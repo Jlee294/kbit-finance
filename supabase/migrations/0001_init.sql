@@ -26,6 +26,18 @@ create type receivable_status  as enum ('outstanding','collected');             
 create type task_status        as enum ('open','in_progress','done','overdue');
 create type health_light       as enum ('green','yellow','red');                             -- P10
 
+-- ============ BẢNG users (phải tạo TRƯỚC các hàm kbit_role, kbit_can_edit...) ===
+create table users (
+  id         uuid primary key default gen_random_uuid(),
+  auth_id    uuid unique not null,            -- = auth.users.id (Supabase Auth)
+  full_name  text not null,
+  email      text unique,
+  role       user_role not null default 'viewer',
+  is_active  boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 -- ===================== HÀM HỖ TRỢ PHÂN QUYỀN =========================
 -- Lấy role của user đang đăng nhập (map auth.uid() -> bảng users)
 create or replace function kbit_role() returns user_role
@@ -75,17 +87,6 @@ create table projects (
 );
 
 -- ============ TẦNG 2 — MASTER DATA ==================================
-create table users (
-  id         uuid primary key default gen_random_uuid(),
-  auth_id    uuid unique not null,            -- = auth.users.id (Supabase Auth)
-  full_name  text not null,
-  email      text unique,
-  role       user_role not null default 'viewer',
-  is_active  boolean not null default true,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
 create table customers (
   id         uuid primary key default gen_random_uuid(),
   code       text unique not null,
