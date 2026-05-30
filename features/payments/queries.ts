@@ -76,7 +76,17 @@ export async function getBankBalances(companyId?: string): Promise<BankBalance[]
   ])
 
   if (accRes.error) throw new Error(accRes.error.message)
-  if (balRes.error) throw new Error(balRes.error.message)
+  // VIEW chưa tồn tại (migration chưa chạy) → trả balance = 0 thay vì crash trang
+  if (balRes.error) {
+    console.warn('v_bank_balances không tồn tại — chạy migration 0003 trên Supabase')
+    return (accRes.data ?? []).map((a) => ({
+      bank_account_id: a.id,
+      name: a.name,
+      currency: a.currency,
+      company_id: a.company_id,
+      balance: 0,
+    }))
+  }
 
   const balById = new Map(
     (balRes.data ?? []).map((r) => [r.bank_account_id, Number(r.balance)]),
