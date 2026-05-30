@@ -14,6 +14,9 @@ export type OrderListRow = {
   fulfillment_status: string
   payment_status: string
   lot_no: string | null
+  discount_pct: number
+  vat_pct: number
+  shipping_fee: number
   created_at: string
   customer: { id: string; code: string; name: string }
   company: { id: string; name: string }
@@ -35,6 +38,8 @@ export type OrderItem = {
   qty: number
   unit_price: number
   line_total: number
+  lot_no: string | null
+  expiry_date: string | null
   product: { id: string; name: string; code: string } | null
 }
 
@@ -77,7 +82,7 @@ export async function listOrders({
       `id, order_code, order_date, delivery_date,
        grand_total, amount_paid, outstanding,
        fulfillment_status, payment_status,
-       lot_no, created_at,
+       lot_no, discount_pct, vat_pct, shipping_fee, created_at,
        customer:customers!customer_id(id, code, name),
        company:companies!company_id(id, name),
        project:projects!project_id(id, name)`,
@@ -115,13 +120,15 @@ export async function getOrder(id: string): Promise<OrderDetail | null> {
       `id, order_code, order_date, delivery_date, expiry_date,
        grand_total, amount_paid, outstanding,
        fulfillment_status, payment_status,
-       lot_no, is_intercompany, counterpart_company_id, created_at,
+       lot_no, discount_pct, vat_pct, shipping_fee,
+       is_intercompany, counterpart_company_id, created_at,
        customer:customers!customer_id(id, code, name),
        company:companies!company_id(id, name),
        project:projects!project_id(id, name),
        counterpart_company:companies!counterpart_company_id(id, name),
        items:customer_order_items(
          id, product_id, description, qty, unit_price, line_total,
+         lot_no, expiry_date,
          product:products(id, name, code)
        )`,
     )

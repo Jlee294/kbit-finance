@@ -8,6 +8,7 @@ import { listProjects } from '@/features/projects/queries'
 import { listProducts } from '@/features/products/queries'
 import { FulfillmentBadge, PaymentBadge } from '@/features/orders/components/StatusBadges'
 import { OrderDetailActions } from '@/features/orders/components/OrderDetailActions'
+import { computeOrderTotals } from '@/features/orders/status'
 import { formatVND, formatDate } from '@/lib/format'
 
 export const dynamic = 'force-dynamic'
@@ -90,43 +91,87 @@ export default async function OrderDetailPage({ params }: Props) {
       </div>
 
       {/* Items table */}
-      <div className="rounded-xl border bg-white overflow-hidden">
-        <div className="px-6 py-4 border-b">
-          <h2 className="font-medium text-gray-900">Dòng hàng</h2>
-        </div>
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide">
-            <tr>
-              <th className="px-4 py-3 text-left">Sản phẩm</th>
-              <th className="px-4 py-3 text-left">Mô tả</th>
-              <th className="px-4 py-3 text-right">SL</th>
-              <th className="px-4 py-3 text-right">Đơn giá</th>
-              <th className="px-4 py-3 text-right">Thành tiền</th>
-            </tr>
-          </thead>
-          <tbody>
-            {order.items.map((it) => (
-              <tr key={it.id} className="border-t">
-                <td className="px-4 py-3 text-gray-700">
-                  {it.product
-                    ? <><span className="font-medium">{it.product.name}</span>{' '}<span className="text-xs text-gray-400">[{it.product.code}]</span></>
-                    : <span className="text-gray-400">—</span>}
-                </td>
-                <td className="px-4 py-3 text-gray-600">{it.description ?? '—'}</td>
-                <td className="px-4 py-3 text-right">{Number(it.qty).toLocaleString('vi-VN')}</td>
-                <td className="px-4 py-3 text-right">{formatVND(Number(it.unit_price))}</td>
-                <td className="px-4 py-3 text-right font-medium">{formatVND(Number(it.line_total))}</td>
-              </tr>
-            ))}
-          </tbody>
-          <tfoot className="border-t bg-gray-50">
-            <tr>
-              <td colSpan={4} className="px-4 py-3 text-right font-medium text-gray-700">Tổng cộng</td>
-              <td className="px-4 py-3 text-right font-bold text-gray-900">{formatVND(Number(order.grand_total))}</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
+      {(() => {
+        const totals = computeOrderTotals(
+          order.items.map((it) => ({ qty: Number(it.qty), unit_price: Number(it.unit_price) })),
+          Number(order.discount_pct),
+          Number(order.vat_pct),
+          Number(order.shipping_fee),
+        )
+        return (
+          <div className="rounded-xl border bg-white overflow-hidden">
+            <div className="px-6 py-4 border-b">
+              <h2 className="font-medium text-gray-900">Dòng hàng</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[750px]">
+                <thead className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide">
+                  <tr>
+                    <th className="px-4 py-3 text-left">Sản phẩm</th>
+                    <th className="px-4 py-3 text-left">Mô tả</th>
+                    <th className="px-4 py-3 text-right">SL</th>
+                    <th className="px-4 py-3 text-right">Đơn giá</th>
+                    <th className="px-4 py-3 text-right">Thành tiền</th>
+                    <th className="px-4 py-3 text-left">Lot No.</th>
+                    <th className="px-4 py-3 text-left">Exp Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {order.items.map((it) => (
+                    <tr key={it.id} className="border-t">
+                      <td className="px-4 py-3 text-gray-700">
+                        {it.product
+                          ? <><span className="font-medium">{it.product.name}</span>{' '}<span className="text-xs text-gray-400">[{it.product.code}]</span></>
+                          : <span className="text-gray-400">—</span>}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">{it.description ?? '—'}</td>
+                      <td className="px-4 py-3 text-right">{Number(it.qty).toLocaleString('vi-VN')}</td>
+                      <td className="px-4 py-3 text-right">{formatVND(Number(it.unit_price))}</td>
+                      <td className="px-4 py-3 text-right font-medium">{formatVND(Number(it.line_total))}</td>
+                      <td className="px-4 py-3 text-gray-600 font-mono text-xs">{it.lot_no ?? '—'}</td>
+                      <td className="px-4 py-3 text-gray-600 text-xs">
+                        {it.expiry_date ? formatDate(it.expiry_date) : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Totals breakdown */}
+            <div className="border-t px-6 py-4 flex justify-end">
+              <dl className="w-72 space-y-1.5 text-sm">
+                <div className="flex justify-between text-gray-600">
+                  <dt>Tiểu tổng</dt>
+                  <dd className="font-medium text-gray-900">{formatVND(totals.subtotal)}</dd>
+                </div>
+                {totals.discountAmount > 0 && (
+                  <div className="flex justify-between text-gray-600">
+                    <dt>Chiết khấu ({Number(order.discount_pct)}%)</dt>
+                    <dd className="text-red-600 font-medium">- {formatVND(totals.discountAmount)}</dd>
+                  </div>
+                )}
+                {totals.vatAmount > 0 && (
+                  <div className="flex justify-between text-gray-600">
+                    <dt>VAT ({Number(order.vat_pct)}%)</dt>
+                    <dd className="text-blue-600 font-medium">+ {formatVND(totals.vatAmount)}</dd>
+                  </div>
+                )}
+                {totals.shippingFee > 0 && (
+                  <div className="flex justify-between text-gray-600">
+                    <dt>Phí vận chuyển</dt>
+                    <dd className="font-medium text-gray-900">+ {formatVND(totals.shippingFee)}</dd>
+                  </div>
+                )}
+                <div className="flex justify-between border-t pt-2 font-semibold text-base">
+                  <dt>Tổng thanh toán</dt>
+                  <dd className="text-gray-900">{formatVND(Number(order.grand_total))}</dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Action buttons (edit, advance status, delete) */}
       <OrderDetailActions

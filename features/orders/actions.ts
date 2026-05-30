@@ -10,7 +10,7 @@ import {
   type UpdateOrderInput,
   FULFILLMENT,
 } from './schema'
-import { computeGrandTotal, derivePaymentStatus } from './status'
+import { computeOrderTotals, derivePaymentStatus } from './status'
 import { buildOrderCode, orderCodePrefix } from './order-code'
 import { getNextOrderSeq } from './queries'
 
@@ -43,7 +43,12 @@ export async function createOrder(raw: CreateOrderInput) {
   const supabase = await createClient()
 
   const input = createOrderSchema.parse(raw)
-  const grandTotal = computeGrandTotal(input.items)
+  const { grandTotal } = computeOrderTotals(
+    input.items,
+    input.discount_pct,
+    input.vat_pct,
+    input.shipping_fee,
+  )
   const paymentStatus = derivePaymentStatus(grandTotal, 0)
 
   // Lấy customer code để build mã đơn
@@ -77,6 +82,9 @@ export async function createOrder(raw: CreateOrderInput) {
         expiry_date: input.expiry_date ?? null,
         is_intercompany: input.is_intercompany,
         counterpart_company_id: input.counterpart_company_id ?? null,
+        discount_pct: input.discount_pct,
+        vat_pct: input.vat_pct,
+        shipping_fee: input.shipping_fee,
         created_by: user.id,
       })
       .select('id, order_code')
@@ -95,6 +103,8 @@ export async function createOrder(raw: CreateOrderInput) {
       description: it.description ?? null,
       qty: it.qty,
       unit_price: it.unit_price,
+      lot_no: it.lot_no ?? null,
+      expiry_date: it.expiry_date ?? null,
     }))
 
     const { error: itemsErr } = await supabase
@@ -138,7 +148,12 @@ export async function updateOrder(id: string, raw: UpdateOrderInput) {
     throw new Error('Không thể sửa đơn đã giao')
   }
 
-  const grandTotal = computeGrandTotal(input.items)
+  const { grandTotal } = computeOrderTotals(
+    input.items,
+    input.discount_pct,
+    input.vat_pct,
+    input.shipping_fee,
+  )
   const paymentStatus = derivePaymentStatus(grandTotal, Number(existing.amount_paid))
 
   // Cập nhật đơn hàng
@@ -157,6 +172,9 @@ export async function updateOrder(id: string, raw: UpdateOrderInput) {
       expiry_date: input.expiry_date ?? null,
       is_intercompany: input.is_intercompany,
       counterpart_company_id: input.counterpart_company_id ?? null,
+      discount_pct: input.discount_pct,
+      vat_pct: input.vat_pct,
+      shipping_fee: input.shipping_fee,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
@@ -177,6 +195,8 @@ export async function updateOrder(id: string, raw: UpdateOrderInput) {
     description: it.description ?? null,
     qty: it.qty,
     unit_price: it.unit_price,
+    lot_no: it.lot_no ?? null,
+    expiry_date: it.expiry_date ?? null,
   }))
 
   const { error: itemsErr } = await supabase
