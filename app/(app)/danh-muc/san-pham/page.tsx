@@ -6,7 +6,7 @@ import { ProductForm } from '@/features/products/components/ProductForm'
 export default async function ProductPage() {
   const [me, rows] = await Promise.all([getCurrentUser(), listProducts()])
   const write = me ? canApprove(me.role) : false
-
+  // Không có render functions → dùng thẳng CatalogPage từ server được
   return (
     <CatalogPage
       title="Sản phẩm"
