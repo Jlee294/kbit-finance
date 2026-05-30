@@ -78,9 +78,9 @@ export async function listOrders({
        grand_total, amount_paid, outstanding,
        fulfillment_status, payment_status,
        lot_no, created_at,
-       customer:customers(id, code, name),
-       company:companies(id, name),
-       project:projects(id, name)`,
+       customer:customers!customer_id(id, code, name),
+       company:companies!company_id(id, name),
+       project:projects!project_id(id, name)`,
       { count: 'exact' },
     )
     .order('order_date', { ascending: false })
@@ -116,9 +116,9 @@ export async function getOrder(id: string): Promise<OrderDetail | null> {
        grand_total, amount_paid, outstanding,
        fulfillment_status, payment_status,
        lot_no, is_intercompany, counterpart_company_id, created_at,
-       customer:customers(id, code, name),
-       company:companies(id, name),
-       project:projects(id, name),
+       customer:customers!customer_id(id, code, name),
+       company:companies!company_id(id, name),
+       project:projects!project_id(id, name),
        counterpart_company:companies!counterpart_company_id(id, name),
        items:customer_order_items(
          id, product_id, description, qty, unit_price, line_total,
