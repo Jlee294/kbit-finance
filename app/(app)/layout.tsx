@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
 const navItems = [
+  { href: '/don-hang', label: 'Đơn hàng' },
   { href: '/danh-muc/cong-ty', label: 'Công ty' },
   { href: '/danh-muc/du-an', label: 'Dự án' },
   { href: '/danh-muc/khach-hang', label: 'Khách hàng' },
