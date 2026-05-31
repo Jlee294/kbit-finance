@@ -3,6 +3,8 @@ import { getConsolidatedReport }    from '@/features/reports/queries'
 import { ConsolidatedKpiCards }     from '@/features/reports/components/KpiCards'
 import { CashFlowTable }            from '@/features/reports/components/CashFlowTable'
 import { ReportFilters }            from '@/features/reports/components/ReportFilters'
+
+export const dynamic = 'force-dynamic'
 import Link                         from 'next/link'
 
 interface SearchParams {

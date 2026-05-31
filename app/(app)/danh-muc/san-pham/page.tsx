@@ -3,6 +3,8 @@ import { getCurrentUser, canApprove } from '@/lib/auth'
 import { CatalogPage } from '@/components/catalog/CatalogPage'
 import { ProductForm } from '@/features/products/components/ProductForm'
 
+export const dynamic = 'force-dynamic'
+
 export default async function ProductPage() {
   const [me, rows] = await Promise.all([getCurrentUser(), listProducts()])
   const write = me ? canApprove(me.role) : false

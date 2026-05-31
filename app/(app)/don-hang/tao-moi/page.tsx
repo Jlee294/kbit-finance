@@ -3,6 +3,8 @@ import { getCurrentUser, canEdit } from '@/lib/auth'
 import { listCompanies } from '@/features/companies/queries'
 import { listCustomers } from '@/features/customers/queries'
 import { listProjects } from '@/features/projects/queries'
+
+export const dynamic = 'force-dynamic'
 import { listProducts } from '@/features/products/queries'
 import { OrderForm } from '@/features/orders/components/OrderForm'
 
