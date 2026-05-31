@@ -1,8 +1,8 @@
 import { unstable_cache } from 'next/cache'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 
 async function _listCompanies() {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
   const { data, error } = await supabase.from('companies').select('*').order('code')
   if (error) throw new Error(error.message)
   return data ?? []

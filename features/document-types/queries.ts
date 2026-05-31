@@ -1,5 +1,5 @@
 import { unstable_cache } from 'next/cache'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 
 export interface DocumentType {
   id: string
@@ -8,7 +8,7 @@ export interface DocumentType {
 }
 
 async function _listDocumentTypes(): Promise<DocumentType[]> {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
   const { data, error } = await supabase
     .from('document_types')
     .select('id, code, name')
