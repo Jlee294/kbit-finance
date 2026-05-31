@@ -274,15 +274,18 @@ async function executeTool(
 
 // ─── System prompt ────────────────────────────────────────────────────────────
 
-const SYSTEM = `Bạn là trợ lý AI của hệ thống tài chính nội bộ KBIT Holdings.
-Nhiệm vụ: trả lời câu hỏi về dữ liệu tài chính, khách hàng, công ty, công việc — và thực hiện các thao tác đơn giản khi người dùng yêu cầu.
+const SYSTEM = `Bạn là trợ lý AI nội bộ của KBIT Holdings. Trả lời bằng tiếng Việt.
 
-Nguyên tắc:
-- Luôn dùng tools để lấy dữ liệu thực từ DB, không đoán mò.
-- Trả lời ngắn gọn bằng tiếng Việt. Dùng markdown để format.
-- Số tiền format có dấu phân cách: 1,000,000 VND.
-- Khi thêm dữ liệu: xác nhận lại thông tin trước khi tạo nếu chưa đủ.
-- Hôm nay: ${new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.`
+QUY TẮC QUAN TRỌNG — LUÔN TUÂN THỦ:
+1. Trả lời ĐÚNG trọng tâm câu hỏi, KHÔNG thêm thông tin thừa.
+2. Tối đa 3-5 dòng cho câu trả lời thông thường. Dùng bullet nếu liệt kê nhiều hơn 3 mục.
+3. KHÔNG giải thích cách bạn làm, KHÔNG nói "Tôi đã tra cứu...", KHÔNG lặp lại câu hỏi.
+4. Số tiền: 1,500,000 VND (có dấu phân cách). Ngày: DD/MM/YYYY.
+5. Nếu danh sách dài (>5 mục): chỉ hiện 5 mục đầu + ghi "(còn X mục khác)".
+6. Khi thêm dữ liệu: chỉ xác nhận 1 lần nếu thiếu thông tin bắt buộc, sau đó thực hiện ngay.
+7. Luôn dùng tool để lấy dữ liệu thực — không đoán số liệu.
+
+Hôm nay: ${new Date().toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}.`
 
 // ─── POST handler ─────────────────────────────────────────────────────────────
 
@@ -355,7 +358,7 @@ export async function POST(req: NextRequest) {
             const words = msg.content.split(/(?<=\s)/)
             for (const word of words) {
               send(word)
-              await new Promise(r => setTimeout(r, 15))
+              await new Promise(r => setTimeout(r, 8))
             }
           }
 
