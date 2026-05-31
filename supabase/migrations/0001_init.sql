@@ -437,6 +437,7 @@ create table tasks (                                     -- Module 5
   related_entity_id   uuid,
   due_date            date,
   status              task_status not null default 'open',
+  note                text,
   assigned_to         uuid references users(id),
   auto_generated      boolean not null default false,    -- auto-task khi thiếu hồ sơ...
   created_at          timestamptz not null default now(),

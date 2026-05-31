@@ -1,0 +1,334 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { formatVND, formatKRW } from '@/lib/format'
+import { allocateUnitCost } from '../cost'
+import { createImportOrder, updateImportOrder } from '../actions'
+import type { ImportOrderDetail } from '../queries'
+
+type SimpleOption  = { id: string; name: string }
+type SupplierOpt   = { id: string; code: string; name: string }
+type ProductOpt    = { id: string; code: string; name: string; unit?: string | null }
+type ProjectOpt    = { id: string; code: string; name: string; company_id: string }
+
+interface Props {
+  companies:   SimpleOption[]
+  suppliers:   SupplierOpt[]
+  products:    ProductOpt[]
+  projects:    ProjectOpt[]
+  editOrder?:  ImportOrderDetail | null
+  onDone:      () => void
+}
+
+interface ItemRow { product_id: string; description: string; qty: string; unit_price: string }
+const newRow = (): ItemRow => ({ product_id: '', description: '', qty: '', unit_price: '' })
+
+const sel = 'w-full h-9 rounded-lg border border-input bg-transparent px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50'
+
+export function ImportOrderForm({ companies, suppliers, products, projects, editOrder, onDone }: Props) {
+  const router = useRouter()
+  const isEdit = !!editOrder
+
+  const [companyId,       setCompanyId]       = useState(editOrder?.company_id ?? '')
+  const [supplierId,      setSupplierId]      = useState(editOrder?.supplier_id ?? '')
+  const [projectId,       setProjectId]       = useState(editOrder?.project_id ?? '')
+  const [orderCode,       setOrderCode]       = useState(editOrder?.order_code ?? '')
+  const [orderDate,       setOrderDate]       = useState(editOrder?.order_date ?? new Date().toISOString().slice(0, 10))
+  const [currency,        setCurrency]        = useState<'VND' | 'KRW'>((editOrder?.currency as 'VND' | 'KRW') ?? 'VND')
+  const [exchangeRate,    setExchangeRate]    = useState(editOrder?.exchange_rate ? String(editOrder.exchange_rate) : '')
+  const [goodsValue,      setGoodsValue]      = useState(editOrder ? String(editOrder.goods_value) : '')
+  const [importDuty,      setImportDuty]      = useState(editOrder ? String(editOrder.import_duty) : '0')
+  const [vatImport,       setVatImport]       = useState(editOrder ? String(editOrder.vat_import) : '0')
+  const [otherFees,       setOtherFees]       = useState(editOrder ? String(editOrder.other_fees) : '0')
+  const [isInterco,       setIsInterco]       = useState(editOrder?.is_intercompany ?? false)
+  const [counterpartId,   setCounterpartId]   = useState(editOrder?.counterpart_company_id ?? '')
+
+  const [items, setItems] = useState<ItemRow[]>(
+    editOrder?.supplier_order_items?.length
+      ? editOrder.supplier_order_items.map((it) => ({
+          product_id:  it.product_id ?? '',
+          description: it.description ?? '',
+          qty:         String(it.qty),
+          unit_price:  String(it.unit_price),
+        }))
+      : [newRow()],
+  )
+
+  const [error,  setError]  = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const filteredProjects = companyId ? projects.filter((p) => p.company_id === companyId) : projects
+  const counterpartList  = companies.filter((c) => c.id !== companyId)
+
+  // ── Preview giá vốn (client-side, hàm thuần)
+  const gv   = parseFloat(goodsValue) || 0
+  const duty = parseFloat(importDuty) || 0
+  const vat  = parseFloat(vatImport)  || 0
+  const fees = parseFloat(otherFees)  || 0
+  const rate = currency === 'KRW' ? (parseFloat(exchangeRate) || 0) : 1
+  const costTotalFc  = gv + duty + fees          // KHÔNG gồm vat_import
+  const costTotalVnd = costTotalFc * (currency === 'KRW' ? rate : 1)
+  const parsedItems  = items.map((r) => ({ qty: parseFloat(r.qty) || 0, unit_price: parseFloat(r.unit_price) || 0 }))
+  const previewUnitCosts = costTotalVnd > 0 ? allocateUnitCost(parsedItems, costTotalVnd) : []
+
+  function updateItem(i: number, field: keyof ItemRow, value: string) {
+    setItems((prev) => prev.map((r, idx) => idx === i ? { ...r, [field]: value } : r))
+  }
+  function addItem() { setItems((prev) => [...prev, newRow()]) }
+  function removeItem(i: number) { setItems((prev) => prev.filter((_, idx) => idx !== i)) }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setSaving(true); setError('')
+    try {
+      const payload = {
+        company_id:   companyId,
+        supplier_id:  supplierId,
+        project_id:   projectId || null,
+        order_code:   orderCode,
+        order_date:   orderDate,
+        currency,
+        exchange_rate: currency === 'KRW' ? parseFloat(exchangeRate) : null,
+        goods_value:  gv,
+        import_duty:  duty,
+        vat_import:   vat,
+        other_fees:   fees,
+        is_intercompany:        isInterco,
+        counterpart_company_id: isInterco ? counterpartId : null,
+        items: items.map((r) => ({
+          product_id:  r.product_id || null,
+          description: r.description || null,
+          qty:         parseFloat(r.qty),
+          unit_price:  parseFloat(r.unit_price) || 0,
+        })),
+      }
+      if (isEdit) {
+        await updateImportOrder(editOrder.id, payload)
+      } else {
+        await createImportOrder(payload)
+      }
+      router.refresh()
+      onDone()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Có lỗi xảy ra')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const fmtCurrency = (n: number) => currency === 'KRW' ? formatKRW(n) : formatVND(n)
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+
+      {/* ── Header ────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1">
+          <Label>Công ty <span className="text-red-500">*</span></Label>
+          <select value={companyId} onChange={(e) => { setCompanyId(e.target.value); setProjectId('') }} required className={sel}>
+            <option value="">— Chọn công ty —</option>
+            {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <Label>Nhà cung cấp <span className="text-red-500">*</span></Label>
+          <select value={supplierId} onChange={(e) => setSupplierId(e.target.value)} required className={sel}>
+            <option value="">— Chọn NCC —</option>
+            {suppliers.map((s) => <option key={s.id} value={s.id}>[{s.code}] {s.name}</option>)}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <Label>Mã đơn <span className="text-red-500">*</span></Label>
+          <Input value={orderCode} onChange={(e) => setOrderCode(e.target.value)} placeholder="VD: IMP-0526-01" required />
+        </div>
+        <div className="space-y-1">
+          <Label>Ngày đặt hàng <span className="text-red-500">*</span></Label>
+          <Input type="date" value={orderDate} onChange={(e) => setOrderDate(e.target.value)} required />
+        </div>
+        <div className="space-y-1">
+          <Label>Dự án</Label>
+          <select value={projectId} onChange={(e) => setProjectId(e.target.value)} className={sel}>
+            <option value="">— Không có —</option>
+            {filteredProjects.map((p) => <option key={p.id} value={p.id}>[{p.code}] {p.name}</option>)}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <Label>Đơn vị tiền <span className="text-red-500">*</span></Label>
+          <select value={currency} onChange={(e) => { setCurrency(e.target.value as 'VND' | 'KRW'); setExchangeRate('') }} className={sel}>
+            <option value="VND">VNĐ</option>
+            <option value="KRW">KRW (Hàn Quốc)</option>
+          </select>
+        </div>
+
+        {/* C4/D4: tỷ giá chỉ hiện khi KRW */}
+        {currency === 'KRW' && (
+          <div className="space-y-1 col-span-2">
+            <Label>
+              Tỷ giá ghi nợ (KRW→VNĐ) <span className="text-red-500">*</span>
+              <span className="ml-2 text-xs text-gray-400 font-normal">Phase 4 dùng để tính chênh lệch tỷ giá khi trả NCC</span>
+            </Label>
+            <Input type="number" min="0.001" step="0.001"
+              value={exchangeRate} onChange={(e) => setExchangeRate(e.target.value)}
+              placeholder="VD: 18" required={currency === 'KRW'} />
+          </div>
+        )}
+      </div>
+
+      {/* ── Chi phí nhập khẩu ─────────────────────────────────────── */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-700 mb-3">Chi phí nhập khẩu ({currency})</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <Label>Giá mua hàng (goods_value) <span className="text-red-500">*</span></Label>
+            <Input type="number" min="0" step="1"
+              value={goodsValue} onChange={(e) => setGoodsValue(e.target.value)} required />
+          </div>
+          <div className="space-y-1">
+            <Label>Thuế nhập khẩu (import_duty)</Label>
+            <Input type="number" min="0" step="1" value={importDuty} onChange={(e) => setImportDuty(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label>
+              VAT khâu nhập khẩu
+              <span className="ml-1 text-xs text-blue-600 font-normal">(khấu trừ riêng — KHÔNG tính vào giá vốn)</span>
+            </Label>
+            <Input type="number" min="0" step="1" value={vatImport} onChange={(e) => setVatImport(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label>
+              Phí khác (other_fees)
+              <span className="ml-1 text-xs text-gray-400 font-normal">HQ, lưu kho, vận chuyển, đại lý</span>
+            </Label>
+            <Input type="number" min="0" step="1" value={otherFees} onChange={(e) => setOtherFees(e.target.value)} />
+          </div>
+        </div>
+
+        {/* Preview giá vốn */}
+        {costTotalFc > 0 && (
+          <div className="mt-3 rounded-lg bg-blue-50 border border-blue-100 px-4 py-3 text-sm space-y-1">
+            <div className="flex justify-between font-semibold text-blue-800">
+              <span>Giá vốn lô (cost_total = mua + thuế NK + phí khác):</span>
+              <span>{fmtCurrency(costTotalFc)}</span>
+            </div>
+            {currency === 'KRW' && rate > 0 && (
+              <div className="flex justify-between text-blue-600">
+                <span>Quy VNĐ (×{rate}):</span>
+                <span>{formatVND(costTotalVnd)}</span>
+              </div>
+            )}
+            {vat > 0 && (
+              <div className="flex justify-between text-gray-500 text-xs">
+                <span>VAT khâu NK (riêng, không vào giá vốn):</span>
+                <span>{fmtCurrency(vat)}</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Dòng hàng ─────────────────────────────────────────────── */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-semibold text-gray-700">Dòng hàng</h3>
+          <Button type="button" variant="outline" size="sm" onClick={addItem}>+ Thêm dòng</Button>
+        </div>
+        <div className="rounded-lg border overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50 text-gray-600 text-xs">
+                <th className="px-3 py-2 text-left">Sản phẩm</th>
+                <th className="px-3 py-2 text-left">Mô tả</th>
+                <th className="px-3 py-2 text-right w-24">Số lượng</th>
+                <th className="px-3 py-2 text-right w-32">Đơn giá ({currency})</th>
+                <th className="px-3 py-2 text-right w-32">Thành tiền</th>
+                <th className="px-3 py-2 text-right w-32">
+                  Giá vốn/đv (VNĐ)
+                  <span className="block text-gray-400 font-normal">unit_cost</span>
+                </th>
+                <th className="px-3 py-2 w-8"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {items.map((row, i) => {
+                const lineTotal = (parseFloat(row.qty) || 0) * (parseFloat(row.unit_price) || 0)
+                const uc        = previewUnitCosts[i] ?? 0
+                return (
+                  <tr key={i}>
+                    <td className="px-3 py-2">
+                      <select value={row.product_id} onChange={(e) => updateItem(i, 'product_id', e.target.value)}
+                        className="w-full h-8 rounded border border-input bg-transparent px-2 text-xs focus:outline-none">
+                        <option value="">— Chọn SP —</option>
+                        {products.map((p) => <option key={p.id} value={p.id}>[{p.code}] {p.name}</option>)}
+                      </select>
+                    </td>
+                    <td className="px-3 py-2">
+                      <Input value={row.description} onChange={(e) => updateItem(i, 'description', e.target.value)}
+                        placeholder="Mô tả..." className="h-8 text-xs" />
+                    </td>
+                    <td className="px-3 py-2">
+                      <Input type="number" min="0.001" step="0.001" value={row.qty}
+                        onChange={(e) => updateItem(i, 'qty', e.target.value)}
+                        className="h-8 text-xs text-right" required />
+                    </td>
+                    <td className="px-3 py-2">
+                      <Input type="number" min="0" step="1" value={row.unit_price}
+                        onChange={(e) => updateItem(i, 'unit_price', e.target.value)}
+                        className="h-8 text-xs text-right" />
+                    </td>
+                    <td className="px-3 py-2 text-right text-xs text-gray-700">
+                      {lineTotal > 0 ? fmtCurrency(lineTotal) : '—'}
+                    </td>
+                    <td className="px-3 py-2 text-right text-xs font-medium text-blue-700">
+                      {uc > 0 ? formatVND(uc) : '—'}
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      {items.length > 1 && (
+                        <button type="button" onClick={() => removeItem(i)}
+                          className="text-red-400 hover:text-red-600 text-xs">✕</button>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ── Giao dịch nội bộ ──────────────────────────────────────── */}
+      <div className="border rounded-lg p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <input id="isIntercoImp" type="checkbox" checked={isInterco}
+            onChange={(e) => { setIsInterco(e.target.checked); if (!e.target.checked) setCounterpartId('') }}
+            className="h-4 w-4 rounded border-gray-300" />
+          <Label htmlFor="isIntercoImp" className="cursor-pointer font-medium">
+            Giao dịch nội bộ (mua từ công ty trong Group — loại trừ khi hợp nhất)
+          </Label>
+        </div>
+        {isInterco && (
+          <div className="pl-6 space-y-1">
+            <Label>Pháp nhân đối ứng <span className="text-red-500">*</span></Label>
+            <select value={counterpartId} onChange={(e) => setCounterpartId(e.target.value)}
+              required={isInterco} className={sel}>
+              <option value="">— Chọn công ty —</option>
+              {counterpartList.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+        )}
+      </div>
+
+      {error && <p className="rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>}
+
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="outline" onClick={onDone} disabled={saving}>Hủy</Button>
+        <Button type="submit" disabled={saving}>
+          {saving ? 'Đang lưu...' : isEdit ? 'Cập nhật đơn' : 'Tạo đơn nhập khẩu'}
+        </Button>
+      </div>
+    </form>
+  )
+}
