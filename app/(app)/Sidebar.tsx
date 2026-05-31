@@ -20,6 +20,16 @@ const navGroups = [
     ],
   },
   {
+    label: 'Kho hàng',
+    items: [
+      { href: '/kho',              label: 'Tồn kho'          },
+      { href: '/kho/nhap',         label: '+ Nhập kho'       },
+      { href: '/kho/xuat',         label: '− Xuất kho'       },
+      { href: '/kho/luan-chuyen',  label: '⇄ Luân chuyển'   },
+      { href: '/kho/lich-su',      label: 'Lịch sử'          },
+    ],
+  },
+  {
     label: 'Tài chính',
     items: [
       { href: '/ke-hoach-thue',  label: 'Kế hoạch thuế'   },
