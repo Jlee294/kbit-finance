@@ -6,6 +6,7 @@ import { listCompanies } from '@/features/companies/queries'
 import { listCustomers } from '@/features/customers/queries'
 import { listProjects } from '@/features/projects/queries'
 import { listProducts } from '@/features/products/queries'
+import { listWarehouses } from '@/features/warehouse/queries'
 import { FulfillmentBadge, PaymentBadge } from '@/features/orders/components/StatusBadges'
 import { OrderDetailActions } from '@/features/orders/components/OrderDetailActions'
 import { computeOrderTotals } from '@/features/orders/status'
@@ -27,9 +28,9 @@ export default async function OrderDetailPage({ params }: Props) {
   const approve = !!me && canApprove(me.role)
 
   // Fetch master data only when user can edit (for the edit form)
-  const [companies, customers, projects, products] = write
-    ? await Promise.all([listCompanies(), listCustomers(), listProjects(), listProducts()])
-    : [[], [], [], []]
+  const [companies, customers, projects, products, warehouses] = write
+    ? await Promise.all([listCompanies(), listCustomers(), listProjects(), listProducts(), listWarehouses()])
+    : [[], [], [], [], []]
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -75,6 +76,12 @@ export default async function OrderDetailPage({ params }: Props) {
           )}
           {order.is_intercompany && order.counterpart_company && (
             <Row label="Công ty đối tác" value={order.counterpart_company.name} />
+          )}
+          {order.warehouse && (
+            <Row
+              label="Kho xuất"
+              value={`[${order.warehouse.code}] ${order.warehouse.name}${order.stock_deducted ? ' ✓ Đã trừ kho' : ''}`}
+            />
           )}
         </div>
 
@@ -182,6 +189,7 @@ export default async function OrderDetailPage({ params }: Props) {
         customers={customers}
         projects={projects.map((p) => ({ id: p.id, code: p.code, name: p.name, company_id: p.company_id }))}
         products={products.map((p) => ({ id: p.id, code: p.code, name: p.name }))}
+        warehouses={warehouses.map((w) => ({ id: w.id, code: w.code, name: w.name }))}
       />
     </div>
   )

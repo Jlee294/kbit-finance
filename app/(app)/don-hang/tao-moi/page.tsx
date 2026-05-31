@@ -3,20 +3,22 @@ import { getCurrentUser, canEdit } from '@/lib/auth'
 import { listCompanies } from '@/features/companies/queries'
 import { listCustomers } from '@/features/customers/queries'
 import { listProjects } from '@/features/projects/queries'
+import { listProducts } from '@/features/products/queries'
+import { listWarehouses } from '@/features/warehouse/queries'
+import { OrderForm } from '@/features/orders/components/OrderForm'
 
 export const dynamic = 'force-dynamic'
-import { listProducts } from '@/features/products/queries'
-import { OrderForm } from '@/features/orders/components/OrderForm'
 
 export default async function NewOrderPage() {
   const me = await getCurrentUser()
   if (!me || !canEdit(me.role)) redirect('/don-hang')
 
-  const [companies, customers, projects, products] = await Promise.all([
+  const [companies, customers, projects, products, warehouses] = await Promise.all([
     listCompanies(),
     listCustomers(),
     listProjects(),
     listProducts(),
+    listWarehouses(),
   ])
 
   return (
@@ -32,6 +34,7 @@ export default async function NewOrderPage() {
           customers={customers}
           projects={projects.map((p) => ({ id: p.id, code: p.code, name: p.name, company_id: p.company_id }))}
           products={products.map((p) => ({ id: p.id, code: p.code, name: p.name }))}
+          warehouses={warehouses.map((w) => ({ id: w.id, code: w.code, name: w.name }))}
         />
       </div>
     </div>

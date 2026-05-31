@@ -28,6 +28,9 @@ export type OrderDetail = OrderListRow & {
   is_intercompany: boolean
   counterpart_company_id: string | null
   counterpart_company: { id: string; name: string } | null
+  warehouse_id: string | null
+  warehouse: { id: string; code: string; name: string } | null
+  stock_deducted: boolean
   items: OrderItem[]
 }
 
@@ -121,11 +124,13 @@ export async function getOrder(id: string): Promise<OrderDetail | null> {
        grand_total, amount_paid, outstanding,
        fulfillment_status, payment_status,
        lot_no, discount_pct, vat_pct, shipping_fee,
-       is_intercompany, counterpart_company_id, created_at,
+       is_intercompany, counterpart_company_id,
+       warehouse_id, stock_deducted, created_at,
        customer:customers!customer_id(id, code, name),
        company:companies!company_id(id, name),
        project:projects!project_id(id, name),
        counterpart_company:companies!counterpart_company_id(id, name),
+       warehouse:warehouses!warehouse_id(id, code, name),
        items:customer_order_items(
          id, product_id, description, qty, unit_price, line_total,
          lot_no, expiry_date,

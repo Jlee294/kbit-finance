@@ -17,14 +17,16 @@ type SimpleOption    = { id: string; name: string }
 type CustomerOption  = { id: string; code: string; name: string }
 type ProjectOption   = { id: string; code: string; name: string; company_id: string }
 type ProductOption   = { id: string; code: string; name: string }
+type WarehouseOption = { id: string; code: string; name: string }
 
 interface Props {
-  companies: SimpleOption[]
-  customers: CustomerOption[]
-  projects:  ProjectOption[]
-  products:  ProductOption[]
-  initial?:  OrderDetail
-  onDone?:   () => void
+  companies:  SimpleOption[]
+  customers:  CustomerOption[]
+  projects:   ProjectOption[]
+  products:   ProductOption[]
+  warehouses: WarehouseOption[]
+  initial?:   OrderDetail
+  onDone?:    () => void
 }
 
 // ── Item row state ────────────────────────────────────────────────────────────
@@ -54,7 +56,7 @@ function newRow(): ItemRow {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export function OrderForm({ companies, customers, projects, products, initial, onDone }: Props) {
+export function OrderForm({ companies, customers, projects, products, warehouses, initial, onDone }: Props) {
   const router  = useRouter()
   const isEdit  = !!initial?.id
 
@@ -69,6 +71,8 @@ export function OrderForm({ companies, customers, projects, products, initial, o
   const [expiryDate,    setExpiryDate]    = useState(initial?.expiry_date   ?? '')
   const [isIntercompany, setIsIntercompany] = useState(initial?.is_intercompany ?? false)
   const [counterpartId,  setCounterpartId]  = useState(initial?.counterpart_company_id ?? '')
+  const [warehouseId,    setWarehouseId]    = useState(initial?.warehouse_id ?? '')
+  const stockDeducted = initial?.stock_deducted ?? false
 
   // ── Charge state ─────────────────────────────────────────────────────────
   const [discountPct,  setDiscountPct]  = useState(String(initial?.discount_pct  ?? 0))
@@ -149,6 +153,7 @@ export function OrderForm({ companies, customers, projects, products, initial, o
         discount_pct:  parseFloat(discountPct) || 0,
         vat_pct:       parseFloat(vatPct)      || 0,
         shipping_fee:  parseFloat(shippingFee) || 0,
+        warehouse_id:  warehouseId || null,
         items: items.map((it) => ({
           product_id:  it.product_id  || null,
           description: it.description || null,
@@ -263,6 +268,38 @@ export function OrderForm({ companies, customers, projects, products, initial, o
           </select>
         )}
       </div>
+
+      {/* ─ Kho xuất hàng ────────────────────────────────────────────────── */}
+      {warehouses.length > 0 && (
+        <div className="flex items-end gap-4 rounded-lg border bg-amber-50 px-4 py-3">
+          <div className="space-y-1 flex-1">
+            <Label>
+              Kho xuất hàng
+              <span className="ml-1 text-xs text-gray-400">(tùy chọn — tự động trừ kho khi tạo đơn)</span>
+            </Label>
+            <select
+              value={warehouseId}
+              onChange={(e) => setWarehouseId(e.target.value)}
+              disabled={stockDeducted}
+              className={`${sel} ${stockDeducted ? 'opacity-60 cursor-not-allowed' : ''}`}
+            >
+              <option value="">— Không trừ kho —</option>
+              {warehouses.map((w) => (
+                <option key={w.id} value={w.id}>[{w.code}] {w.name}</option>
+              ))}
+            </select>
+          </div>
+          {stockDeducted && (
+            <p className="text-xs text-green-700 font-medium shrink-0">✓ Đã trừ kho</p>
+          )}
+          {!stockDeducted && warehouseId && fulfillment !== 'draft' && (
+            <p className="text-xs text-amber-700 shrink-0">Kho sẽ bị trừ khi lưu</p>
+          )}
+          {!stockDeducted && warehouseId && fulfillment === 'draft' && (
+            <p className="text-xs text-gray-500 shrink-0">Kho chỉ bị trừ khi đơn không phải Nháp</p>
+          )}
+        </div>
+      )}
 
       {/* ─ Items table ───────────────────────────────────────────────────── */}
       <div>

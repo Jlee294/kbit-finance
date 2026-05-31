@@ -8,10 +8,11 @@ import { OrderForm } from './OrderForm'
 import { setFulfillmentStatus, deleteOrder } from '../actions'
 import type { OrderDetail } from '../queries'
 
-type SimpleOption = { id: string; name: string }
-type CustomerOption = { id: string; code: string; name: string }
-type ProjectOption  = { id: string; code: string; name: string; company_id: string }
-type ProductOption  = { id: string; code: string; name: string }
+type SimpleOption    = { id: string; name: string }
+type CustomerOption  = { id: string; code: string; name: string }
+type ProjectOption   = { id: string; code: string; name: string; company_id: string }
+type ProductOption   = { id: string; code: string; name: string }
+type WarehouseOption = { id: string; code: string; name: string }
 
 interface Props {
   order: OrderDetail
@@ -21,6 +22,7 @@ interface Props {
   customers: CustomerOption[]
   projects: ProjectOption[]
   products: ProductOption[]
+  warehouses: WarehouseOption[]
 }
 
 // Fulfillment transitions: what a button should advance to
@@ -39,7 +41,7 @@ const NEXT_LABEL: Record<string, string> = {
 
 export function OrderDetailActions({
   order, canWrite, canApprove,
-  companies, customers, projects, products,
+  companies, customers, projects, products, warehouses,
 }: Props) {
   const router = useRouter()
   const [editOpen, setEditOpen]   = useState(false)
@@ -123,6 +125,7 @@ export function OrderDetailActions({
             customers={customers}
             projects={projects}
             products={products}
+            warehouses={warehouses}
             onDone={() => { setEditOpen(false); router.refresh() }}
           />
         </DialogContent>

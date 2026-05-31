@@ -28,6 +28,7 @@ export const createOrderSchema = z.object({
   discount_pct:  z.coerce.number().min(0).max(100).default(0),
   vat_pct:       z.coerce.number().min(0).max(100).default(0),
   shipping_fee:  z.coerce.number().min(0).default(0),
+  warehouse_id:  z.string().uuid().optional().nullable(),
   items: z.array(orderItemSchema).min(1, 'Đơn phải có ít nhất 1 dòng hàng'),
 }).refine((v) => !v.is_intercompany || !!v.counterpart_company_id, {
   message: 'Giao dịch nội bộ phải chọn công ty đối tác',

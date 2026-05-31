@@ -13,6 +13,7 @@ import {
 import { computeOrderTotals, derivePaymentStatus } from './status'
 import { buildOrderCode, orderCodePrefix } from './order-code'
 import { getNextOrderSeq } from './queries'
+import { deductOrderStock } from '@/features/warehouse/actions'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -85,6 +86,7 @@ export async function createOrder(raw: CreateOrderInput) {
         discount_pct: input.discount_pct,
         vat_pct: input.vat_pct,
         shipping_fee: input.shipping_fee,
+        warehouse_id: input.warehouse_id ?? null,
         created_by: user.id,
       })
       .select('id, order_code')
@@ -117,6 +119,22 @@ export async function createOrder(raw: CreateOrderInput) {
       throw new Error(itemsErr.message)
     }
 
+    // Tự động trừ kho nếu đơn không phải nháp và có chọn kho
+    if (input.warehouse_id && input.fulfillment_status !== 'draft') {
+      const stockItems = input.items
+        .filter((it) => !!it.product_id)
+        .map((it) => ({ product_id: it.product_id!, quantity: it.qty }))
+
+      if (stockItems.length > 0) {
+        const deductResult = await deductOrderStock(order.id, input.warehouse_id, stockItems)
+        if (deductResult.error) {
+          // Rollback: xoá đơn vừa tạo
+          await supabase.from('customer_orders').delete().eq('id', order.id)
+          throw new Error(deductResult.error)
+        }
+      }
+    }
+
     revalidatePath('/don-hang')
     return { id: order.id, orderCode: order.order_code }
   }
@@ -139,13 +157,18 @@ export async function updateOrder(id: string, raw: UpdateOrderInput) {
   // Kiểm tra đơn có tồn tại và chưa delivered
   const { data: existing, error: fetchErr } = await supabase
     .from('customer_orders')
-    .select('id, fulfillment_status, amount_paid')
+    .select('id, fulfillment_status, amount_paid, stock_deducted, warehouse_id')
     .eq('id', id)
     .single()
 
   if (fetchErr || !existing) throw new Error('Không tìm thấy đơn hàng')
   if (existing.fulfillment_status === 'delivered') {
     throw new Error('Không thể sửa đơn đã giao')
+  }
+  // Nếu đã trừ kho, không cho thay đổi kho hoặc số lượng
+  if (existing.stock_deducted) {
+    const warehouseChanged = (input.warehouse_id ?? null) !== (existing.warehouse_id ?? null)
+    if (warehouseChanged) throw new Error('Đơn đã xuất kho — không thể đổi kho')
   }
 
   const { grandTotal } = computeOrderTotals(
@@ -175,6 +198,7 @@ export async function updateOrder(id: string, raw: UpdateOrderInput) {
       discount_pct: input.discount_pct,
       vat_pct: input.vat_pct,
       shipping_fee: input.shipping_fee,
+      warehouse_id: input.warehouse_id ?? null,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
