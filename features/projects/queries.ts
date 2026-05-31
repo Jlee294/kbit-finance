@@ -7,7 +7,10 @@ async function _listProjects() {
     .from('projects')
     .select('*, companies(code, name)')
     .order('code')
-  if (error) throw new Error(error.message)
+  if (error) {
+    console.error('[listProjects]', error.message)
+    return []
+  }
   return data ?? []
 }
 

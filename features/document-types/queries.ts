@@ -13,7 +13,10 @@ async function _listDocumentTypes(): Promise<DocumentType[]> {
     .from('document_types')
     .select('id, code, name')
     .order('code')
-  if (error) throw new Error(error.message)
+  if (error) {
+    console.error('[listDocumentTypes]', error.message)
+    return []
+  }
   return (data ?? []) as DocumentType[]
 }
 

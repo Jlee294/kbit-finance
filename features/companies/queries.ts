@@ -4,7 +4,12 @@ import { createServiceClient } from '@/lib/supabase/server'
 async function _listCompanies() {
   const supabase = createServiceClient()
   const { data, error } = await supabase.from('companies').select('*').order('code')
-  if (error) throw new Error(error.message)
+  if (error) {
+    // Gracefully degrade — sẽ hiện [] thay vì crash trang
+    // Nguyên nhân thường gặp: SUPABASE_SERVICE_ROLE_KEY chưa set trên Vercel
+    console.error('[listCompanies]', error.message)
+    return []
+  }
   return data ?? []
 }
 
