@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import type { UserRole } from '@/lib/auth'
 
 const navGroups = [
   {
@@ -63,8 +64,12 @@ const navGroups = [
   },
 ]
 
-export function Sidebar() {
+// Routes chỉ dành cho admin + CEO
+const COST_ROUTES = new Set(['/danh-muc/san-pham'])
+
+export function Sidebar({ role }: { role: UserRole }) {
   const pathname = usePathname()
+  const canSeeCosts = role === 'admin' || role === 'ceo'
 
   function isActive(href: string) {
     return pathname === href || pathname.startsWith(href + '/')
@@ -72,35 +77,41 @@ export function Sidebar() {
 
   return (
     <nav className="flex flex-col gap-5 px-3 py-4 flex-1 overflow-y-auto">
-      {navGroups.map((group) => (
-        <div key={group.label}>
-          <p className="px-3 mb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-widest">
-            {group.label}
-          </p>
-          <ul className="space-y-0.5">
-            {group.items.map(({ href, label }) => {
-              const active = isActive(href)
-              return (
-                <li key={href}>
-                  <Link
-                    href={href}
-                    className={`flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors
-                      ${active
-                        ? 'bg-blue-50 text-blue-700 font-medium'
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                      }`}
-                  >
-                    {label}
-                    {active && (
-                      <span className="h-1.5 w-1.5 rounded-full bg-blue-500 shrink-0" />
-                    )}
-                  </Link>
-                </li>
-              )
-            })}
-          </ul>
-        </div>
-      ))}
+      {navGroups.map((group) => {
+        const visibleItems = group.items.filter(
+          ({ href }) => !COST_ROUTES.has(href) || canSeeCosts
+        )
+        if (visibleItems.length === 0) return null
+        return (
+          <div key={group.label}>
+            <p className="px-3 mb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-widest">
+              {group.label}
+            </p>
+            <ul className="space-y-0.5">
+              {visibleItems.map(({ href, label }) => {
+                const active = isActive(href)
+                return (
+                  <li key={href}>
+                    <Link
+                      href={href}
+                      className={`flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors
+                        ${active
+                          ? 'bg-blue-50 text-blue-700 font-medium'
+                          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                        }`}
+                    >
+                      {label}
+                      {active && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-blue-500 shrink-0" />
+                      )}
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        )
+      })}
     </nav>
   )
 }

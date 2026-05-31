@@ -35,7 +35,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
 
         {/* Nav groups */}
-        <Sidebar />
+        <Sidebar role={me.role} />
 
         {/* User info + sign out */}
         <div className="px-4 py-4 border-t space-y-2">

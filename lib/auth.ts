@@ -1,7 +1,7 @@
 import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
 
-export type UserRole = 'admin' | 'chief_accountant' | 'accountant' | 'viewer'
+export type UserRole = 'admin' | 'ceo' | 'chief_accountant' | 'accountant' | 'viewer'
 
 export interface CurrentUser {
   id: string
@@ -35,4 +35,9 @@ export function canApprove(role: UserRole) {
 
 export function isAdmin(role: UserRole) {
   return role === 'admin'
+}
+
+/** Xem giá vốn + danh mục brand — chỉ admin và CEO */
+export function canViewCosts(role: UserRole) {
+  return role === 'admin' || role === 'ceo'
 }
