@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { documentTypeSchema } from './schema'
 
@@ -20,6 +20,7 @@ export async function createDocumentType(input: unknown): Promise<string> {
   }
 
   revalidatePath('/danh-muc/loai-chung-tu')
+  revalidateTag('document-types', {})
   return row.id as string
 }
 
@@ -38,4 +39,5 @@ export async function updateDocumentType(id: string, input: unknown): Promise<vo
   }
 
   revalidatePath('/danh-muc/loai-chung-tu')
+  revalidateTag('document-types', {})
 }

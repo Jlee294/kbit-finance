@@ -19,10 +19,9 @@ export default async function RuiRoPage({
   const companyId = sp.company
   const period    = sp.period
 
+  // getCurrentUser + listCompanies chạy song song, cả 2 đều được cache
   const [companies, me] = await Promise.all([listCompanies(), getCurrentUser()])
   const canRun          = !!me && canApprove(me.role)
-
-  const assessment = companyId ? await getLatestAssessment(companyId) : null
 
   return (
     <div className="space-y-6 p-6">
@@ -36,6 +35,7 @@ export default async function RuiRoPage({
         </Link>
       </div>
 
+      {/* Filter hiện ngay */}
       <Suspense fallback={null}>
         <RuiRoFilters
           companies={companies.map(c => ({ id: c.id, name: c.name }))}
@@ -45,23 +45,35 @@ export default async function RuiRoPage({
         />
       </Suspense>
 
-      {!companyId && (
+      {!companyId ? (
         <div className="rounded-xl border bg-white shadow-sm px-6 py-10 text-center text-sm text-gray-400">
           Chọn một công ty để xem sức khỏe tài chính.
         </div>
-      )}
-
-      {companyId && !assessment && (
-        <div className="rounded-xl border bg-white shadow-sm px-6 py-10 text-center text-sm text-gray-500">
-          Chưa có dữ liệu chấm điểm.{canRun ? ' Bấm "Chấm điểm ngay" để bắt đầu.' : ''}
-        </div>
-      )}
-
-      {assessment && (
-        <Suspense fallback={<div className="h-32 bg-gray-50 rounded-xl animate-pulse" />}>
-          <HealthDashboard assessment={assessment} />
+      ) : (
+        /* Stream assessment — skeleton hiện trong lúc chờ */
+        <Suspense fallback={<div className="h-48 bg-gray-50 rounded-xl animate-pulse" />}>
+          <AssessmentSection companyId={companyId} canRun={canRun} />
         </Suspense>
       )}
     </div>
   )
+}
+
+async function AssessmentSection({
+  companyId, canRun,
+}: {
+  companyId: string
+  canRun: boolean
+}) {
+  const assessment = await getLatestAssessment(companyId)
+
+  if (!assessment) {
+    return (
+      <div className="rounded-xl border bg-white shadow-sm px-6 py-10 text-center text-sm text-gray-500">
+        Chưa có dữ liệu chấm điểm.{canRun ? ' Bấm "Chấm điểm ngay" để bắt đầu.' : ''}
+      </div>
+    )
+  }
+
+  return <HealthDashboard assessment={assessment} />
 }

@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { companySchema } from './schema'
 
@@ -10,6 +10,7 @@ export async function createCompany(input: unknown) {
   const { error } = await supabase.from('companies').insert(data)
   if (error) throw new Error(error.message)
   revalidatePath('/danh-muc/cong-ty')
+  revalidateTag('companies', {})
 }
 
 export async function updateCompany(id: string, input: unknown) {
@@ -18,4 +19,5 @@ export async function updateCompany(id: string, input: unknown) {
   const { error } = await supabase.from('companies').update(data).eq('id', id)
   if (error) throw new Error(error.message)
   revalidatePath('/danh-muc/cong-ty')
+  revalidateTag('companies', {})
 }
