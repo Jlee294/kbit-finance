@@ -3,6 +3,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { Sidebar } from './Sidebar'
+import { ChatWidget } from '@/components/chat/ChatWidget'
 
 async function SignOutButton() {
   async function signOut() {
@@ -50,6 +51,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <main className="flex-1 p-6 overflow-auto">
         {children}
       </main>
+
+      {/* ── AI Chatbot ──────────────────────────────────── */}
+      <ChatWidget />
     </div>
   )
 }
