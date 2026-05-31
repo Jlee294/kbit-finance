@@ -28,10 +28,12 @@ export function CompanyForm({ initial, onDone }: Props) {
     setError('')
     try {
       const payload = { code, name, country, base_currency: currency }
-      if (initial?.id) {
-        await updateCompany(initial.id, payload)
-      } else {
-        await createCompany(payload)
+      const result = initial?.id
+        ? await updateCompany(initial.id, payload)
+        : await createCompany(payload)
+      if (result?.error) {
+        setError(result.error)
+        return
       }
       router.refresh()
       onDone()
