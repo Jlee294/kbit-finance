@@ -2,15 +2,15 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { productSchema } from './schema'
+import { brandSchema } from './schema'
 
 export interface ActionResult { error?: string }
 
-export async function createProduct(input: unknown): Promise<ActionResult> {
+export async function createBrand(input: unknown): Promise<ActionResult> {
   try {
-    const data = productSchema.parse(input)
+    const data = brandSchema.parse(input)
     const supabase = await createClient()
-    const { error } = await supabase.from('products').insert(data)
+    const { error } = await supabase.from('brands').insert(data)
     if (error) return { error: error.message }
     revalidatePath('/danh-muc/san-pham')
     return {}
@@ -19,11 +19,11 @@ export async function createProduct(input: unknown): Promise<ActionResult> {
   }
 }
 
-export async function updateProduct(id: string, input: unknown): Promise<ActionResult> {
+export async function updateBrand(id: string, input: unknown): Promise<ActionResult> {
   try {
-    const data = productSchema.parse(input)
+    const data = brandSchema.parse(input)
     const supabase = await createClient()
-    const { error } = await supabase.from('products').update(data).eq('id', id)
+    const { error } = await supabase.from('brands').update(data).eq('id', id)
     if (error) return { error: error.message }
     revalidatePath('/danh-muc/san-pham')
     return {}
