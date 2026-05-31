@@ -1,8 +1,11 @@
-import { unstable_cache } from 'next/cache'
-import { createServiceClient } from '@/lib/supabase/server'
+import { cache } from 'react'
+import { createClient } from '@/lib/supabase/server'
 
-async function _listProjects() {
-  const supabase = createServiceClient()
+/**
+ * React cache() — dedup per request. Auth client, không cần service key.
+ */
+export const listProjects = cache(async () => {
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from('projects')
     .select('*, companies(code, name)')
@@ -12,14 +15,4 @@ async function _listProjects() {
     return []
   }
   return data ?? []
-}
-
-/**
- * Cache 60s — projects ít thay đổi.
- * Sau khi mutate, actions gọi revalidateTag('projects').
- */
-export const listProjects = unstable_cache(
-  _listProjects,
-  ['projects'],
-  { revalidate: 60, tags: ['projects'] },
-)
+})
