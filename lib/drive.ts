@@ -182,22 +182,38 @@ export async function shareWithUser(fileId: string, email: string): Promise<void
 
 /**
  * Lấy folder path segments cho entity.
- * Dùng chung cho upload-init route và tests.
+ * Cấu trúc cây thư mục (theo yêu cầu Kế toán trưởng):
+ *
+ *   {Tên công ty} / {Năm} / {Tháng} / {Dự án | "Chung"} / {Bán ra | Mua vào | Ngân hàng | Khác}
+ *
+ * Ví dụ:
+ *   "KBIT Aesthetic" / "2026" / "05" / "Chung" / "Bán ra"
+ *   "KBIT Aesthetic" / "2026" / "05" / "Dự án ABC" / "Mua vào"
  */
 export function buildFolderPath(opts: {
   companyName: string
-  year: string | number
-  entityType: 'customer_order' | 'supplier_order' | 'income' | 'expense'
+  year:        string | number
+  month?:      string | number | null    // 1-12, padded "01"-"12"
+  projectName?: string | null            // tên dự án; nếu rỗng → "Chung"
+  entityType:  'customer_order' | 'supplier_order' | 'income' | 'expense' | 'cash_book'
 }): string[] {
-  const ENTITY_LABEL: Record<string, string> = {
-    customer_order: 'Đơn hàng KH',
-    supplier_order: 'Đơn hàng NCC',
-    income:         'Thu tiền',
-    expense:        'Chi phí',
+  const ENTITY_CATEGORY: Record<string, string> = {
+    customer_order: 'Bán ra',
+    supplier_order: 'Mua vào',
+    income:         'Ngân hàng',
+    expense:        'Ngân hàng',
+    cash_book:      'Khác',
   }
+  const month = opts.month != null
+    ? String(opts.month).padStart(2, '0')
+    : String(new Date().getMonth() + 1).padStart(2, '0')
+  const project = (opts.projectName?.trim() || 'Chung')
+
   return [
     opts.companyName,
     String(opts.year),
-    ENTITY_LABEL[opts.entityType] ?? opts.entityType,
+    `Tháng ${month}`,
+    project,
+    ENTITY_CATEGORY[opts.entityType] ?? 'Khác',
   ]
 }

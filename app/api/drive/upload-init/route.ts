@@ -47,50 +47,64 @@ export async function POST(req: NextRequest) {
 
   const { entity_type, entity_id, file_name, mime_type, file_size } = body
 
-  // ── Resolve company name + year từ entity ─────────────────────────────────
-  let companyName = 'KBIT'
-  let year = String(new Date().getFullYear())
+  // ── Resolve company / year / month / project từ entity ───────────────────
+  const now = new Date()
+  let companyName  = 'KBIT'
+  let year         = String(now.getFullYear())
+  let month        = String(now.getMonth() + 1).padStart(2, '0')
+  let projectName: string | null = null
+
+  /** Parse YYYY-MM-DD → tách year + month */
+  function setDateFields(dateStr: string | undefined | null) {
+    if (!dateStr) return
+    const m = dateStr.match(/^(\d{4})-(\d{2})/)
+    if (m) { year = m[1]; month = m[2] }
+  }
 
   try {
     if (entity_type === 'income') {
       const { data } = await supabase
         .from('income_transactions')
-        .select('txn_date, companies!company_id(name)')
+        .select('txn_date, companies!company_id(name), projects!project_id(name)')
         .eq('id', entity_id)
         .single()
       if (data) {
         companyName = (data.companies as any)?.name ?? companyName
-        year = data.txn_date?.slice(0, 4) ?? year
+        projectName = (data.projects as any)?.name ?? null
+        setDateFields(data.txn_date)
       }
     } else if (entity_type === 'expense') {
       const { data } = await supabase
         .from('expense_transactions')
-        .select('txn_date, companies!company_id(name)')
+        .select('txn_date, companies!company_id(name), projects!project_id(name)')
         .eq('id', entity_id)
         .single()
       if (data) {
         companyName = (data.companies as any)?.name ?? companyName
-        year = data.txn_date?.slice(0, 4) ?? year
+        projectName = (data.projects as any)?.name ?? null
+        setDateFields(data.txn_date)
       }
     } else if (entity_type === 'customer_order') {
       const { data } = await supabase
         .from('customer_orders')
-        .select('order_date, companies(name)')
+        .select('order_date, companies(name), projects(name)')
         .eq('id', entity_id)
         .single()
       if (data) {
         companyName = (data.companies as any)?.name ?? companyName
-        year = data.order_date?.slice(0, 4) ?? year
+        projectName = (data.projects as any)?.name ?? null
+        setDateFields(data.order_date)
       }
     } else if (entity_type === 'supplier_order') {
       const { data } = await supabase
         .from('supplier_orders')
-        .select('order_date, companies(name)')
+        .select('order_date, companies(name), projects(name)')
         .eq('id', entity_id)
         .single()
       if (data) {
         companyName = (data.companies as any)?.name ?? companyName
-        year = data.order_date?.slice(0, 4) ?? year
+        projectName = (data.projects as any)?.name ?? null
+        setDateFields(data.order_date)
       }
     }
   } catch {
@@ -98,7 +112,10 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Tạo/tìm thư mục Drive ─────────────────────────────────────────────────
-  const segments = buildFolderPath({ companyName, year, entityType: entity_type })
+  const segments = buildFolderPath({
+    companyName, year, month, projectName,
+    entityType: entity_type,
+  })
 
   try {
     const folderId    = await ensureFolderPath(segments)
