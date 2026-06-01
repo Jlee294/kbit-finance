@@ -8,18 +8,19 @@ const navGroups = [
   {
     label: 'Tổng quan',
     items: [
-      { href: '/bao-cao',  label: 'Báo cáo'  },
-      { href: '/rui-ro',   label: 'Sức khỏe' },
+      { href: '/bao-cao',          label: 'Báo cáo'         },
+      { href: '/bang-ke-ban-ra',   label: 'Bảng kê bán ra'  },
+      { href: '/bang-ke-mua-vao',  label: 'Bảng kê mua vào' },
+      { href: '/rui-ro',           label: 'Sức khỏe'        },
     ],
   },
   {
     label: 'Giao dịch',
     items: [
-      { href: '/don-hang',   label: 'Đơn hàng'  },
-      { href: '/thu-tien',   label: 'Thu tiền'  },
-      { href: '/chi-vn',     label: 'Chi VN'    },
-      { href: '/chi-kr',     label: 'Chi KR'    },
-      { href: '/nhap-khau',  label: 'Nhập khẩu' },
+      { href: '/don-hang',         label: 'Nhật ký bán ra' },
+      { href: '/nhap-khau',        label: 'Nhật ký mua vào' },
+      { href: '/ngan-hang',        label: 'Ngân hàng'       },
+      { href: '/chung-tu-khac',    label: 'Chứng từ khác'   },
     ],
   },
   {
@@ -35,9 +36,9 @@ const navGroups = [
   {
     label: 'Kế toán',
     items: [
-      { href: '/duyet-khoa-ky',               label: 'Duyệt & Khóa kỳ' },
-      { href: '/chung-tu',                    label: 'Chứng từ'         },
-      { href: '/cong-viec',                   label: 'Công việc'        },
+      { href: '/duyet-khoa-ky',               label: 'Duyệt & Khóa kỳ'  },
+      { href: '/chung-tu',                    label: 'Tài liệu đính kèm' },
+      { href: '/cong-viec',                   label: 'Công việc'         },
       { href: '/danh-muc/ky-ke-toan',         label: 'Kỳ kế toán'      },
       { href: '/danh-muc/loai-chung-tu',      label: 'Loại chứng từ'   },
       { href: '/danh-muc/thu-vien-nghiep-vu', label: 'Thư viện NV'     },

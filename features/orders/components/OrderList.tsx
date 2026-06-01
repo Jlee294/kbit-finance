@@ -23,8 +23,8 @@ export function OrderList({ initialRows, total, canWrite }: Props) {
       {/* Header bar */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Đơn hàng</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{total.toLocaleString('vi-VN')} đơn</p>
+          <h1 className="text-xl font-semibold text-gray-900">Nhật ký bán ra</h1>
+          <p className="text-sm text-gray-500 mt-0.5">{total.toLocaleString('vi-VN')} đơn / hóa đơn bán ra</p>
         </div>
         {canWrite && (
           <Button onClick={() => router.push('/don-hang/tao-moi')}>

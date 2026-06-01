@@ -32,7 +32,7 @@ export function ImportOrderTable({ rows, canWrite, companies, suppliers, product
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Đơn nhập khẩu ({rows.length})</h2>
+        <h2 className="text-lg font-semibold">Nhật ký mua vào — {rows.length} hóa đơn</h2>
         {canWrite && (
           <Button onClick={() => setAddOpen(true)}>+ Thêm đơn nhập khẩu</Button>
         )}
