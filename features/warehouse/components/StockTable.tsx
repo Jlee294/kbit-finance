@@ -21,8 +21,10 @@ export function StockTable({ warehouses, stock }: Props) {
       <div className="flex gap-2 flex-wrap">
         <button
           onClick={() => setActiveWh('all')}
-          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-            activeWh === 'all' ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50'
+          className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            activeWh === 'all'
+              ? 'bg-brand-800 text-white shadow-sm'
+              : 'bg-white border border-gray-200 text-gray-600 hover:bg-brand-50/40 hover:text-brand-800 hover:border-brand-200'
           }`}
         >
           Tất cả ({stock.length})
@@ -33,8 +35,10 @@ export function StockTable({ warehouses, stock }: Props) {
             <button
               key={wh.id}
               onClick={() => setActiveWh(wh.id)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                activeWh === wh.id ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50'
+              className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                activeWh === wh.id
+                  ? 'bg-brand-800 text-white shadow-sm'
+                  : 'bg-white border border-gray-200 text-gray-600 hover:bg-brand-50/40 hover:text-brand-800 hover:border-brand-200'
               }`}
             >
               {wh.name} ({count})
@@ -52,7 +56,7 @@ export function StockTable({ warehouses, stock }: Props) {
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b bg-gray-50 text-xs text-gray-500 uppercase">
+              <tr className="border-b border-brand-100 bg-brand-50/60 text-xs text-brand-800 font-semibold">
                 <th className="px-4 py-3 text-left">Sản phẩm</th>
                 {activeWh === 'all' && <th className="px-4 py-3 text-left">Kho</th>}
                 <th className="px-4 py-3 text-left">ĐVT</th>
@@ -63,7 +67,7 @@ export function StockTable({ warehouses, stock }: Props) {
               {filtered.map((r, i) => {
                 const low = r.qty_on_hand <= 5
                 return (
-                  <tr key={i} className={`hover:bg-gray-50 ${low ? 'bg-amber-50' : ''}`}>
+                  <tr key={i} className={`hover:bg-brand-50/40 ${low ? 'bg-warning-50' : ''}`}>
                     <td className="px-4 py-2.5">
                       <p className="font-medium text-gray-800">{r.product_name}</p>
                       <p className="text-xs text-gray-400">{r.product_code}</p>

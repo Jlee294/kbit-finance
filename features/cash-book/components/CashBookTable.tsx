@@ -71,7 +71,7 @@ export function CashBookTable({ rows, companies, users, canWrite }: Props) {
         ) : (
           <table className="w-full text-sm min-w-[1000px]">
             <thead>
-              <tr className="border-b bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
+              <tr className="border-b border-brand-100 bg-brand-50/60 text-xs text-brand-800 font-semibold tracking-wide">
                 <th className="px-3 py-2.5 text-left w-[8%]">Ký hiệu</th>
                 <th className="px-3 py-2.5 text-left w-[8%]">Ngày</th>
                 <th className="px-3 py-2.5 text-left w-[14%]">Đối tác</th>
@@ -85,7 +85,7 @@ export function CashBookTable({ rows, companies, users, canWrite }: Props) {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {rows.map((r) => (
-                <tr key={r.id} className="hover:bg-gray-50 group">
+                <tr key={r.id} className="hover:bg-brand-50/40 group">
                   <td className="px-3 py-2 font-mono text-xs text-gray-700">{r.ky_hieu ?? '—'}</td>
                   <td className="px-3 py-2 text-gray-500 text-xs whitespace-nowrap">{fmtDate(r.txn_date)}</td>
                   <td className="px-3 py-2 text-gray-700">

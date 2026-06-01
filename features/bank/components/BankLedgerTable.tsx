@@ -24,7 +24,7 @@ export function BankLedgerTable({ rows }: { rows: BankRow[] }) {
     <div className="rounded-xl border bg-white shadow-sm overflow-x-auto">
       <table className="w-full text-sm min-w-[1100px]">
         <thead>
-          <tr className="border-b bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
+          <tr className="border-b border-brand-100 bg-brand-50/60 text-xs text-brand-800 font-semibold tracking-wide">
             <th className="px-3 py-2.5 text-left w-[8%]">Ngày</th>
             <th className="px-3 py-2.5 text-center w-[6%]">Loại</th>
             <th className="px-3 py-2.5 text-left w-[18%]">Tài khoản ngân hàng</th>
@@ -41,7 +41,7 @@ export function BankLedgerTable({ rows }: { rows: BankRow[] }) {
                           r.region === 'KR'    ? `/chi-kr/${r.id}`   :
                                                   `/chi-vn/${r.id}`
             return (
-              <tr key={r.direction + ':' + r.id} className="hover:bg-gray-50">
+              <tr key={r.direction + ':' + r.id} className="hover:bg-brand-50/40">
                 <td className="px-3 py-2 text-xs text-gray-500 whitespace-nowrap">{fmtDate(r.txn_date)}</td>
                 <td className="px-3 py-2 text-center">
                   <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${

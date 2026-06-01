@@ -25,7 +25,7 @@ export function TransactionHistory({ rows }: { rows: TxnRow[] }) {
     <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b bg-gray-50 text-xs text-gray-500 uppercase">
+          <tr className="border-b border-brand-100 bg-brand-50/60 text-xs text-brand-800 font-semibold">
             <th className="px-4 py-3 text-left">Ngày</th>
             <th className="px-4 py-3 text-left">Loại</th>
             <th className="px-4 py-3 text-left">Kho</th>
@@ -36,7 +36,7 @@ export function TransactionHistory({ rows }: { rows: TxnRow[] }) {
         </thead>
         <tbody className="divide-y divide-gray-100">
           {rows.map(r => (
-            <tr key={r.id} className="hover:bg-gray-50">
+            <tr key={r.id} className="hover:bg-brand-50/40">
               <td className="px-4 py-2.5 text-gray-500 text-xs whitespace-nowrap">
                 {new Date(r.txn_date).toLocaleDateString('vi-VN')}
               </td>

@@ -6,16 +6,16 @@ type FulfillmentStatus = keyof typeof FULFILLMENT_LABEL
 type PaymentStatus = keyof typeof PAYMENT_LABEL
 
 const FULFILLMENT_COLOR: Record<FulfillmentStatus, string> = {
-  draft:          'bg-gray-100 text-gray-700',
-  confirmed:      'bg-blue-100 text-blue-700',
-  awaiting_goods: 'bg-yellow-100 text-yellow-800',
-  delivered:      'bg-green-100 text-green-700',
+  draft:          'bg-gray-100 text-gray-700 ring-1 ring-gray-200',
+  confirmed:      'bg-brand-50 text-brand-800 ring-1 ring-brand-200',
+  awaiting_goods: 'bg-warning-50 text-warning-700 ring-1 ring-warning-500/30',
+  delivered:      'bg-success-50 text-success-700 ring-1 ring-success-500/30',
 }
 
 const PAYMENT_COLOR: Record<PaymentStatus, string> = {
-  unpaid:  'bg-red-100 text-red-700',
-  partial: 'bg-orange-100 text-orange-700',
-  paid:    'bg-green-100 text-green-700',
+  unpaid:  'bg-danger-50 text-danger-700 ring-1 ring-danger-500/30',
+  partial: 'bg-warning-50 text-warning-700 ring-1 ring-warning-500/30',
+  paid:    'bg-success-50 text-success-700 ring-1 ring-success-500/30',
 }
 
 export function FulfillmentBadge({ status }: { status: string }) {

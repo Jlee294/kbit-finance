@@ -47,7 +47,7 @@ export function OrderList({ initialRows, total, canWrite }: Props) {
       ) : (
         <div className="overflow-x-auto rounded-xl border bg-white">
           <table className="w-full text-sm">
-            <thead className="border-b bg-gray-50 text-gray-600 text-xs uppercase tracking-wide">
+            <thead className="border-b border-brand-100 bg-brand-50/60 text-brand-800 text-xs font-semibold tracking-wide">
               <tr>
                 <th className="px-4 py-3 text-left">Mã đơn</th>
                 <th className="px-4 py-3 text-left">Khách hàng</th>
@@ -63,7 +63,7 @@ export function OrderList({ initialRows, total, canWrite }: Props) {
               {rows.map((row) => (
                 <tr
                   key={row.id}
-                  className="border-t hover:bg-gray-50 transition-colors cursor-pointer"
+                  className="border-t hover:bg-brand-50/40 transition-colors cursor-pointer"
                   onClick={() => router.push(`/don-hang/${row.id}`)}
                 >
                   <td className="px-4 py-3 font-mono font-medium text-blue-700">

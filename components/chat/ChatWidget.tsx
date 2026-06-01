@@ -121,7 +121,7 @@ export function ChatWidget() {
       <button
         onClick={() => setOpen(v => !v)}
         className={`fixed bottom-5 right-5 z-50 flex items-center justify-center w-12 h-12 rounded-full shadow-lg transition-all ${
-          open ? 'bg-gray-700 rotate-45' : 'bg-blue-600 hover:bg-blue-700'
+          open ? 'bg-gray-700 rotate-45' : 'bg-brand-800 hover:bg-brand-700'
         }`}
         title="Trợ lý AI KBIT"
         aria-label="Mở chatbot"
@@ -142,7 +142,7 @@ export function ChatWidget() {
       {open && (
         <div className="fixed bottom-20 right-5 z-50 w-[380px] max-w-[calc(100vw-1.5rem)] h-[520px] flex flex-col bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-blue-600 text-white">
+          <div className="flex items-center justify-between px-4 py-3 bg-brand-800 text-white">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold">K</div>
               <div>
@@ -165,7 +165,7 @@ export function ChatWidget() {
                     <button
                       key={s}
                       onClick={() => send(s)}
-                      className="text-xs text-left px-3 py-2 rounded-lg border border-blue-100 bg-white text-blue-700 hover:bg-blue-50 transition-colors"
+                      className="text-xs text-left px-3 py-2 rounded-lg border border-brand-100 bg-white text-brand-700 hover:bg-brand-50 transition-colors"
                     >
                       {s}
                     </button>
@@ -179,7 +179,7 @@ export function ChatWidget() {
                 <div
                   className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${
                     msg.role === 'user'
-                      ? 'bg-blue-600 text-white rounded-tr-sm'
+                      ? 'bg-brand-800 text-white rounded-tr-sm'
                       : 'bg-white border border-gray-200 text-gray-800 rounded-tl-sm shadow-sm'
                   }`}
                 >
@@ -224,7 +224,7 @@ export function ChatWidget() {
               <button
                 onClick={() => send(input)}
                 disabled={!input.trim() || streaming}
-                className="flex-shrink-0 w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex-shrink-0 w-9 h-9 rounded-xl bg-brand-800 text-white flex items-center justify-center hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />

@@ -142,7 +142,7 @@ export function ProductCatalog({ brands, products, rates, canWrite }: Props) {
           onClick={() => setActiveBrandId('all')}
           className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${
             activeBrandId === 'all'
-              ? 'bg-gray-900 text-white border-gray-900'
+              ? 'bg-brand-800 text-white border-brand-800'
               : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
           }`}
         >
@@ -155,8 +155,8 @@ export function ProductCatalog({ brands, products, rates, canWrite }: Props) {
             onClick={() => setActiveBrandId(b.id)}
             className={`group px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${
               activeBrandId === b.id
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white text-gray-700 border-gray-200 hover:border-blue-400 hover:text-blue-700'
+                ? 'bg-brand-800 text-white border-brand-800'
+                : 'bg-white text-gray-700 border-gray-200 hover:border-brand-400 hover:text-brand-800'
             }`}
           >
             {b.name}
@@ -217,7 +217,7 @@ export function ProductCatalog({ brands, products, rates, canWrite }: Props) {
                     <td className="px-3 py-2.5">
                       <p className="font-medium text-gray-900 leading-snug">{p.name}</p>
                       {p.brand && activeBrandId === 'all' && (
-                        <p className="text-[10px] text-blue-500">{p.brand.name}</p>
+                        <p className="text-[10px] text-brand-700">{p.brand.name}</p>
                       )}
                     </td>
                     <td className="px-3 py-2.5 text-gray-500 text-xs">{p.unit}</td>
