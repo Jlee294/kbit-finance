@@ -27,11 +27,11 @@ const navGroups = [
   {
     label: 'Kho hàng',
     items: [
-      { href: '/kho',              label: 'Tồn kho'        },
-      { href: '/kho/nhap',         label: '+ Nhập kho'     },
-      { href: '/kho/xuat',         label: '− Xuất kho'     },
-      { href: '/kho/luan-chuyen',  label: '⇄ Luân chuyển' },
-      { href: '/kho/lich-su',      label: 'Lịch sử'        },
+      { href: '/kho',              label: 'Tồn kho'      },
+      { href: '/kho/nhap',         label: 'Nhập kho'     },
+      { href: '/kho/xuat',         label: 'Xuất kho'     },
+      { href: '/kho/luan-chuyen',  label: 'Luân chuyển'  },
+      { href: '/kho/lich-su',      label: 'Lịch sử'      },
     ],
   },
   {
@@ -86,7 +86,7 @@ export function Sidebar({ role }: { role: UserRole }) {
         if (visibleItems.length === 0) return null
         return (
           <div key={group.label}>
-            <p className="px-3 mb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-widest">
+            <p className="px-3 mb-1.5 text-[10px] font-semibold text-brand-700 uppercase tracking-widest">
               {group.label}
             </p>
             <ul className="space-y-0.5">
@@ -98,13 +98,13 @@ export function Sidebar({ role }: { role: UserRole }) {
                       href={href}
                       className={`flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors
                         ${active
-                          ? 'bg-blue-50 text-blue-700 font-medium'
-                          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                          ? 'bg-brand-50 text-brand-800 font-medium'
+                          : 'text-gray-600 hover:bg-gray-50 hover:text-brand-800'
                         }`}
                     >
                       {label}
                       {active && (
-                        <span className="h-1.5 w-1.5 rounded-full bg-blue-500 shrink-0" />
+                        <span className="h-1.5 w-1.5 rounded-full bg-brand-800 shrink-0" />
                       )}
                     </Link>
                   </li>

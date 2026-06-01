@@ -60,44 +60,46 @@ export default async function CongNoPage({
         </button>
       </form>
 
-      {/* 4 KPI cards */}
+      {/* 4 KPI cards — accent border-top theo loại */}
       <div className="grid grid-cols-4 gap-3">
-        <div className="rounded-xl border bg-white px-4 py-3">
-          <p className="text-xs text-gray-500">Phải thu KH</p>
-          <p className="text-lg font-semibold text-amber-700">{fmtVND(totalAr)}</p>
+        <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 border-t-4 border-t-warning-500 shadow-sm">
+          <p className="text-xs text-gray-500 font-medium">Phải thu KH</p>
+          <p className="text-lg font-semibold text-warning-700 mt-1">{fmtVND(totalAr)}</p>
           <p className="text-[10px] text-gray-400 mt-0.5">{ar.length} khách hàng</p>
         </div>
-        <div className="rounded-xl border bg-white px-4 py-3">
-          <p className="text-xs text-gray-500">Phải trả NCC</p>
-          <p className="text-lg font-semibold text-red-600">{fmtVND(totalAp)}</p>
+        <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 border-t-4 border-t-danger-500 shadow-sm">
+          <p className="text-xs text-gray-500 font-medium">Phải trả NCC</p>
+          <p className="text-lg font-semibold text-danger-700 mt-1">{fmtVND(totalAp)}</p>
           <p className="text-[10px] text-gray-400 mt-0.5">{ap.length} nhà cung cấp</p>
         </div>
-        <div className="rounded-xl border bg-white px-4 py-3">
-          <p className="text-xs text-gray-500">Chi hộ chưa thu lại</p>
-          <p className="text-lg font-semibold text-purple-700">{fmtVND(totalIr)}</p>
+        <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 border-t-4 border-t-brand-500 shadow-sm">
+          <p className="text-xs text-gray-500 font-medium">Chi hộ chưa thu lại</p>
+          <p className="text-lg font-semibold text-brand-700 mt-1">{fmtVND(totalIr)}</p>
           <p className="text-[10px] text-gray-400 mt-0.5">{ir.length} nhân viên</p>
         </div>
-        <div className="rounded-xl border bg-white px-4 py-3">
-          <p className="text-xs text-gray-500">Thu cọc chưa gắn đơn</p>
-          <p className="text-lg font-semibold text-blue-700">{fmtVND(totalDep)}</p>
+        <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 border-t-4 border-t-info-500 shadow-sm">
+          <p className="text-xs text-gray-500 font-medium">Thu cọc chưa gắn đơn</p>
+          <p className="text-lg font-semibold text-info-700 mt-1">{fmtVND(totalDep)}</p>
           <p className="text-[10px] text-gray-400 mt-0.5">{deposits.length} phiếu</p>
         </div>
       </div>
 
-      {/* Net summary */}
-      <div className={`rounded-xl border-2 px-5 py-4 ${
-        netDebt >= 0 ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
+      {/* Net summary — gradient brand */}
+      <div className={`rounded-xl px-5 py-4 shadow-sm ${
+        netDebt >= 0
+          ? 'bg-gradient-to-r from-brand-800 to-brand-700 text-white'
+          : 'bg-gradient-to-r from-danger-700 to-danger-500 text-white'
       }`}>
-        <p className="text-xs text-gray-600 uppercase tracking-wider font-semibold">
+        <p className="text-xs uppercase tracking-wider font-semibold opacity-80">
           Công nợ ròng (Phải thu − Phải trả − Thu cọc)
         </p>
-        <p className={`text-2xl font-bold mt-1 ${netDebt >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+        <p className="text-2xl font-bold mt-1">
           {netDebt >= 0 ? '' : '−'}{fmtVND(Math.abs(netDebt))}
         </p>
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs opacity-75 mt-1">
           {netDebt >= 0
-            ? 'Tổng tài sản công nợ ròng > 0 — đối tác đang nợ ta'
-            : 'Tổng nợ ròng < 0 — ta đang nợ đối tác'}
+            ? 'Đối tác đang nợ ta nhiều hơn ta nợ họ'
+            : 'Ta đang nợ đối tác nhiều hơn họ nợ ta'}
         </p>
       </div>
 

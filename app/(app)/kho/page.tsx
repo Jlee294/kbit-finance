@@ -24,19 +24,19 @@ export default async function KhoPage() {
         </div>
         <div className="flex gap-2">
           <Link href="/kho/nhap"
-            className="h-8 px-3 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 flex items-center gap-1">
-            + Nhập kho
+            className="h-9 px-3.5 bg-success-500 text-white rounded-lg text-sm font-medium hover:bg-success-700 transition-colors flex items-center">
+            Nhập kho
           </Link>
           <Link href="/kho/xuat"
-            className="h-8 px-3 bg-red-500 text-white rounded-md text-sm hover:bg-red-600 flex items-center gap-1">
-            − Xuất kho
+            className="h-9 px-3.5 bg-danger-500 text-white rounded-lg text-sm font-medium hover:bg-danger-700 transition-colors flex items-center">
+            Xuất kho
           </Link>
           <Link href="/kho/luan-chuyen"
-            className="h-8 px-3 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 flex items-center gap-1">
-            ⇄ Luân chuyển
+            className="h-9 px-3.5 bg-brand-800 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition-colors flex items-center">
+            Luân chuyển
           </Link>
           <Link href="/kho/lich-su"
-            className="h-8 px-3 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200 flex items-center">
+            className="h-9 px-3.5 bg-white text-gray-700 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors flex items-center">
             Lịch sử
           </Link>
         </div>
