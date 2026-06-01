@@ -4,19 +4,9 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { UserRole } from '@/lib/auth'
 
-/**
- * Thứ tự groups GIỮ NGUYÊN như cũ.
- * Chỉ đánh dấu `primary: true` cho 2 nhóm chính (Giao dịch + Kho hàng)
- * để hiển thị nổi bật hơn (label màu brand + viền trái, item to hơn).
- *
- * Các nhóm còn lại vẫn hiển thị bình thường, chỉ khác nhẹ:
- * label text mờ hơn, item text size 13.
- */
-
 interface NavGroup {
-  label:    string
-  primary?: boolean
-  items:    { href: string; label: string }[]
+  label: string
+  items: { href: string; label: string }[]
 }
 
 const navGroups: NavGroup[] = [
@@ -32,7 +22,6 @@ const navGroups: NavGroup[] = [
   },
   {
     label: 'Giao dịch',
-    primary: true,
     items: [
       { href: '/don-hang',         label: 'Nhật ký bán ra'  },
       { href: '/nhap-khau',        label: 'Nhật ký mua vào' },
@@ -42,7 +31,6 @@ const navGroups: NavGroup[] = [
   },
   {
     label: 'Kho hàng',
-    primary: true,
     items: [
       { href: '/kho',              label: 'Tồn kho'     },
       { href: '/kho/nhap',         label: 'Nhập kho'    },
@@ -104,15 +92,12 @@ export function Sidebar({ role }: { role: UserRole }) {
 
         return (
           <div key={group.label}>
-            {/* Group label — primary đậm + brand color, secondary mờ */}
-            <p className={`px-3 mb-1.5 uppercase tracking-widest ${
-              group.primary
-                ? 'text-[11px] font-bold text-brand-800'   // PRIMARY: đậm + brand
-                : 'text-[10px] font-semibold text-gray-400' // SECONDARY: mờ
-            }`}>
+            {/* Group label — TẤT CẢ đều nổi bật: brand color + bold + uppercase */}
+            <p className="px-3 mb-1.5 text-[11px] font-bold uppercase tracking-widest text-brand-800">
               {group.label}
             </p>
 
+            {/* Items — đồng nhất size + style */}
             <ul className="space-y-0.5">
               {visibleItems.map(({ href, label }) => {
                 const active = isActive(href)
@@ -120,15 +105,10 @@ export function Sidebar({ role }: { role: UserRole }) {
                   <li key={href}>
                     <Link
                       href={href}
-                      className={`flex items-center justify-between px-3 rounded-md transition-colors
-                        ${group.primary ? 'py-2 text-sm' : 'py-1.5 text-[13px]'}
+                      className={`flex items-center justify-between px-3 py-1.5 rounded-md text-[13px] transition-colors
                         ${active
-                          ? group.primary
-                            ? 'bg-brand-50 text-brand-800 font-semibold'
-                            : 'bg-brand-50 text-brand-800 font-medium'
-                          : group.primary
-                            ? 'text-gray-800 font-medium hover:bg-gray-50 hover:text-brand-800'
-                            : 'text-gray-600 hover:bg-gray-50 hover:text-brand-800'
+                          ? 'bg-brand-50 text-brand-800 font-semibold'
+                          : 'text-gray-700 hover:bg-gray-50 hover:text-brand-800'
                         }`}
                     >
                       <span>{label}</span>
