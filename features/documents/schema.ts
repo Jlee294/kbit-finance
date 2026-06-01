@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const docEntityType = z.enum(['customer_order', 'supplier_order', 'income', 'expense'])
+export const docEntityType = z.enum(['customer_order', 'supplier_order', 'income', 'expense', 'cash_book'])
 export type DocEntityType = z.infer<typeof docEntityType>
 
 export const uploadDocumentSchema = z.object({

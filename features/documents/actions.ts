@@ -2,7 +2,34 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { uploadDocumentSchema } from './schema'
+import { uploadDocumentSchema, type DocEntityType } from './schema'
+import { listDocumentsForEntity, type Document } from './queries'
+
+/** Wrapper Server Action để client component fetch docs theo entity. */
+export async function listDocumentsAction(
+  entityType: DocEntityType,
+  entityId: string,
+): Promise<Document[]> {
+  return listDocumentsForEntity(entityType, entityId)
+}
+
+/** Lấy document_type_id mặc định (theo code) — auto-create nếu chưa có. */
+export async function getOrCreateDocTypeId(code: string, name: string): Promise<string> {
+  const supabase = await createClient()
+  const { data: existing } = await supabase
+    .from('document_types')
+    .select('id')
+    .eq('code', code)
+    .maybeSingle()
+  if (existing) return existing.id
+  const { data: created, error } = await supabase
+    .from('document_types')
+    .insert({ code, name })
+    .select('id')
+    .single()
+  if (error) throw new Error(error.message)
+  return created.id
+}
 
 export async function uploadDocument(input: unknown): Promise<string> {
   const data = uploadDocumentSchema.parse(input)

@@ -133,6 +133,38 @@ export async function getFileWebViewLink(fileId: string): Promise<string> {
 }
 
 /**
+ * Lấy parents (folder cha) hiện tại của file.
+ * Dùng cho migration: cần biết folder cũ để remove trước khi add folder mới.
+ */
+export async function getFileParents(fileId: string): Promise<string[]> {
+  const token = await getAccessToken(DRIVE_SCOPE)
+  const res = await driveGet(`/files/${fileId}?fields=parents`, token)
+  if (!res.ok) throw new Error(`Drive: lấy parents thất bại (${res.status})`)
+  const { parents } = await res.json() as { parents?: string[] }
+  return parents ?? []
+}
+
+/**
+ * Di chuyển file sang folder mới (PATCH với addParents + removeParents).
+ * Drive API không có "move" thuần — phải dùng update parents.
+ */
+export async function moveFile(fileId: string, newParentId: string, oldParentIds?: string[]): Promise<void> {
+  const token = await getAccessToken(DRIVE_SCOPE)
+  const removeStr = oldParentIds && oldParentIds.length > 0
+    ? `&removeParents=${oldParentIds.join(',')}`
+    : ''
+  const url = `${UPLOAD_API.replace('/upload', '')}/files/${fileId}?addParents=${newParentId}${removeStr}&fields=id,parents`
+  const res = await fetch(`${API}/files/${fileId}?addParents=${newParentId}${removeStr}&fields=id,parents`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(`Drive: move thất bại (${res.status}): ${errText}`)
+  }
+}
+
+/**
  * Lấy metadata file (name, mimeType, size) để proxy stream.
  */
 export async function getFileMetadata(fileId: string): Promise<{

@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { createCashEntry, updateCashEntry, deleteCashEntry } from '../actions'
 import type { CashRow } from '../queries'
+import { EntityFilesButton } from '@/features/documents/components/EntityFilesButton'
 
 type SimpleOption = { id: string; name: string }
 type UserOption   = { id: string; name: string }
@@ -107,9 +108,18 @@ export function CashBookTable({ rows, companies, users, canWrite }: Props) {
                   </td>
                   <td className="px-3 py-2 text-xs text-gray-500">{r.company_name ?? '—'}</td>
                   {canWrite && (
-                    <td className="px-3 py-2 text-right">
-                      <button onClick={() => openEdit(r)} className="text-xs text-gray-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 mr-2">Sửa</button>
-                      <button onClick={() => handleDelete(r.id)} className="text-xs text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100">Xoá</button>
+                    <td className="px-3 py-2 text-right whitespace-nowrap">
+                      <span className="inline-flex items-center gap-2">
+                        <EntityFilesButton
+                          entityType="cash_book"
+                          entityId={r.id}
+                          defaultDocTypeCode="OTHER"
+                          defaultDocTypeName="Chứng từ khác"
+                          canWrite={canWrite}
+                        />
+                        <button onClick={() => openEdit(r)} className="text-xs text-gray-400 hover:text-blue-600 opacity-0 group-hover:opacity-100">Sửa</button>
+                        <button onClick={() => handleDelete(r.id)} className="text-xs text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100">Xoá</button>
+                      </span>
                     </td>
                   )}
                 </tr>

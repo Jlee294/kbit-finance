@@ -22,7 +22,7 @@ import { createClient } from '@/lib/supabase/server'
 import { ensureFolderPath, initResumableUpload, buildFolderPath } from '@/lib/drive'
 
 const bodySchema = z.object({
-  entity_type: z.enum(['customer_order', 'supplier_order', 'income', 'expense']),
+  entity_type: z.enum(['customer_order', 'supplier_order', 'income', 'expense', 'cash_book']),
   entity_id:   z.string().uuid(),
   file_name:   z.string().min(1).max(200),
   mime_type:   z.string().min(1),
@@ -105,6 +105,17 @@ export async function POST(req: NextRequest) {
         companyName = (data.companies as any)?.name ?? companyName
         projectName = (data.projects as any)?.name ?? null
         setDateFields(data.order_date)
+      }
+    } else if (entity_type === 'cash_book') {
+      // cash_book không có project_id — luôn "Chung"
+      const { data } = await supabase
+        .from('cash_book')
+        .select('txn_date, companies!company_id(name)')
+        .eq('id', entity_id)
+        .single()
+      if (data) {
+        companyName = (data.companies as any)?.name ?? companyName
+        setDateFields(data.txn_date)
       }
     }
   } catch {

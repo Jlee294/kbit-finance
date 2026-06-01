@@ -15,7 +15,7 @@ import { useRef, useState, useTransition } from 'react'
 import { uploadDocument } from '../actions'
 
 interface Props {
-  entityType: 'customer_order' | 'supplier_order' | 'income' | 'expense'
+  entityType: 'customer_order' | 'supplier_order' | 'income' | 'expense' | 'cash_book'
   entityId: string
   documentTypeId: string
   label?: string
