@@ -90,16 +90,15 @@ export default async function BaoCaoPage({
   const from      = sp.from
   const to        = sp.to
 
-  // listCompanies đã được cache — không tốn thêm DB round-trip
-  const companies = await listCompanies()
-
-  let projects: Array<{ id: string; name: string }> = []
-  if (companyId) {
-    const supabase = await createClient()
-    const { data } = await supabase
-      .from('projects').select('id, name').eq('company_id', companyId).order('name')
-    projects = data ?? []
-  }
+  // Chạy song song: listCompanies + projects (nếu có companyId)
+  const supabase = await createClient()
+  const [companies, projectsRes] = await Promise.all([
+    listCompanies(),
+    companyId
+      ? supabase.from('projects').select('id, name').eq('company_id', companyId).order('name')
+      : Promise.resolve({ data: [] as Array<{ id: string; name: string }> }),
+  ])
+  const projects: Array<{ id: string; name: string }> = projectsRes.data ?? []
 
   return (
     <div className="space-y-6 p-6">

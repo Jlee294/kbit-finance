@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
 
 export type KrExpenseRow = {
@@ -57,7 +58,7 @@ export async function listKrExpenses(): Promise<KrExpenseRow[]> {
 }
 
 /** NCC nước Hàn Quốc */
-export async function listKrSuppliers() {
+export const listKrSuppliers = cache(async () => {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('suppliers')
@@ -65,12 +66,12 @@ export async function listKrSuppliers() {
     .eq('country', 'KR')
     .eq('is_active', true)
     .order('code')
-  if (error) throw new Error(error.message)
+  if (error) { console.error('[listKrSuppliers]', error.message); return [] }
   return data ?? []
-}
+})
 
 /** Tài khoản ngân hàng KRW */
-export async function listKrwBankAccounts() {
+export const listKrwBankAccounts = cache(async () => {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('bank_accounts')
@@ -78,9 +79,9 @@ export async function listKrwBankAccounts() {
     .eq('currency', 'KRW')
     .eq('is_active', true)
     .order('name')
-  if (error) throw new Error(error.message)
+  if (error) { console.error('[listKrwBankAccounts]', error.message); return [] }
   return data ?? []
-}
+})
 
 /** Đơn NCC KRW còn nợ (outstanding > 0) + rate_booked từ exchange_rate của đơn */
 export async function getKrSupplierOrdersUnpaid(): Promise<KrUnpaidOrder[]> {

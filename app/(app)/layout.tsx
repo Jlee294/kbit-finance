@@ -3,7 +3,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { Sidebar } from './Sidebar'
-import { ChatWidget } from '@/components/chat/ChatWidget'
+import { ChatWidgetLazy } from '@/components/chat/ChatWidgetLazy'
 
 async function SignOutButton() {
   async function signOut() {
@@ -53,7 +53,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </main>
 
       {/* ── AI Chatbot ──────────────────────────────────── */}
-      <ChatWidget />
+      <ChatWidgetLazy />
     </div>
   )
 }

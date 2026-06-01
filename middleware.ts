@@ -1,6 +1,13 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+/**
+ * Middleware gọn nhẹ — chỉ check JWT trong cookie (KHÔNG roundtrip Supabase Auth).
+ *
+ * Trước đây dùng `supabase.auth.getUser()` → mỗi request gọi tới Supabase Auth
+ * tốn 100-300ms. Đổi sang `getClaims()` để decode JWT cục bộ (vẫn verify chữ ký
+ * qua JWKS cache). Việc verify revocation server-side để các page tự xử lý.
+ */
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request })
 
@@ -20,9 +27,16 @@ export async function middleware(request: NextRequest) {
     },
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // getClaims() decode JWT cục bộ — nhanh hơn getUser() rất nhiều
+  let authed = false
+  try {
+    const { data } = await supabase.auth.getClaims()
+    authed = !!data?.claims?.sub
+  } catch {
+    authed = false
+  }
 
-  if (!user && !request.nextUrl.pathname.startsWith('/login')) {
+  if (!authed && !request.nextUrl.pathname.startsWith('/login')) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
@@ -30,5 +44,8 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|login).*)'],
+  // Loại trừ thêm: _next/data (RSC prefetch), api routes (tự xử lý auth), file tĩnh
+  matcher: [
+    '/((?!_next/static|_next/image|_next/data|favicon.ico|robots.txt|sitemap.xml|api/chat|login).*)',
+  ],
 }
