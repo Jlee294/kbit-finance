@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getCurrentUser, canEdit } from '@/lib/auth'
 import { parseInvoiceTT78, type ParsedInvoice } from '@/lib/xml/invoice-tt78'
 import { parseBankTechcomXml, type ParsedBankStatement } from '@/lib/xml/bank-techcom'
+import { parseBankExcelBuffer, parseBankCsvText } from '@/lib/xml/bank-techcom-table'
 
 export interface ActionResult<T = void> { error?: string; data?: T }
 
@@ -218,11 +219,25 @@ export async function parseBankXmlFile(
     if (!me || !canEdit(me.role)) return { error: 'Không có quyền' }
 
     const file = formData.get('file') as File | null
-    if (!file) return { error: 'Vui lòng chọn file XML' }
+    if (!file) return { error: 'Vui lòng chọn file sao kê' }
 
     const supabase = await createClient()
-    const xml = await file.text()
-    const parsed = parseBankTechcomXml(xml, file.name)
+    const name = file.name.toLowerCase()
+
+    // Dispatch theo loại file
+    let parsed: ParsedBankStatement
+    if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+      const buf = await file.arrayBuffer()
+      parsed = parseBankExcelBuffer(buf, file.name)
+    } else if (name.endsWith('.csv')) {
+      const text = await file.text()
+      parsed = parseBankCsvText(text, file.name)
+    } else if (name.endsWith('.xml')) {
+      const xml = await file.text()
+      parsed = parseBankTechcomXml(xml, file.name)
+    } else {
+      return { error: 'Chỉ hỗ trợ file .xlsx / .xls / .csv / .xml' }
+    }
 
     // Tìm tài khoản ngân hàng theo số tk
     let bankMatch: BankParseResult['bank_account_match'] = null

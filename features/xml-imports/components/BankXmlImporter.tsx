@@ -110,11 +110,15 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
     <div className="space-y-5">
       <form onSubmit={handleParse} className="rounded-xl border bg-white p-4 space-y-3">
         <div className="space-y-1">
-          <Label>File XML sao kê (Techcombank)</Label>
-          <Input ref={inputRef} type="file" accept=".xml,application/xml,text/xml" className="cursor-pointer" />
-          <p className="text-xs text-gray-500">Xuất từ Techcom Business → Báo cáo → Sao kê → Định dạng XML.</p>
+          <Label>File sao kê Techcombank</Label>
+          <Input ref={inputRef} type="file"
+            accept=".xlsx,.xls,.csv,.xml,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/xml,text/xml"
+            className="cursor-pointer" />
+          <p className="text-xs text-gray-500">
+            Hỗ trợ <b>Excel (.xlsx/.xls)</b>, <b>CSV (.csv)</b> hoặc <b>XML</b>. Xuất từ Techcom Business → Báo cáo → Sao kê.
+          </p>
         </div>
-        <Button type="submit" disabled={parsing}>{parsing ? 'Đang đọc…' : 'Đọc XML'}</Button>
+        <Button type="submit" disabled={parsing}>{parsing ? 'Đang đọc…' : 'Đọc file'}</Button>
       </form>
 
       {error && <p className="rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>}

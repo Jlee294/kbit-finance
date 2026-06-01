@@ -30,13 +30,13 @@ export default async function ImportBankXmlPage() {
       <div className="flex items-center gap-2 text-sm text-gray-500">
         <Link href="/ngan-hang" className="hover:text-gray-900">Ngân hàng</Link>
         <span>/</span>
-        <span className="font-medium text-gray-900">Import sao kê XML</span>
+        <span className="font-medium text-gray-900">Import sao kê</span>
       </div>
 
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">Import sao kê ngân hàng từ XML</h1>
+        <h1 className="text-xl font-semibold text-gray-900">Import sao kê ngân hàng</h1>
         <p className="text-sm text-gray-500 mt-0.5">
-          Upload file sao kê XML từ Techcombank Business — hệ thống tự đọc và tạo phiếu thu/chi.
+          Upload sao kê Excel / CSV / XML từ Techcombank Business — hệ thống tự đọc và tạo phiếu thu/chi.
         </p>
       </div>
 
