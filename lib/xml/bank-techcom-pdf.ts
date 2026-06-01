@@ -23,7 +23,46 @@
  */
 
 import { extractText } from 'unpdf'
-import type { ParsedBankStatement, ParsedBankTxn } from './bank-techcom'
+import type { ParsedBankStatement, ParsedBankTxn, BankStatementSummary } from './bank-techcom'
+
+/** Parse 1 số từ chuỗi raw text, dạng "1,234,567" hoặc "1234567" */
+function parseMoneyStr(s: string): number {
+  return Number(s.replace(/,/g, '').trim()) || 0
+}
+
+/** Extract summary metadata từ PDF text — Techcom có 2 pattern:
+ *    "Label/ 1,234"  hoặc  "1,234Label/"  (số trước label)
+ */
+function extractPdfSummary(text: string): BankStatementSummary {
+  const s: BankStatementSummary = {
+    opening_balance: null, closing_balance: null,
+    total_debit: null, total_credit: null,
+    total_fee: null, total_vat: null,
+    debit_count: null, credit_count: null,
+  }
+  /** Match number near label. Ưu tiên "NLabel/" (số đứng ngay trước, no space)
+   *  vì layout right-aligned của Techcom Balance Summary. Fallback "Label/ N". */
+  const findNum = (label: string): number | null => {
+    // Pattern 1: số DÍNH LIỀN label (no whitespace) — "1,349,223Số dư đầu ngày"
+    const before = new RegExp('([\\d,]+)(?=' + label + ')')
+    const m1 = text.match(before)
+    if (m1) return parseMoneyStr(m1[1])
+    // Pattern 2: label/ N — "Tổng tiền ghi nợ/ 334,565,181"
+    const after = new RegExp(label + '\\/?\\s+([\\d,]+)')
+    const m2 = text.match(after)
+    if (m2) return parseMoneyStr(m2[1])
+    return null
+  }
+  s.opening_balance = findNum('Số dư đầu ngày')
+  s.closing_balance = findNum('Số dư cuối ngày')
+  s.total_debit     = findNum('Tổng tiền ghi nợ')
+  s.total_credit    = findNum('Tổng tiền ghi có')
+  s.total_fee       = findNum('Tổng phí') ?? 0
+  s.total_vat       = findNum('Tổng (?:thuế|VAT)') ?? 0
+  s.debit_count     = findNum('Tổng lệnh ghi nợ')
+  s.credit_count    = findNum('Tổng lệnh ghi có')
+  return s
+}
 
 export async function parseBankTechcomPdf(
   buffer: ArrayBuffer,
@@ -85,12 +124,15 @@ export function parsePdfText(
     ords.push(Number(m[1]))
   }
 
+  const summary = extractPdfSummary(text)
+
   if (starts.length === 0) {
     warnings.push('Không tìm thấy giao dịch nào trong PDF (không match pattern ord + datetime)')
     return {
       account_number: accMatch?.[1] ?? null,
       currency: currMatch?.[1]?.toUpperCase() ?? 'VND',
       txns: [],
+      summary,
       raw_filename: filename,
       warnings,
     }
@@ -103,9 +145,11 @@ export function parsePdfText(
     const end = starts[i + 1] ?? text.length
     const block = text.slice(start, end).trim()
 
-    // Date giao dịch (date thứ 2 trong block — sau datetime đầu)
-    // Datetime đầu: "31/05/2026 02:00:20" → bỏ
-    // Date 2: chỉ "DD/MM/YYYY" không kèm time
+    // Date + Time (Requesting date — datetime đầu trong block)
+    const firstDtMatch = block.match(/^(\d+)\s+(\d{2}\/\d{2}\/\d{4})\s+(\d{2}:\d{2}:\d{2})/)
+    const txn_time = firstDtMatch ? firstDtMatch[3] : null
+
+    // Date giao dịch (date thứ 2 trong block)
     const afterFirstDt = block.replace(/^(\d+)\s+\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2}\s*/, '')
     const date2Match = afterFirstDt.match(/^(\d{2})\/(\d{2})\/(\d{4})/)
     if (!date2Match) {
@@ -186,10 +230,13 @@ export function parsePdfText(
 
     txns.push({
       txn_date,
+      txn_time,
       description,
       reference,
       debit,
       credit,
+      fee: 0,        // Techcom PDF không hiện fee inline (đã có Tổng phí trong summary)
+      vat: 0,        // tương tự
       balance,
       counterpart,
     })
@@ -199,6 +246,7 @@ export function parsePdfText(
     account_number: accMatch?.[1] ?? null,
     currency: (currMatch?.[1]?.toUpperCase() ?? 'VND'),
     txns,
+    summary,
     raw_filename: filename,
     warnings,
   }

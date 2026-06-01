@@ -28,15 +28,15 @@
  */
 
 import * as XLSX from 'xlsx'
-import type { ParsedBankStatement, ParsedBankTxn } from './bank-techcom'
+import type { ParsedBankStatement, ParsedBankTxn, BankStatementSummary } from './bank-techcom'
 
 // ── Aliases tên cột (sắp xếp theo PRIORITY — match cụ thể trước) ─────────────
 // Cùng 1 nhóm key thì alias cụ thể (specific) phải đặt TRƯỚC alias chung.
 
 interface ColMatch {
-  key: 'date' | 'description' | 'debit' | 'credit' | 'amount' | 'balance' | 'reference' | 'counterpart_account' | 'counterpart_name' | 'counterpart_bank'
-  patterns: string[]      // ưu tiên patterns đầu danh sách
-  priority: number        // số càng nhỏ = ưu tiên càng cao (chọn trước khi conflict)
+  key: 'date' | 'description' | 'debit' | 'credit' | 'amount' | 'balance' | 'reference' | 'counterpart_account' | 'counterpart_name' | 'counterpart_bank' | 'fee' | 'vat'
+  patterns: string[]
+  priority: number
 }
 
 const COLUMN_RULES: ColMatch[] = [
@@ -68,6 +68,10 @@ const COLUMN_RULES: ColMatch[] = [
   { key: 'counterpart_name',    priority: 1,  patterns: ['ten tai khoan doi ung', "remitter's account name", 'ten doi ung', 'beneficiary name', 'remitter name'] },
   { key: 'counterpart_account', priority: 1,  patterns: ['tai khoan dich', "remitter's account number", 'tai khoan doi ung', 'tk doi ung', 'counterparty account'] },
   { key: 'counterpart_bank',    priority: 1,  patterns: ['ngan hang doi tac', "remitter's bank", 'partner bank'] },
+
+  // FEE — VAT
+  { key: 'fee',                 priority: 1,  patterns: ['phi lai', 'fee interest', 'fee', 'phi', 'phi - lai'] },
+  { key: 'vat',                 priority: 1,  patterns: ['thue transaction vat', 'transaction vat', 'thue', 'vat'] },
 ]
 
 /** Bỏ dấu tiếng Việt + lowercase + bỏ khoảng trắng dư */
@@ -185,6 +189,8 @@ interface HeaderMap {
   counterpart_name?:    number
   counterpart_account?: number
   counterpart_bank?:    number
+  fee?:                 number
+  vat?:                 number
 }
 
 function findHeader(rows: any[][]): { headerIdx: number; map: HeaderMap } | null {
@@ -242,6 +248,54 @@ function findAccountNumber(rows: any[][], headerIdx: number): string | null {
   return null
 }
 
+/** Extract summary numbers từ metadata section (trước header dòng giao dịch) */
+function extractSummary(rows: any[][], headerIdx: number): BankStatementSummary {
+  const summary: BankStatementSummary = {
+    opening_balance: null, closing_balance: null,
+    total_debit: null, total_credit: null,
+    total_fee: null, total_vat: null,
+    debit_count: null, credit_count: null,
+  }
+  // Quét tất cả cells trong dòng trước header
+  for (let i = 0; i < headerIdx; i++) {
+    const row = rows[i] ?? []
+    for (let c = 0; c < row.length; c++) {
+      const cell = row[c]
+      if (cell == null) continue
+      const cellNorm = norm(String(cell))
+      // Tìm cell tiếp theo (cùng row hoặc liền kề) có giá trị số
+      const nextValue = (): number | null => {
+        for (let cc = c + 1; cc < row.length; cc++) {
+          if (row[cc] != null && row[cc] !== '') {
+            const n = num(row[cc])
+            if (n !== 0 || String(row[cc]).trim() === '0') return n
+          }
+        }
+        return null
+      }
+      // Map keyword → field
+      if (cellNorm.includes('so du dau ngay') || cellNorm.includes('opening balance')) {
+        const v = nextValue(); if (v != null) summary.opening_balance = v
+      } else if (cellNorm.includes('so du cuoi ngay') || cellNorm.includes('closing balance')) {
+        const v = nextValue(); if (v != null) summary.closing_balance = v
+      } else if (cellNorm.includes('tong ghi no') || cellNorm.includes('total debits')) {
+        const v = nextValue(); if (v != null) summary.total_debit = v
+      } else if (cellNorm.includes('tong ghi co') || cellNorm.includes('total credits')) {
+        const v = nextValue(); if (v != null) summary.total_credit = v
+      } else if (cellNorm.includes('tong phi') || cellNorm.includes('total fees')) {
+        const v = nextValue(); if (v != null) summary.total_fee = v
+      } else if (cellNorm.includes('tong vat') || cellNorm.includes('total vat')) {
+        const v = nextValue(); if (v != null) summary.total_vat = v
+      } else if (cellNorm.includes('tong lenh ghi no') || cellNorm.includes('total debit transaction')) {
+        const v = nextValue(); if (v != null) summary.debit_count = v
+      } else if (cellNorm.includes('tong lenh ghi co') || cellNorm.includes('total credit transaction')) {
+        const v = nextValue(); if (v != null) summary.credit_count = v
+      }
+    }
+  }
+  return summary
+}
+
 function findCurrency(rows: any[][], headerIdx: number): string {
   for (let i = 0; i < headerIdx; i++) {
     const row = rows[i] ?? []
@@ -297,6 +351,16 @@ function rowsToTxns(rows: any[][], header: { headerIdx: number; map: HeaderMap }
     const description = map.description != null ? String(row[map.description] ?? '').trim() : ''
     const reference   = map.reference   != null ? str(row[map.reference]) : null
     const balance     = map.balance     != null ? num(row[map.balance]) : null
+    const fee         = map.fee         != null ? num(row[map.fee])      : 0
+    const vat         = map.vat         != null ? num(row[map.vat])      : 0
+
+    // Trích giờ từ datetime cell (nếu có) — vd: "2026-05-29 13:01:54"
+    let txnTime: string | null = null
+    if (dateCell) {
+      const dateStr = String(dateCell)
+      const timeMatch = dateStr.match(/\b(\d{2}:\d{2}:\d{2})\b/)
+      if (timeMatch) txnTime = timeMatch[1]
+    }
 
     // Counterpart: ưu tiên name, fallback bank
     let counterpart: string | null = null
@@ -305,10 +369,10 @@ function rowsToTxns(rows: any[][], header: { headerIdx: number; map: HeaderMap }
 
     out.push({
       txn_date:    txnDate,
+      txn_time:    txnTime,
       description,
       reference,
-      debit,
-      credit,
+      debit, credit, fee, vat,
       balance,
       counterpart,
     })
@@ -323,7 +387,7 @@ export function parseBankExcelBuffer(buffer: ArrayBuffer, filename?: string): Pa
   const wb = XLSX.read(buffer, { type: 'array', cellDates: false, cellNF: false, cellText: false })
   const firstSheetName = wb.SheetNames[0]
   if (!firstSheetName) {
-    return { account_number: null, currency: 'VND', txns: [], raw_filename: filename, warnings: ['File rỗng / không có sheet'] }
+    return { account_number: null, currency: 'VND', txns: [], summary: { opening_balance: null, closing_balance: null, total_debit: null, total_credit: null, total_fee: null, total_vat: null, debit_count: null, credit_count: null }, raw_filename: filename, warnings: ['File rỗng / không có sheet'] }
   }
   const ws = wb.Sheets[firstSheetName]
   const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null }) as any[][]
@@ -331,12 +395,13 @@ export function parseBankExcelBuffer(buffer: ArrayBuffer, filename?: string): Pa
   const header = findHeader(rows)
   if (!header) {
     warnings.push(`Không tìm thấy dòng tiêu đề. File có ${rows.length} dòng. 5 dòng đầu: ${rows.slice(0, 5).map(r => r.slice(0, 3).join('|')).join(' / ')}`)
-    return { account_number: null, currency: 'VND', txns: [], raw_filename: filename, warnings }
+    return { account_number: null, currency: 'VND', txns: [], summary: { opening_balance: null, closing_balance: null, total_debit: null, total_credit: null, total_fee: null, total_vat: null, debit_count: null, credit_count: null }, raw_filename: filename, warnings }
   }
 
   const txns = rowsToTxns(rows, header)
   const account = findAccountNumber(rows, header.headerIdx)
   const currency = findCurrency(rows, header.headerIdx)
+  const summary = extractSummary(rows, header.headerIdx)
 
   if (txns.length === 0) {
     warnings.push(`Đọc được header (dòng ${header.headerIdx + 1}) nhưng không có giao dịch hợp lệ. Kiểm tra format ngày.`)
@@ -346,6 +411,7 @@ export function parseBankExcelBuffer(buffer: ArrayBuffer, filename?: string): Pa
     account_number: account,
     currency,
     txns,
+    summary,
     raw_filename: filename,
     warnings,
   }
@@ -359,7 +425,7 @@ export function parseBankCsvText(text: string, filename?: string): ParsedBankSta
   const header = findHeader(rows)
   if (!header) {
     warnings.push(`Không tìm thấy dòng tiêu đề trong CSV. File có ${rows.length} dòng.`)
-    return { account_number: null, currency: 'VND', txns: [], raw_filename: filename, warnings }
+    return { account_number: null, currency: 'VND', txns: [], summary: { opening_balance: null, closing_balance: null, total_debit: null, total_credit: null, total_fee: null, total_vat: null, debit_count: null, credit_count: null }, raw_filename: filename, warnings }
   }
   const txns = rowsToTxns(rows, header)
   if (txns.length === 0) {
@@ -369,6 +435,7 @@ export function parseBankCsvText(text: string, filename?: string): ParsedBankSta
     account_number: findAccountNumber(rows, header.headerIdx),
     currency:       findCurrency(rows, header.headerIdx),
     txns,
+    summary:        extractSummary(rows, header.headerIdx),
     raw_filename:   filename,
     warnings,
   }

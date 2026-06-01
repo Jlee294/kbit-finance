@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,6 +20,7 @@ interface Props {
 }
 
 function fmt(v: number) { return v.toLocaleString('vi-VN') }
+function fmtDiff(v: number) { return (v >= 0 ? '+' : '') + v.toLocaleString('vi-VN') }
 
 export function BankXmlImporter({ companies, banks, customers, suppliers }: Props) {
   const router = useRouter()
@@ -42,11 +43,10 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
     note: string
   }>>({})
 
-  /** Tìm KH/NCC khớp tên đối ứng nhất (simple substring match) */
+  /** Tìm KH/NCC khớp tên đối ứng (substring match) */
   function findMatch(counterpart: string | null, list: { id: string; name: string }[]): string {
     if (!counterpart) return ''
     const cp = counterpart.toLowerCase()
-    // Exact substring match
     const hit = list.find(x => cp.includes(x.name.toLowerCase()) || x.name.toLowerCase().includes(cp.slice(0, 20)))
     return hit?.id ?? ''
   }
@@ -76,7 +76,6 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
       init[i] = {
         include: true,
         direction,
-        // Auto-suggest match từ tên đối ứng
         customer_id: direction === 'thu' ? findMatch(t.counterpart, customers) : '',
         supplier_id: direction === 'chi' ? findMatch(t.counterpart, suppliers) : '',
         note: t.description,
@@ -84,6 +83,53 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
     })
     setPerTxn(init)
   }
+
+  // ── Đối chiếu tự động ─────────────────────────────────────────────────────
+  const reconciliation = useMemo(() => {
+    if (!result) return null
+    const sumDebit  = result.txns.reduce((s, t) => s + t.debit, 0)
+    const sumCredit = result.txns.reduce((s, t) => s + t.credit, 0)
+    const sumFee    = result.txns.reduce((s, t) => s + (t.fee || 0), 0)
+    const sumVat    = result.txns.reduce((s, t) => s + (t.vat || 0), 0)
+    const meta      = result.summary
+
+    // Sort txns by date+time ascending để tính running balance
+    const sorted = [...result.txns]
+      .map((t, idx) => ({ t, idx }))
+      .sort((a, b) => {
+        const da = a.t.txn_date + ' ' + (a.t.txn_time ?? '23:59:59')
+        const db = b.t.txn_date + ' ' + (b.t.txn_time ?? '23:59:59')
+        return da < db ? -1 : da > db ? 1 : 0
+      })
+
+    // Tính expected balance cho từng dòng
+    const rowChecks: Record<number, { ok: boolean; expected: number | null; diff: number | null }> = {}
+    let runningBalance = meta.opening_balance ?? null
+    for (const { t, idx } of sorted) {
+      if (runningBalance === null) {
+        rowChecks[idx] = { ok: true, expected: null, diff: null }
+        continue
+      }
+      const expected = runningBalance + t.credit - t.debit - (t.fee || 0) - (t.vat || 0)
+      const actual = t.balance
+      if (actual === null) {
+        rowChecks[idx] = { ok: true, expected, diff: null }
+      } else {
+        const diff = actual - expected
+        rowChecks[idx] = { ok: Math.abs(diff) < 1, expected, diff }
+      }
+      runningBalance = actual ?? expected
+    }
+
+    return {
+      sumDebit, sumCredit, sumFee, sumVat,
+      meta,
+      computed_closing: meta.opening_balance != null ? meta.opening_balance + sumCredit - sumDebit - sumFee - sumVat : null,
+      rowChecks,
+      totalRowOk: Object.values(rowChecks).filter(c => c.ok).length,
+      totalRowFail: Object.values(rowChecks).filter(c => !c.ok).length,
+    }
+  }, [result])
 
   async function handleCommit() {
     if (!result || !bankId || !companyId) { setError('Chọn TK ngân hàng + công ty'); return }
@@ -126,7 +172,7 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
             accept=".xlsx,.xls,.csv,.xml,.pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/xml,text/xml,application/pdf"
             className="cursor-pointer" />
           <p className="text-xs text-gray-500">
-            Hỗ trợ <b>Excel</b> (.xlsx/.xls), <b>CSV</b>, <b>XML</b> hoặc <b>PDF</b>. Xuất từ Techcom Business → Truy vấn giao dịch → tải file.
+            Hỗ trợ <b>Excel</b> (.xlsx/.xls), <b>CSV</b>, <b>XML</b> hoặc <b>PDF</b>. Xuất từ Techcom Business → Truy vấn giao dịch.
           </p>
         </div>
         <Button type="submit" disabled={parsing}>{parsing ? 'Đang đọc…' : 'Đọc file'}</Button>
@@ -134,8 +180,9 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
 
       {error && <p className="rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>}
 
-      {result && (
+      {result && reconciliation && (
         <div className="rounded-xl border-2 border-gray-200 bg-white p-4 space-y-4">
+          {/* Header + TK chọn */}
           <div className="flex items-start justify-between flex-wrap gap-3">
             <div>
               <p className="text-xs text-gray-400">{result.raw_filename}</p>
@@ -169,52 +216,94 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
             </div>
           </div>
 
+          {/* ── BOX ĐỐI CHIẾU TỔNG ────────────────────────────────────── */}
+          <ReconciliationBox rec={reconciliation} currency={result.currency} />
+
           {result.warnings.length > 0 && (
             <div className="rounded bg-amber-50 px-3 py-2 text-xs text-amber-700">
               ⚠ {result.warnings.join(' · ')}
             </div>
           )}
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs min-w-[1100px]">
-              <thead className="bg-gray-50">
+          {/* ── BẢNG GIAO DỊCH ────────────────────────────────────────── */}
+          <div className="overflow-x-auto border rounded-lg">
+            <table className="w-full text-xs min-w-[1500px]">
+              <thead className="bg-gray-50 sticky top-0">
                 <tr className="text-[10px] text-gray-500 uppercase">
-                  <th className="px-2 py-2 text-center w-[40px]"><input type="checkbox" checked
-                    onChange={(e) => {
-                      const c = e.target.checked
-                      setPerTxn(p => Object.fromEntries(Object.entries(p).map(([k, v]) => [k, { ...v, include: c }])))
-                    }} /></th>
-                  <th className="px-2 py-2 text-left">Ngày</th>
-                  <th className="px-2 py-2 text-left">Đối ứng</th>
-                  <th className="px-2 py-2 text-left">Diễn giải</th>
-                  <th className="px-2 py-2 text-right">Chi (Nợ)</th>
-                  <th className="px-2 py-2 text-right">Thu (Có)</th>
-                  <th className="px-2 py-2 text-center">Loại</th>
-                  <th className="px-2 py-2 text-left">KH / NCC</th>
+                  <th className="px-2 py-2 text-center w-[32px]">
+                    <input type="checkbox" checked
+                      onChange={(e) => {
+                        const c = e.target.checked
+                        setPerTxn(p => Object.fromEntries(Object.entries(p).map(([k, v]) => [k, { ...v, include: c }])))
+                      }} />
+                  </th>
+                  <th className="px-2 py-2 text-left w-[88px]">Ngày GD</th>
+                  <th className="px-2 py-2 text-left w-[160px]">Bút toán + Đối ứng</th>
+                  <th className="px-2 py-2 text-left w-[280px]">Nội dung (Diễn giải)</th>
+                  <th className="px-2 py-2 text-right w-[100px]">Chi (Nợ)</th>
+                  <th className="px-2 py-2 text-right w-[100px]">Thu (Có)</th>
+                  <th className="px-2 py-2 text-right w-[70px]">Phí</th>
+                  <th className="px-2 py-2 text-right w-[70px]">Thuế</th>
+                  <th className="px-2 py-2 text-right w-[110px]">Số dư</th>
+                  <th className="px-2 py-2 text-center w-[70px]">Đối chiếu</th>
+                  <th className="px-2 py-2 text-center w-[64px]">Loại</th>
+                  <th className="px-2 py-2 text-left w-[180px]">KH / NCC</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {result.txns.map((t, i) => {
                   const ctrl = perTxn[i]
+                  const check = reconciliation.rowChecks[i]
                   if (!ctrl) return null
                   return (
-                    <tr key={i} className={ctrl.include ? '' : 'opacity-40'}>
-                      <td className="px-2 py-1.5 text-center">
+                    <tr key={i} className={`${ctrl.include ? '' : 'opacity-40'} align-top`}>
+                      <td className="px-2 py-2 text-center">
                         <input type="checkbox" checked={ctrl.include}
                           onChange={(e) => setPerTxn(p => ({ ...p, [i]: { ...ctrl, include: e.target.checked } }))} />
                       </td>
-                      <td className="px-2 py-1.5 text-gray-600">{t.txn_date}</td>
-                      <td className="px-2 py-1.5 text-gray-600 text-[11px] max-w-[200px] truncate" title={t.counterpart ?? ''}>
-                        {t.counterpart ?? '—'}
+                      <td className="px-2 py-2 text-gray-600 whitespace-nowrap">
+                        {t.txn_date}
+                        {t.txn_time && <p className="text-[10px] text-gray-400">{t.txn_time}</p>}
                       </td>
-                      <td className="px-2 py-1.5 text-gray-700">
-                        <input value={ctrl.note}
+                      <td className="px-2 py-2 text-[10px] text-gray-500 break-all">
+                        {t.reference && <div className="font-mono text-blue-700">{t.reference}</div>}
+                        {t.counterpart && <div className="text-gray-700 mt-0.5 leading-tight">{t.counterpart}</div>}
+                      </td>
+                      <td className="px-2 py-2">
+                        <textarea
+                          value={ctrl.note}
                           onChange={(e) => setPerTxn(p => ({ ...p, [i]: { ...ctrl, note: e.target.value } }))}
-                          className="w-full h-6 rounded border-0 bg-transparent px-1 text-[11px] hover:bg-gray-50 focus:bg-white focus:border" />
+                          rows={2}
+                          className="w-full min-h-[36px] rounded border-0 bg-transparent px-1 py-0.5 text-[11px] hover:bg-gray-50 focus:bg-white focus:border focus:border-input resize-y whitespace-pre-wrap break-words"
+                        />
                       </td>
-                      <td className="px-2 py-1.5 text-right text-red-600">{t.debit > 0 ? fmt(t.debit) : ''}</td>
-                      <td className="px-2 py-1.5 text-right text-green-700">{t.credit > 0 ? fmt(t.credit) : ''}</td>
-                      <td className="px-2 py-1.5 text-center">
+                      <td className="px-2 py-2 text-right text-red-600 font-medium tabular-nums">
+                        {t.debit > 0 ? fmt(t.debit) : ''}
+                      </td>
+                      <td className="px-2 py-2 text-right text-green-700 font-medium tabular-nums">
+                        {t.credit > 0 ? fmt(t.credit) : ''}
+                      </td>
+                      <td className="px-2 py-2 text-right text-gray-500 tabular-nums text-[10px]">
+                        {t.fee > 0 ? fmt(t.fee) : '—'}
+                      </td>
+                      <td className="px-2 py-2 text-right text-gray-500 tabular-nums text-[10px]">
+                        {t.vat > 0 ? fmt(t.vat) : '—'}
+                      </td>
+                      <td className="px-2 py-2 text-right text-gray-700 tabular-nums">
+                        {t.balance != null ? fmt(t.balance) : '—'}
+                      </td>
+                      <td className="px-2 py-2 text-center">
+                        {check.diff === null ? (
+                          <span className="text-[10px] text-gray-300">—</span>
+                        ) : check.ok ? (
+                          <span className="text-xs font-bold text-green-700">OK</span>
+                        ) : (
+                          <span className="text-[10px] font-medium text-red-600" title={`Chênh ${fmtDiff(check.diff)}`}>
+                            ❌ {fmtDiff(check.diff)}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-2 py-2 text-center">
                         <select value={ctrl.direction}
                           onChange={(e) => setPerTxn(p => ({ ...p, [i]: { ...ctrl, direction: e.target.value as 'thu' | 'chi' } }))}
                           className="h-6 rounded border border-input bg-white px-1 text-[11px]">
@@ -222,19 +311,19 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
                           <option value="chi">Chi</option>
                         </select>
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td className="px-2 py-2">
                         {ctrl.direction === 'thu' ? (
                           <select value={ctrl.customer_id}
                             onChange={(e) => setPerTxn(p => ({ ...p, [i]: { ...ctrl, customer_id: e.target.value } }))}
                             className="w-full h-6 rounded border border-input bg-white px-1 text-[11px]">
-                            <option value="">— Chọn KH —</option>
+                            <option value="">— Chưa gán (gắn sau) —</option>
                             {customers.map(c => <option key={c.id} value={c.id}>[{c.code}] {c.name}</option>)}
                           </select>
                         ) : (
                           <select value={ctrl.supplier_id}
                             onChange={(e) => setPerTxn(p => ({ ...p, [i]: { ...ctrl, supplier_id: e.target.value } }))}
                             className="w-full h-6 rounded border border-input bg-white px-1 text-[11px]">
-                            <option value="">— Chọn NCC —</option>
+                            <option value="">— Chưa gán (gắn sau) —</option>
                             {suppliers.map(s => <option key={s.id} value={s.id}>[{s.code}] {s.name}</option>)}
                           </select>
                         )}
@@ -246,18 +335,111 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
             </table>
           </div>
 
-          <div className="flex justify-end gap-2">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-gray-500">
+              💡 Có thể bấm <b>Tạo</b> ngay cả khi chưa gán KH/NCC. Phiếu thu được lưu với <code>is_unassigned=true</code>,
+              phiếu chi được lưu chưa gắn NCC — bạn vào trang Thu tiền / Chi VN để gán sau.
+            </p>
             <Button onClick={handleCommit} disabled={committing || !bankId || !companyId}
               className="bg-green-600 hover:bg-green-700">
               {committing ? 'Đang tạo…' : `Tạo ${Object.values(perTxn).filter(x => x.include).length} giao dịch`}
             </Button>
           </div>
-
-          <p className="text-xs text-gray-500">
-            Lưu ý: Phiếu thu được tạo với <code>is_unassigned=true</code> — bạn cần vào <b>Thu tiền</b> để phân bổ vào đơn hàng.
-          </p>
         </div>
       )}
+    </div>
+  )
+}
+
+// ── Sub-component: Box Đối chiếu Tổng ──────────────────────────────────────
+
+function ReconciliationBox({ rec, currency }: { rec: any; currency: string }) {
+  const fmtCur = (v: number) => v.toLocaleString('vi-VN') + ' ' + (currency === 'VND' ? 'đ' : currency)
+  const m = rec.meta
+  const sumOk = m.total_debit != null && Math.abs(rec.sumDebit - m.total_debit) < 1 &&
+                m.total_credit != null && Math.abs(rec.sumCredit - m.total_credit) < 1
+  const balOk = m.closing_balance != null && rec.computed_closing != null &&
+                Math.abs(rec.computed_closing - m.closing_balance) < 1
+
+  return (
+    <div className="rounded-xl border-2 border-blue-200 bg-blue-50 p-4 space-y-3">
+      <p className="text-xs font-semibold text-blue-800 uppercase tracking-wider">
+        Đối chiếu tổng với sao kê
+      </p>
+
+      <div className="grid grid-cols-2 gap-4">
+        {/* Cột trái: Tổng phát sinh */}
+        <div className="space-y-1.5">
+          <Row label="Số dư đầu kỳ"           pdf={m.opening_balance} fmt={fmtCur} />
+          <Row label="+ Phát sinh tăng (Có)"  app={rec.sumCredit} pdf={m.total_credit} fmt={fmtCur} compare />
+          <Row label="− Phát sinh giảm (Nợ)"  app={rec.sumDebit}  pdf={m.total_debit}  fmt={fmtCur} compare />
+          {m.total_fee != null && m.total_fee > 0 && (
+            <Row label="− Phí" app={rec.sumFee} pdf={m.total_fee} fmt={fmtCur} compare />
+          )}
+          {m.total_vat != null && m.total_vat > 0 && (
+            <Row label="− Thuế" app={rec.sumVat} pdf={m.total_vat} fmt={fmtCur} compare />
+          )}
+        </div>
+
+        {/* Cột phải: Số dư cuối */}
+        <div className="space-y-1.5">
+          <Row label="Số dư cuối kỳ (PDF báo)" pdf={m.closing_balance} fmt={fmtCur} />
+          <div className="border-t border-blue-200 pt-1.5">
+            <Row label="Tính: SDD + Có − Nợ" app={rec.computed_closing} fmt={fmtCur} />
+          </div>
+          <div className="rounded bg-white px-3 py-2 mt-2">
+            <p className="text-xs text-gray-600">Đối chiếu:</p>
+            <p className={`text-base font-bold ${balOk ? 'text-green-700' : 'text-red-600'}`}>
+              {balOk ? '✓ KHỚP' : '❌ KHÔNG KHỚP'}
+              {!balOk && m.closing_balance != null && rec.computed_closing != null &&
+                <span className="text-xs ml-2 font-normal">
+                  Chênh {fmtDiff(rec.computed_closing - m.closing_balance)}
+                </span>
+              }
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Đối chiếu per-row */}
+      <div className="border-t border-blue-200 pt-2 flex items-center gap-4 text-xs">
+        <span className="text-gray-600">Đối chiếu từng dòng:</span>
+        <span className="text-green-700 font-medium">✓ {rec.totalRowOk} OK</span>
+        {rec.totalRowFail > 0 && (
+          <span className="text-red-600 font-medium">❌ {rec.totalRowFail} chênh lệch</span>
+        )}
+        {!sumOk && m.total_debit != null && (
+          <span className="text-amber-700">⚠ Tổng app không khớp PDF</span>
+        )}
+      </div>
+    </div>
+  )
+
+  function fmtDiff(v: number) { return (v >= 0 ? '+' : '') + fmtCur(v) }
+}
+
+function Row({ label, app, pdf, fmt, compare }: {
+  label: string
+  app?: number | null
+  pdf?: number | null
+  fmt: (v: number) => string
+  compare?: boolean
+}) {
+  const match = app != null && pdf != null && Math.abs(app - pdf) < 1
+  return (
+    <div className="flex items-baseline justify-between text-xs">
+      <span className="text-gray-700">{label}:</span>
+      <div className="text-right">
+        {app != null && <span className="font-mono font-medium text-gray-900">{fmt(app)}</span>}
+        {pdf != null && (
+          <span className={`ml-2 font-mono text-[10px] ${
+            compare ? (match ? 'text-green-700' : 'text-red-600') : 'text-gray-500'
+          }`}>
+            {app != null ? '(PDF: ' : ''}{fmt(pdf)}{app != null ? ')' : ''}
+            {compare && (match ? ' ✓' : ' ❌')}
+          </span>
+        )}
+      </div>
     </div>
   )
 }

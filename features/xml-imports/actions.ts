@@ -502,7 +502,7 @@ export interface CommitBankTxnsInput {
     debit:         number
     credit:        number
     reference:     string | null
-    direction:     'thu' | 'chi'
+    direction:     'thu' | 'chi' | ''   // empty = unassigned, lưu nhưng chưa rõ loại
     customer_id?:  string | null
     supplier_id?:  string | null
     note?:         string | null
@@ -517,16 +517,20 @@ export async function commitBankTxns(input: CommitBankTxnsInput): Promise<Action
 
     let created = 0, skipped = 0
     for (const t of input.txns) {
-      if (t.direction === 'thu') {
-        if (!t.customer_id) { skipped++; continue }
+      // Auto-detect direction nếu trống (KTT: cho phép lưu chưa gắn)
+      const dir: 'thu' | 'chi' = t.direction || (t.credit > 0 ? 'thu' : 'chi')
+
+      if (dir === 'thu') {
+        if (t.credit <= 0) { skipped++; continue }
+        // Cho phép customer_id NULL (migration 0019 đã drop NOT NULL)
         const { error } = await supabase.from('income_transactions').insert({
           company_id:      input.company_id,
           bank_account_id: input.bank_account_id,
-          customer_id:     t.customer_id,
+          customer_id:     t.customer_id || null,
           amount:          t.credit,
           amount_vnd:      t.credit,
           txn_date:        t.txn_date,
-          is_unassigned:   true,    // chưa gắn đơn — user phân bổ sau
+          is_unassigned:   true,    // chưa phân bổ vào đơn — gán sau
           note:            t.note ?? t.description.slice(0, 200),
           status:          'draft',
           created_by:      me.id,
@@ -534,12 +538,12 @@ export async function commitBankTxns(input: CommitBankTxnsInput): Promise<Action
         if (error) { console.error('[import income]', error.message); skipped++; continue }
         created++
       } else {
-        // 'chi' → expense_transactions
-        if (!t.supplier_id) { skipped++; continue }
+        if (t.debit <= 0) { skipped++; continue }
+        // supplier_id nullable trong schema gốc — OK
         const { error } = await supabase.from('expense_transactions').insert({
           company_id:      input.company_id,
           bank_account_id: input.bank_account_id,
-          supplier_id:     t.supplier_id,
+          supplier_id:     t.supplier_id || null,
           region:          'VN',
           txn_date:        t.txn_date,
           amount_vnd:      t.debit,

@@ -28,19 +28,35 @@
 import { XMLParser } from 'fast-xml-parser'
 
 export interface ParsedBankTxn {
-  txn_date:    string          // YYYY-MM-DD
-  description: string
-  reference:   string | null
-  debit:       number           // số tiền ghi nợ (chi ra)
-  credit:      number           // số tiền ghi có (thu vào)
-  balance:     number | null    // số dư sau giao dịch
-  counterpart: string | null    // tài khoản đối ứng
+  txn_date:        string          // YYYY-MM-DD ngày giao dịch
+  txn_time:        string | null   // HH:MM:SS giờ KH thực hiện (nếu có)
+  description:     string          // diễn giải thuần (đã tách khỏi datetime + ref)
+  reference:       string | null   // số bút toán (FT...)
+  debit:           number           // số tiền ghi nợ (chi ra)
+  credit:          number           // số tiền ghi có (thu vào)
+  fee:             number           // phí — lãi
+  vat:             number           // thuế
+  balance:         number | null    // số dư sau giao dịch
+  counterpart:     string | null    // tên đối ứng / NH đối tác
+}
+
+/** Tổng từ metadata file (để đối chiếu) */
+export interface BankStatementSummary {
+  opening_balance: number | null
+  closing_balance: number | null
+  total_debit:     number | null
+  total_credit:    number | null
+  total_fee:       number | null
+  total_vat:       number | null
+  debit_count:     number | null
+  credit_count:    number | null
 }
 
 export interface ParsedBankStatement {
   account_number: string | null
   currency:       string
   txns:           ParsedBankTxn[]
+  summary:        BankStatementSummary
   raw_filename?:  string
   warnings:       string[]
 }
@@ -142,19 +158,19 @@ function parseTxnNode(t: any): ParsedBankTxn | null {
     const type = String(t.Type ?? t.type ?? t.DC ?? '').toUpperCase()
     if (type.startsWith('D') || type.includes('NỢ') || type.includes('NO')) {
       return {
-        txn_date: date,
+        txn_date: date, txn_time: null,
         description: String(description).trim(),
         reference: str(t.Reference ?? t.RefNo ?? t.TxnId ?? null),
-        debit: amt, credit: 0,
+        debit: amt, credit: 0, fee: 0, vat: 0,
         balance: num(t.Balance ?? t.balance) || null,
         counterpart: str(t.CounterAccount ?? t.RelatedAccount ?? null),
       }
     } else {
       return {
-        txn_date: date,
+        txn_date: date, txn_time: null,
         description: String(description).trim(),
         reference: str(t.Reference ?? t.RefNo ?? t.TxnId ?? null),
-        debit: 0, credit: amt,
+        debit: 0, credit: amt, fee: 0, vat: 0,
         balance: num(t.Balance ?? t.balance) || null,
         counterpart: str(t.CounterAccount ?? t.RelatedAccount ?? null),
       }
@@ -162,10 +178,10 @@ function parseTxnNode(t: any): ParsedBankTxn | null {
   }
 
   return {
-    txn_date:    date,
+    txn_date:    date, txn_time: null,
     description: String(description).trim(),
     reference:   str(t.Reference ?? t.RefNo ?? t.TxnId ?? t.transactionId ?? null),
-    debit, credit,
+    debit, credit, fee: 0, vat: 0,
     balance:     num(t.Balance ?? t.balance) || null,
     counterpart: str(t.CounterAccount ?? t.RelatedAccount ?? null),
   }
@@ -193,6 +209,7 @@ export function parseBankTechcomXml(xml: string, filename?: string): ParsedBankS
     account_number: acc.number,
     currency:       acc.currency,
     txns,
+    summary: { opening_balance: null, closing_balance: null, total_debit: null, total_credit: null, total_fee: null, total_vat: null, debit_count: null, credit_count: null },
     raw_filename:   filename,
     warnings,
   }
