@@ -31,6 +31,15 @@ export type OrderDetail = OrderListRow & {
   warehouse_id: string | null
   warehouse: { id: string; code: string; name: string } | null
   stock_deducted: boolean
+  // Hóa đơn
+  invoice_template:  string | null
+  invoice_symbol:    string | null
+  invoice_no:        string | null
+  invoice_date:      string | null
+  customer_tax_code: string | null
+  vat_amount:        number | null
+  dinh_khoan_no:     string | null
+  dinh_khoan_co:     string | null
   items: OrderItem[]
 }
 
@@ -125,7 +134,10 @@ export async function getOrder(id: string): Promise<OrderDetail | null> {
        fulfillment_status, payment_status,
        lot_no, discount_pct, vat_pct, shipping_fee,
        is_intercompany, counterpart_company_id,
-       warehouse_id, stock_deducted, created_at,
+       warehouse_id, stock_deducted,
+       invoice_template, invoice_symbol, invoice_no, invoice_date,
+       customer_tax_code, vat_amount, dinh_khoan_no, dinh_khoan_co,
+       created_at,
        customer:customers!customer_id(id, code, name),
        company:companies!company_id(id, name),
        project:projects!project_id(id, name),

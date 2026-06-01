@@ -74,6 +74,16 @@ export function OrderForm({ companies, customers, projects, products, warehouses
   const [warehouseId,    setWarehouseId]    = useState(initial?.warehouse_id ?? '')
   const stockDeducted = initial?.stock_deducted ?? false
 
+  // ── Hóa đơn state ────────────────────────────────────────────────────────
+  const [invoiceTemplate, setInvoiceTemplate] = useState(initial?.invoice_template  ?? '')
+  const [invoiceSymbol,   setInvoiceSymbol]   = useState(initial?.invoice_symbol    ?? '')
+  const [invoiceNo,       setInvoiceNo]       = useState(initial?.invoice_no        ?? '')
+  const [invoiceDate,     setInvoiceDate]     = useState(initial?.invoice_date      ?? '')
+  const [customerTaxCode, setCustomerTaxCode] = useState(initial?.customer_tax_code ?? '')
+  const [vatAmount,       setVatAmount]       = useState(initial?.vat_amount != null ? String(initial.vat_amount) : '')
+  const [dinhKhoanNo,     setDinhKhoanNo]     = useState(initial?.dinh_khoan_no     ?? '')
+  const [dinhKhoanCo,     setDinhKhoanCo]     = useState(initial?.dinh_khoan_co     ?? '')
+
   // ── Charge state ─────────────────────────────────────────────────────────
   const [discountPct,  setDiscountPct]  = useState(String(initial?.discount_pct  ?? 0))
   const [vatPct,       setVatPct]       = useState(String(initial?.vat_pct       ?? 0))
@@ -154,6 +164,14 @@ export function OrderForm({ companies, customers, projects, products, warehouses
         vat_pct:       parseFloat(vatPct)      || 0,
         shipping_fee:  parseFloat(shippingFee) || 0,
         warehouse_id:  warehouseId || null,
+        invoice_template:  invoiceTemplate  || null,
+        invoice_symbol:    invoiceSymbol    || null,
+        invoice_no:        invoiceNo        || null,
+        invoice_date:      invoiceDate      || null,
+        customer_tax_code: customerTaxCode  || null,
+        vat_amount:        vatAmount ? parseFloat(vatAmount) : null,
+        dinh_khoan_no:     dinhKhoanNo      || null,
+        dinh_khoan_co:     dinhKhoanCo      || null,
         items: items.map((it) => ({
           product_id:  it.product_id  || null,
           description: it.description || null,
@@ -267,6 +285,45 @@ export function OrderForm({ companies, customers, projects, products, warehouses
             )}
           </select>
         )}
+      </div>
+
+      {/* ─ Thông tin hóa đơn ─────────────────────────────────────────────── */}
+      <div className="rounded-lg border bg-slate-50 px-4 py-3 space-y-3">
+        <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Thông tin hóa đơn (cho bảng kê bán ra)</p>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="space-y-1">
+            <Label className="text-xs">Ký hiệu mẫu HĐ</Label>
+            <Input value={invoiceTemplate} onChange={(e) => setInvoiceTemplate(e.target.value)} placeholder="VD: 1/001" className="h-8 text-sm" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Ký hiệu HĐ</Label>
+            <Input value={invoiceSymbol} onChange={(e) => setInvoiceSymbol(e.target.value)} placeholder="VD: AA/24E" className="h-8 text-sm" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Số HĐ</Label>
+            <Input value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} placeholder="VD: 0000123" className="h-8 text-sm" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Ngày HĐ</Label>
+            <Input type="date" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} className="h-8 text-sm" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">MST khách hàng</Label>
+            <Input value={customerTaxCode} onChange={(e) => setCustomerTaxCode(e.target.value)} placeholder="VD: 0123456789" className="h-8 text-sm" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Tiền VAT (nếu nhập tay)</Label>
+            <Input type="number" min="0" step="any" value={vatAmount} onChange={(e) => setVatAmount(e.target.value)} placeholder="auto theo VAT %" className="h-8 text-sm text-right" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Định khoản Nợ</Label>
+            <Input value={dinhKhoanNo} onChange={(e) => setDinhKhoanNo(e.target.value)} placeholder="131" className="h-8 text-sm" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Định khoản Có</Label>
+            <Input value={dinhKhoanCo} onChange={(e) => setDinhKhoanCo(e.target.value)} placeholder="511" className="h-8 text-sm" />
+          </div>
+        </div>
       </div>
 
       {/* ─ Kho xuất hàng ────────────────────────────────────────────────── */}

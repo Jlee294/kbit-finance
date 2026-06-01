@@ -38,6 +38,7 @@ export function ImportOrderForm({ companies, suppliers, products, projects, edit
   const [projectId,       setProjectId]       = useState(editOrder?.project_id ?? '')
   const [orderCode,       setOrderCode]       = useState(editOrder?.order_code ?? '')
   const [orderDate,       setOrderDate]       = useState(editOrder?.order_date ?? new Date().toISOString().slice(0, 10))
+  const [orderType,       setOrderType]       = useState<'import' | 'domestic'>((editOrder?.order_type as 'import' | 'domestic') ?? 'import')
   const [currency,        setCurrency]        = useState<'VND' | 'KRW'>((editOrder?.currency as 'VND' | 'KRW') ?? 'VND')
   const [exchangeRate,    setExchangeRate]    = useState(editOrder?.exchange_rate ? String(editOrder.exchange_rate) : '')
   const [goodsValue,      setGoodsValue]      = useState(editOrder ? String(editOrder.goods_value) : '')
@@ -46,6 +47,16 @@ export function ImportOrderForm({ companies, suppliers, products, projects, edit
   const [otherFees,       setOtherFees]       = useState(editOrder ? String(editOrder.other_fees) : '0')
   const [isInterco,       setIsInterco]       = useState(editOrder?.is_intercompany ?? false)
   const [counterpartId,   setCounterpartId]   = useState(editOrder?.counterpart_company_id ?? '')
+
+  // Hóa đơn
+  const [invoiceTemplate,  setInvoiceTemplate]  = useState(editOrder?.invoice_template  ?? '')
+  const [invoiceSymbol,    setInvoiceSymbol]    = useState(editOrder?.invoice_symbol    ?? '')
+  const [invoiceNo,        setInvoiceNo]        = useState(editOrder?.invoice_no        ?? '')
+  const [invoiceDate,      setInvoiceDate]      = useState(editOrder?.invoice_date      ?? '')
+  const [supplierTaxCode,  setSupplierTaxCode]  = useState(editOrder?.supplier_tax_code ?? '')
+  const [vatAmount,        setVatAmount]        = useState(editOrder?.vat_amount != null ? String(editOrder.vat_amount) : '')
+  const [dinhKhoanNo,      setDinhKhoanNo]      = useState(editOrder?.dinh_khoan_no     ?? '')
+  const [dinhKhoanCo,      setDinhKhoanCo]      = useState(editOrder?.dinh_khoan_co     ?? '')
 
   const [items, setItems] = useState<ItemRow[]>(
     editOrder?.supplier_order_items?.length
@@ -91,6 +102,7 @@ export function ImportOrderForm({ companies, suppliers, products, projects, edit
         project_id:   projectId || null,
         order_code:   orderCode,
         order_date:   orderDate,
+        order_type:   orderType,
         currency,
         exchange_rate: currency === 'KRW' ? parseFloat(exchangeRate) : null,
         goods_value:  gv,
@@ -99,6 +111,15 @@ export function ImportOrderForm({ companies, suppliers, products, projects, edit
         other_fees:   fees,
         is_intercompany:        isInterco,
         counterpart_company_id: isInterco ? counterpartId : null,
+        // Hóa đơn
+        invoice_template:  invoiceTemplate  || null,
+        invoice_symbol:    invoiceSymbol    || null,
+        invoice_no:        invoiceNo        || null,
+        invoice_date:      invoiceDate      || null,
+        supplier_tax_code: supplierTaxCode  || null,
+        vat_amount:        vatAmount ? parseFloat(vatAmount) : null,
+        dinh_khoan_no:     dinhKhoanNo      || null,
+        dinh_khoan_co:     dinhKhoanCo      || null,
         items: items.map((r) => ({
           product_id:  r.product_id || null,
           description: r.description || null,
@@ -154,6 +175,13 @@ export function ImportOrderForm({ companies, suppliers, products, projects, edit
           <select value={projectId} onChange={(e) => setProjectId(e.target.value)} className={sel}>
             <option value="">— Không có —</option>
             {filteredProjects.map((p) => <option key={p.id} value={p.id}>[{p.code}] {p.name}</option>)}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <Label>Loại đơn <span className="text-red-500">*</span></Label>
+          <select value={orderType} onChange={(e) => setOrderType(e.target.value as 'import' | 'domestic')} className={sel}>
+            <option value="import">Nhập khẩu</option>
+            <option value="domestic">Mua trong nước</option>
           </select>
         </div>
         <div className="space-y-1">
@@ -299,6 +327,47 @@ export function ImportOrderForm({ companies, suppliers, products, projects, edit
         </div>
       </div>
 
+      {/* ── Thông tin hóa đơn ────────────────────────────────────── */}
+      <div className="rounded-lg border bg-slate-50 px-4 py-3 space-y-3">
+        <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider">
+          Thông tin hóa đơn (cho bảng kê mua vào)
+        </p>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="space-y-1">
+            <Label className="text-xs">Ký hiệu mẫu HĐ</Label>
+            <Input value={invoiceTemplate} onChange={(e) => setInvoiceTemplate(e.target.value)} placeholder="VD: 1/001" className="h-8 text-sm" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Ký hiệu HĐ</Label>
+            <Input value={invoiceSymbol} onChange={(e) => setInvoiceSymbol(e.target.value)} placeholder="VD: AA/24E" className="h-8 text-sm" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Số HĐ</Label>
+            <Input value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} placeholder="VD: 0000123" className="h-8 text-sm" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Ngày HĐ</Label>
+            <Input type="date" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} className="h-8 text-sm" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">MST NCC</Label>
+            <Input value={supplierTaxCode} onChange={(e) => setSupplierTaxCode(e.target.value)} placeholder="VD: 0123456789" className="h-8 text-sm" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Tiền VAT</Label>
+            <Input type="number" min="0" step="any" value={vatAmount} onChange={(e) => setVatAmount(e.target.value)} placeholder="0" className="h-8 text-sm text-right" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Định khoản Nợ</Label>
+            <Input value={dinhKhoanNo} onChange={(e) => setDinhKhoanNo(e.target.value)} placeholder="156 / 152..." className="h-8 text-sm" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Định khoản Có</Label>
+            <Input value={dinhKhoanCo} onChange={(e) => setDinhKhoanCo(e.target.value)} placeholder="331" className="h-8 text-sm" />
+          </div>
+        </div>
+      </div>
+
       {/* ── Giao dịch nội bộ ──────────────────────────────────────── */}
       <div className="border rounded-lg p-4 space-y-3">
         <div className="flex items-center gap-2">
@@ -326,7 +395,7 @@ export function ImportOrderForm({ companies, suppliers, products, projects, edit
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" onClick={onDone} disabled={saving}>Hủy</Button>
         <Button type="submit" disabled={saving}>
-          {saving ? 'Đang lưu...' : isEdit ? 'Cập nhật đơn' : 'Tạo đơn nhập khẩu'}
+          {saving ? 'Đang lưu...' : isEdit ? 'Cập nhật đơn' : (orderType === 'domestic' ? 'Tạo đơn mua trong nước' : 'Tạo đơn nhập khẩu')}
         </Button>
       </div>
     </form>

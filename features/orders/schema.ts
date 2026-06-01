@@ -29,6 +29,15 @@ export const createOrderSchema = z.object({
   vat_pct:       z.coerce.number().min(0).max(100).default(0),
   shipping_fee:  z.coerce.number().min(0).default(0),
   warehouse_id:  z.string().uuid().optional().nullable(),
+  // ── Thông tin hóa đơn (theo file mẫu Kế toán trưởng) ──
+  invoice_template:  z.string().optional().nullable(),
+  invoice_symbol:    z.string().optional().nullable(),
+  invoice_no:        z.string().optional().nullable(),
+  invoice_date:      z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  customer_tax_code: z.string().optional().nullable(),
+  vat_amount:        z.coerce.number().min(0).optional().nullable(),
+  dinh_khoan_no:     z.string().optional().nullable(),
+  dinh_khoan_co:     z.string().optional().nullable(),
   items: z.array(orderItemSchema).min(1, 'Đơn phải có ít nhất 1 dòng hàng'),
 }).refine((v) => !v.is_intercompany || !!v.counterpart_company_id, {
   message: 'Giao dịch nội bộ phải chọn công ty đối tác',

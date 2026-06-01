@@ -4,6 +4,7 @@ export type ImportOrderRow = {
   id: string
   order_code: string
   order_date: string
+  order_type: string
   currency: string
   exchange_rate: number | null
   goods_value: number
@@ -23,6 +24,15 @@ export type ImportOrderDetail = ImportOrderRow & {
   project_id: string | null
   counterpart_company_id: string | null
   companies: { name: string } | null
+  // Hóa đơn
+  invoice_template:  string | null
+  invoice_symbol:    string | null
+  invoice_no:        string | null
+  invoice_date:      string | null
+  supplier_tax_code: string | null
+  vat_amount:        number | null
+  dinh_khoan_no:     string | null
+  dinh_khoan_co:     string | null
   supplier_order_items: ImportItemRow[]
 }
 
@@ -43,13 +53,12 @@ export async function listImportOrders(companyId?: string): Promise<ImportOrderR
   let q = supabase
     .from('supplier_orders')
     .select(`
-      id, order_code, order_date, currency, exchange_rate,
+      id, order_code, order_date, order_type, currency, exchange_rate,
       goods_value, import_duty, vat_import, other_fees,
       cost_total, amount_paid, outstanding, is_intercompany,
       company_id, supplier_id,
       suppliers!supplier_id(name, code)
     `)
-    .eq('order_type', 'import')
     .order('order_date', { ascending: false })
     .order('created_at', { ascending: false })
   if (companyId) q = q.eq('company_id', companyId)
@@ -64,10 +73,12 @@ export async function getImportOrder(id: string): Promise<ImportOrderDetail> {
   const { data, error } = await supabase
     .from('supplier_orders')
     .select(`
-      id, order_code, order_date, currency, exchange_rate,
+      id, order_code, order_date, order_type, currency, exchange_rate,
       goods_value, import_duty, vat_import, other_fees,
       cost_total, amount_paid, outstanding, is_intercompany,
       company_id, supplier_id, project_id, counterpart_company_id,
+      invoice_template, invoice_symbol, invoice_no, invoice_date,
+      supplier_tax_code, vat_amount, dinh_khoan_no, dinh_khoan_co,
       suppliers!supplier_id(name, code),
       companies!company_id(name),
       supplier_order_items(

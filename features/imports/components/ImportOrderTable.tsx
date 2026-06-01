@@ -34,14 +34,14 @@ export function ImportOrderTable({ rows, canWrite, companies, suppliers, product
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Nhật ký mua vào — {rows.length} hóa đơn</h2>
         {canWrite && (
-          <Button onClick={() => setAddOpen(true)}>+ Thêm đơn nhập khẩu</Button>
+          <Button onClick={() => setAddOpen(true)}>+ Thêm hóa đơn mua vào</Button>
         )}
       </div>
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent showCloseButton={false} className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Tạo đơn nhập khẩu</DialogTitle>
+            <DialogTitle>Tạo hóa đơn mua vào (nhập khẩu / mua trong nước)</DialogTitle>
           </DialogHeader>
           <ImportOrderForm
             companies={companies} suppliers={suppliers}
@@ -53,7 +53,7 @@ export function ImportOrderTable({ rows, canWrite, companies, suppliers, product
 
       {rows.length === 0 ? (
         <div className="rounded-lg border bg-white p-10 text-center text-gray-400">
-          Chưa có đơn nhập khẩu nào
+          Chưa có hóa đơn mua vào nào
         </div>
       ) : (
         <div className="rounded-xl border bg-white overflow-hidden shadow-sm">
@@ -63,6 +63,7 @@ export function ImportOrderTable({ rows, canWrite, companies, suppliers, product
                 <th className="px-4 py-3 text-left">Mã đơn</th>
                 <th className="px-4 py-3 text-left">Ngày</th>
                 <th className="px-4 py-3 text-left">NCC</th>
+                <th className="px-4 py-3 text-center">Loại</th>
                 <th className="px-4 py-3 text-center">Tiền</th>
                 <th className="px-4 py-3 text-right">Giá vốn lô</th>
                 <th className="px-4 py-3 text-right">Còn nợ NCC</th>
@@ -78,6 +79,13 @@ export function ImportOrderTable({ rows, canWrite, companies, suppliers, product
                   <td className="px-4 py-3 text-gray-600">{row.order_date}</td>
                   <td className="px-4 py-3 text-gray-600">
                     {(row.suppliers as { name: string } | null)?.name ?? '—'}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                      row.order_type === 'domestic' ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'
+                    }`}>
+                      {row.order_type === 'domestic' ? 'Trong nước' : 'Nhập khẩu'}
+                    </span>
                   </td>
                   <td className="px-4 py-3 text-center">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${row.currency === 'KRW' ? 'bg-orange-50 text-orange-700' : 'bg-blue-50 text-blue-700'}`}>

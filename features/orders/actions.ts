@@ -87,6 +87,15 @@ export async function createOrder(raw: CreateOrderInput) {
         vat_pct: input.vat_pct,
         shipping_fee: input.shipping_fee,
         warehouse_id: input.warehouse_id ?? null,
+        // Hóa đơn
+        invoice_template:  input.invoice_template  ?? null,
+        invoice_symbol:    input.invoice_symbol    ?? null,
+        invoice_no:        input.invoice_no        ?? null,
+        invoice_date:      input.invoice_date      ?? null,
+        customer_tax_code: input.customer_tax_code ?? null,
+        vat_amount:        input.vat_amount        ?? null,
+        dinh_khoan_no:     input.dinh_khoan_no     ?? null,
+        dinh_khoan_co:     input.dinh_khoan_co     ?? null,
         created_by: user.id,
       })
       .select('id, order_code')
@@ -199,6 +208,14 @@ export async function updateOrder(id: string, raw: UpdateOrderInput) {
       vat_pct: input.vat_pct,
       shipping_fee: input.shipping_fee,
       warehouse_id: input.warehouse_id ?? null,
+      invoice_template:  input.invoice_template  ?? null,
+      invoice_symbol:    input.invoice_symbol    ?? null,
+      invoice_no:        input.invoice_no        ?? null,
+      invoice_date:      input.invoice_date      ?? null,
+      customer_tax_code: input.customer_tax_code ?? null,
+      vat_amount:        input.vat_amount        ?? null,
+      dinh_khoan_no:     input.dinh_khoan_no     ?? null,
+      dinh_khoan_co:     input.dinh_khoan_co     ?? null,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)

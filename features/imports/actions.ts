@@ -16,7 +16,7 @@ export async function createImportOrder(input: unknown): Promise<string> {
   const { items, ...header } = data
   const { data: order, error: e1 } = await supabase
     .from('supplier_orders')
-    .insert({ ...header, order_type: 'import' })
+    .insert({ ...header, order_type: header.order_type ?? 'import' })
     .select('id')
     .single()
   if (e1) throw new Error(e1.message)
@@ -57,7 +57,7 @@ export async function updateImportOrder(id: string, input: unknown): Promise<voi
 
   const { error: e1 } = await supabase
     .from('supplier_orders')
-    .update({ ...header, order_type: 'import' })
+    .update({ ...header, order_type: header.order_type ?? 'import' })
     .eq('id', id)
   if (e1) throw new Error(e1.message)
 

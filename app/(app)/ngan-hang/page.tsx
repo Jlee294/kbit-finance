@@ -1,7 +1,13 @@
-import Link from 'next/link'
+import { getCurrentUser, canEdit } from '@/lib/auth'
 import { listBankLedger, listBankAccounts } from '@/features/bank/queries'
 import { listCompanies } from '@/features/companies/queries'
+import { listCustomers } from '@/features/customers/queries'
+import { listSuppliers } from '@/features/suppliers/queries'
+import { listProjects }  from '@/features/projects/queries'
+import { listKrSuppliers, listKrwBankAccounts } from '@/features/expenses-kr/queries'
+import { createClient } from '@/lib/supabase/server'
 import { BankLedgerTable } from '@/features/bank/components/BankLedgerTable'
+import { BankCreateButtons } from '@/features/bank/components/BankCreateButtons'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +19,10 @@ export default async function NganHangPage({
   searchParams: Promise<{ company?: string; bank?: string; type?: string; from?: string; to?: string }>
 }) {
   const sp = await searchParams
-  const [rows, companies, banks] = await Promise.all([
+  const supabase = await createClient()
+
+  const [me, rows, companies, banks, customers, suppliers, krSuppliers, krwBanks, projects, bankRes] = await Promise.all([
+    getCurrentUser(),
     listBankLedger({
       companyId:     sp.company || undefined,
       bankAccountId: sp.bank    || undefined,
@@ -24,7 +33,21 @@ export default async function NganHangPage({
     }),
     listCompanies(),
     listBankAccounts(),
+    listCustomers(),
+    listSuppliers(),
+    listKrSuppliers(),
+    listKrwBankAccounts(),
+    listProjects(),
+    supabase.from('bank_accounts').select('id, name, currency, company_id').eq('is_active', true).order('name'),
   ])
+
+  const canWrite = !!me && canEdit(me.role)
+
+  const bankAccountsForForms = (bankRes.data ?? []).map((b: any) => ({
+    id: b.id, name: b.name, currency: b.currency, company_id: b.company_id,
+  }))
+  const suppliersForForms = suppliers.map((s: any) => ({ id: s.id, code: s.code as string, name: s.name }))
+  const krSuppliersForForms = krSuppliers.map((s: any) => ({ id: s.id, code: s.code as string, name: s.name }))
 
   const totalThu = rows.filter(r => r.direction === 'thu').reduce((s, r) => s + r.amount_vnd, 0)
   const totalChi = rows.filter(r => r.direction === 'chi').reduce((s, r) => s + r.amount_vnd, 0)
@@ -38,17 +61,17 @@ export default async function NganHangPage({
             {rows.length} giao dịch · gộp tất cả thu / chi VN / chi KR
           </p>
         </div>
-        <div className="flex gap-2">
-          <Link href="/thu-tien" className="h-8 px-3 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 flex items-center">
-            + Thu tiền
-          </Link>
-          <Link href="/chi-vn" className="h-8 px-3 bg-red-500 text-white rounded-md text-sm hover:bg-red-600 flex items-center">
-            + Chi VN
-          </Link>
-          <Link href="/chi-kr" className="h-8 px-3 bg-red-600 text-white rounded-md text-sm hover:bg-red-700 flex items-center">
-            + Chi KR
-          </Link>
-        </div>
+        {canWrite && (
+          <BankCreateButtons
+            companies={companies.map((c: any) => ({ id: c.id, name: c.name }))}
+            customers={customers}
+            suppliers={suppliersForForms}
+            krSuppliers={krSuppliersForForms}
+            bankAccounts={bankAccountsForForms}
+            krwBanks={krwBanks}
+            projects={projects.map((p: any) => ({ id: p.id, code: p.code, name: p.name, company_id: p.company_id }))}
+          />
+        )}
       </div>
 
       {/* Tổng kết */}
