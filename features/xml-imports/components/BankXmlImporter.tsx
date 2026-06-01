@@ -31,6 +31,9 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
   const [result, setResult] = useState<BankParseResult | null>(null)
   const [error, setError] = useState('')
 
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [dragOver, setDragOver] = useState(false)
+
   const [bankId, setBankId] = useState('')
   const [companyId, setCompanyId] = useState('')
 
@@ -51,13 +54,25 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
     return hit?.id ?? ''
   }
 
-  async function handleParse(e: React.FormEvent) {
-    e.preventDefault()
-    if (!inputRef.current?.files?.[0]) { setError('Chọn file'); return }
+  function handleFileSelect(file: File | null) {
+    setSelectedFile(file)
+    setResult(null)
+    setError('')
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault(); setDragOver(false)
+    const f = e.dataTransfer.files?.[0]
+    if (f) handleFileSelect(f)
+  }
+
+  async function handleParse(e?: React.FormEvent) {
+    e?.preventDefault()
+    if (!selectedFile) { setError('Chưa chọn file'); return }
     setParsing(true); setError(''); setResult(null)
 
     const fd = new FormData()
-    fd.append('file', inputRef.current.files[0])
+    fd.append('file', selectedFile)
 
     const res = await parseBankXmlFile(fd)
     setParsing(false)
@@ -175,20 +190,68 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
 
   return (
     <div className="space-y-5">
-      <form onSubmit={handleParse} className="rounded-xl border bg-white p-4 space-y-3">
-        <div className="space-y-2">
-          <Label>Chọn file sao kê</Label>
-          <Input ref={inputRef} type="file"
+
+      {/* ─ Drop zone ───────────────────────────────────────────────── */}
+      <div
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={handleDrop}
+        onClick={() => inputRef.current?.click()}
+        className={`rounded-2xl border-2 border-dashed transition-colors cursor-pointer
+          ${dragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white hover:bg-gray-50'}
+          px-6 py-12 text-center`}
+      >
+        <div className="flex flex-col items-center gap-3">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-400">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 7.5A2.5 2.5 0 015.5 5h3.379a2 2 0 011.414.586l1.121 1.121a2 2 0 001.414.586h6.172A2.5 2.5 0 0121 9.793V18a2 2 0 01-2 2H5a2 2 0 01-2-2V7.5z" />
+          </svg>
+          <h3 className="text-base font-semibold text-gray-900">
+            Kéo thả file sao kê vào đây
+          </h3>
+          <p className="text-sm text-gray-500">Hoặc bấm để chọn file</p>
+          <Button type="button" onClick={(e) => { e.stopPropagation(); inputRef.current?.click() }}
+            className="bg-blue-600 hover:bg-blue-700">
+            Chọn file
+          </Button>
+          <input ref={inputRef} type="file" className="hidden"
             accept=".xlsx,.xls,.csv,.xml,.pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/xml,text/xml,application/pdf"
-            className="cursor-pointer" />
-          <p className="text-xs text-gray-500">
-            Nhận Excel, CSV, XML hoặc PDF
-          </p>
+            onChange={(e) => handleFileSelect(e.target.files?.[0] ?? null)} />
+          <p className="text-xs text-gray-400">Excel · CSV · XML · PDF</p>
         </div>
-        <Button type="submit" disabled={parsing}>{parsing ? 'Đang đọc…' : 'Đọc file'}</Button>
-      </form>
+
+        {/* File chip */}
+        {selectedFile && (
+          <div className="mt-6 mx-auto max-w-md rounded-lg bg-gray-50 border px-4 py-3 flex items-center justify-between"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="text-gray-400 shrink-0">📄</span>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">{selectedFile.name}</p>
+                <p className="text-xs text-gray-500">{(selectedFile.size / 1024).toFixed(1)} KB</p>
+              </div>
+            </div>
+            <button onClick={(e) => { e.stopPropagation(); handleFileSelect(null) }}
+              className="text-gray-400 hover:text-red-500 text-sm shrink-0 ml-3" aria-label="Xóa file">
+              ✕
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* ─ Action button ──────────────────────────────────────────── */}
+      {selectedFile && !result && (
+        <Button onClick={() => handleParse()} disabled={parsing}
+          className="w-full h-12 text-base bg-green-600 hover:bg-green-700 disabled:bg-gray-300">
+          {parsing ? 'Đang đọc file...' : 'Bắt đầu đọc'}
+        </Button>
+      )}
 
       {error && <p className="rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>}
+
+      {/* ─ Summary banner sau khi parse ───────────────────────────── */}
+      {result && reconciliation && (
+        <SummaryBanner result={result} rec={reconciliation} bankName={banks.find(b => b.id === bankId)?.name} />
+      )}
 
       {result && reconciliation && (
         <div className="rounded-xl border-2 border-gray-200 bg-white p-4 space-y-4">
@@ -238,9 +301,6 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
               hoặc <a href="/danh-muc/tai-khoan-ngan-hang" target="_blank" className="underline font-medium">thêm TK mới</a> rồi tải lại.
             </div>
           )}
-
-          {/* ── BOX ĐỐI CHIẾU TỔNG ────────────────────────────────────── */}
-          <ReconciliationBox rec={reconciliation} currency={result.currency} />
 
           {result.warnings.length > 0 && (
             <div className="rounded bg-amber-50 px-3 py-2 text-xs text-amber-700">
@@ -445,6 +505,80 @@ function ReconciliationBox({ rec, currency }: { rec: any; currency: string }) {
   )
 
   function fmtDiff(v: number) { return (v >= 0 ? '+' : '') + fmtCur(v) }
+}
+
+// ── Summary banner (overview sau khi parse) ──────────────────────────────────
+
+function SummaryBanner({ result, rec, bankName }: { result: BankParseResult; rec: any; bankName?: string }) {
+  const balOk = rec.meta.closing_balance != null && rec.computed_closing != null &&
+                Math.abs(rec.computed_closing - rec.meta.closing_balance) < 1
+  const fmtCur = (v: number | null | undefined) =>
+    v == null ? '—' : v.toLocaleString('vi-VN')
+
+  return (
+    <div className="space-y-4">
+      {/* Stats banner — gradient blue */}
+      <div className="rounded-2xl bg-gradient-to-br from-slate-800 to-blue-900 text-white px-6 py-5">
+        <div className="grid grid-cols-4 gap-4">
+          <BannerStat label="File" value="1" />
+          <BannerStat label="Thành công" value="1" />
+          <BannerStat label="Giao dịch" value={String(result.txns.length)} />
+          <BannerStat label="Đối chiếu" value={`${rec.totalRowOk}/${result.txns.length}`}
+            valueClass={rec.totalRowFail === 0 ? 'text-green-300' : 'text-amber-300'} />
+        </div>
+      </div>
+
+      {/* Result card per file */}
+      <div className="rounded-xl border bg-white overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b">
+          <div className="flex items-center gap-3">
+            <div className={`h-8 w-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${
+              balOk ? 'bg-green-500' : 'bg-amber-500'
+            }`}>✓</div>
+            <div>
+              <p className="font-semibold text-gray-900">{result.raw_filename ?? 'sao kê'}</p>
+              <p className="text-xs text-gray-500">
+                {bankName ?? `Số TK: ${result.account_number ?? '—'}`}
+                {' · '}{result.txns.length} giao dịch
+                {' · '}Đối chiếu: {rec.totalRowOk}/{result.txns.length} OK
+              </p>
+            </div>
+          </div>
+          <span className={`text-xs px-3 py-1 rounded-full font-semibold ${
+            balOk ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'
+          }`}>
+            {balOk ? 'KHỚP' : 'CHƯA KHỚP'}
+          </span>
+        </div>
+        <div className="grid grid-cols-4 divide-x divide-gray-100">
+          <CardStat label="SỐ DƯ ĐẦU KỲ" value={fmtCur(rec.meta.opening_balance)} />
+          <CardStat label="PHÁT SINH NỢ" value={fmtCur(rec.sumDebit)} color="text-red-600" />
+          <CardStat label="PHÁT SINH CÓ" value={fmtCur(rec.sumCredit)} color="text-blue-700" />
+          <CardStat label="SỐ DƯ CUỐI KỲ" value={fmtCur(rec.meta.closing_balance)} bold />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function BannerStat({ label, value, valueClass }: { label: string; value: string; valueClass?: string }) {
+  return (
+    <div className="text-center">
+      <p className={`text-3xl font-bold ${valueClass ?? 'text-white'}`}>{value}</p>
+      <p className="text-xs text-blue-100/80 mt-1">{label}</p>
+    </div>
+  )
+}
+
+function CardStat({ label, value, color, bold }: { label: string; value: string; color?: string; bold?: boolean }) {
+  return (
+    <div className="px-4 py-3 text-center">
+      <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">{label}</p>
+      <p className={`tabular-nums ${bold ? 'text-base font-semibold' : 'text-sm font-medium'} ${color ?? 'text-gray-900'}`}>
+        {value}
+      </p>
+    </div>
+  )
 }
 
 function Row({ label, app, pdf, fmt, compare }: {
