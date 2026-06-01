@@ -8,7 +8,7 @@ import type { TaskRow }   from '../queries'
 
 const STATUS_CLS: Record<TaskStatus, string> = {
   open:        'bg-gray-100 text-gray-700',
-  in_progress: 'bg-blue-50  text-blue-700',
+  in_progress: 'bg-brand-50  text-brand-800',
   done:        'bg-green-50 text-green-700',
   overdue:     'bg-red-50   text-red-700',
 }
@@ -59,7 +59,7 @@ function TaskRow({ task }: { task: TaskRow }) {
           <button
             onClick={advance}
             disabled={pending}
-            className="text-xs text-blue-600 hover:underline disabled:opacity-40"
+            className="text-xs text-brand-700 hover:underline disabled:opacity-40"
           >
             {TASK_STATUS_LABELS[next]} →
           </button>

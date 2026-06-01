@@ -293,7 +293,7 @@ export function SalesInvoiceXmlImporter({ companies, projects, warehouses, produ
                               <td className="px-2 py-1.5 text-right">{it.qty}</td>
                               <td className="px-2 py-1.5 text-right">{fmtVND(it.unit_price)}</td>
                               <td className="px-2 py-1.5 text-right font-medium">{fmtVND(it.amount)}</td>
-                              <td className="px-2 py-1.5 text-right text-blue-700">{fmtVND(it.vat_amount)}</td>
+                              <td className="px-2 py-1.5 text-right text-brand-800">{fmtVND(it.vat_amount)}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -301,7 +301,7 @@ export function SalesInvoiceXmlImporter({ companies, projects, warehouses, produ
                           <tr>
                             <td colSpan={4} className="px-2 py-1.5 text-right">Tổng:</td>
                             <td className="px-2 py-1.5 text-right">{fmtVND(inv.subtotal)}</td>
-                            <td className="px-2 py-1.5 text-right text-blue-700">{fmtVND(inv.vat_amount)}</td>
+                            <td className="px-2 py-1.5 text-right text-brand-800">{fmtVND(inv.vat_amount)}</td>
                           </tr>
                           <tr>
                             <td colSpan={5} className="px-2 py-1.5 text-right">Tổng cộng:</td>

@@ -105,7 +105,7 @@ export function ThresholdForm({ companies }: Props) {
       <button
         type="submit"
         disabled={pending}
-        className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700
+        className="px-4 py-1.5 bg-brand-800 text-white text-sm rounded-lg hover:bg-brand-700
                    disabled:opacity-50 transition-colors"
       >
         {pending ? 'Đang lưu...' : 'Lưu ngưỡng'}

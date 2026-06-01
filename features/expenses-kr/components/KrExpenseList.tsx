@@ -12,7 +12,7 @@ const STATUS_LABEL: Record<string, string> = {
   draft: 'Nháp', confirmed: 'Xác nhận', approved: 'Đã duyệt', void: 'Hủy',
 }
 const STATUS_COLOR: Record<string, string> = {
-  draft: 'bg-gray-100 text-gray-600', confirmed: 'bg-blue-100 text-blue-700',
+  draft: 'bg-gray-100 text-gray-600', confirmed: 'bg-brand-100 text-brand-800',
   approved: 'bg-green-100 text-green-700', void: 'bg-red-100 text-red-600',
 }
 const KIND_LABEL: Record<string, string> = { goods: 'Tiền hàng', service: 'Dịch vụ' }
@@ -149,7 +149,7 @@ export function KrExpenseList({
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                       exp.expense_kind === 'service'
                         ? 'bg-orange-50 text-orange-700'
-                        : 'bg-blue-50 text-blue-700'
+                        : 'bg-brand-50 text-brand-800'
                     }`}>
                       {KIND_LABEL[exp.expense_kind] ?? exp.expense_kind}
                     </span>
@@ -165,7 +165,7 @@ export function KrExpenseList({
                   </td>
                   <td className="px-4 py-3 text-center">
                     {exp.has_vat
-                      ? <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">VAT</span>
+                      ? <span className="text-xs bg-brand-50 text-brand-800 px-2 py-0.5 rounded-full">VAT</span>
                       : <span className="text-gray-300">—</span>
                     }
                   </td>
@@ -209,7 +209,7 @@ export function KrExpenseList({
                     <td className="px-4 py-3 text-right font-semibold text-amber-700">{formatKRW(o.outstanding)}</td>
                     <td className="px-4 py-3 text-right text-xs">
                       {o.exchange_rate != null
-                        ? <span className="text-blue-700">{o.exchange_rate}</span>
+                        ? <span className="text-brand-800">{o.exchange_rate}</span>
                         : <span className="text-amber-600">Chưa có</span>
                       }
                     </td>

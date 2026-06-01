@@ -262,7 +262,7 @@ export default async function CongNoPage({
                 <tr key={r.id} className="hover:bg-gray-50">
                   <td className="px-3 py-2 text-gray-800 text-xs">{r.customer_name || <span className="text-gray-400">—</span>}</td>
                   <td className="px-3 py-2 text-xs text-gray-500">{fmtDate(r.txn_date)}</td>
-                  <td className="px-3 py-2 text-right text-xs text-blue-700 font-medium">
+                  <td className="px-3 py-2 text-right text-xs text-brand-800 font-medium">
                     {r.currency !== 'VND' && r.amount.toLocaleString() + ' ' + r.currency + ' / '}
                     {fmtVND(r.amount_vnd)}
                   </td>

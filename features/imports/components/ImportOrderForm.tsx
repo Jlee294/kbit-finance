@@ -248,7 +248,7 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
           <div className="space-y-1">
             <Label>
               VAT khâu nhập khẩu
-              <span className="ml-1 text-xs text-blue-600 font-normal">(khấu trừ riêng — KHÔNG tính vào giá vốn)</span>
+              <span className="ml-1 text-xs text-brand-700 font-normal">(khấu trừ riêng — KHÔNG tính vào giá vốn)</span>
             </Label>
             <Input type="number" min="0" step="1" value={vatImport} onChange={(e) => setVatImport(e.target.value)} />
           </div>
@@ -263,13 +263,13 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
 
         {/* Preview giá vốn */}
         {costTotalFc > 0 && (
-          <div className="mt-3 rounded-lg bg-blue-50 border border-blue-100 px-4 py-3 text-sm space-y-1">
-            <div className="flex justify-between font-semibold text-blue-800">
+          <div className="mt-3 rounded-lg bg-brand-50 border border-brand-100 px-4 py-3 text-sm space-y-1">
+            <div className="flex justify-between font-semibold text-brand-900">
               <span>Giá vốn lô (cost_total = mua + thuế NK + phí khác):</span>
               <span>{fmtCurrency(costTotalFc)}</span>
             </div>
             {currency === 'KRW' && rate > 0 && (
-              <div className="flex justify-between text-blue-600">
+              <div className="flex justify-between text-brand-700">
                 <span>Quy VNĐ (×{rate}):</span>
                 <span>{formatVND(costTotalVnd)}</span>
               </div>
@@ -336,7 +336,7 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
                     <td className="px-3 py-2 text-right text-xs text-gray-700">
                       {lineTotal > 0 ? fmtCurrency(lineTotal) : '—'}
                     </td>
-                    <td className="px-3 py-2 text-right text-xs font-medium text-blue-700">
+                    <td className="px-3 py-2 text-right text-xs font-medium text-brand-800">
                       {uc > 0 ? formatVND(uc) : '—'}
                     </td>
                     <td className="px-3 py-2 text-center">

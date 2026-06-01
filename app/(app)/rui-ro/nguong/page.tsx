@@ -28,7 +28,7 @@ export default async function NguongPage() {
           <h1 className="text-xl font-semibold text-gray-900">Quản lý ngưỡng chỉ tiêu</h1>
           <p className="text-sm text-gray-500 mt-0.5">Đặt ngưỡng vàng / đỏ cho từng chỉ tiêu</p>
         </div>
-        <Link href="/rui-ro" className="text-sm text-blue-600 hover:underline">
+        <Link href="/rui-ro" className="text-sm text-brand-700 hover:underline">
           ← Sức khỏe tài chính
         </Link>
       </div>

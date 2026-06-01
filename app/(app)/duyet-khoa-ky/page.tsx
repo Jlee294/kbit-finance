@@ -149,7 +149,7 @@ export default async function DuyetKhoaKyPage() {
           {periods.length === 0 ? (
             <div className="px-5 py-8 text-center text-sm text-gray-400">
               Chưa có kỳ kế toán.{' '}
-              <Link href="/danh-muc/ky-ke-toan" className="text-blue-600 hover:underline">
+              <Link href="/danh-muc/ky-ke-toan" className="text-brand-700 hover:underline">
                 Tạo kỳ ở đây →
               </Link>
             </div>

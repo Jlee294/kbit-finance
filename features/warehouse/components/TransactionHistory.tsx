@@ -7,7 +7,7 @@ const TYPE_COLOR: Record<string, string> = {
   receipt:         'bg-green-50 text-green-700',
   issue:           'bg-red-50 text-red-700',
   transfer_out:    'bg-orange-50 text-orange-700',
-  transfer_in:     'bg-blue-50 text-blue-700',
+  transfer_in:     'bg-brand-50 text-brand-800',
   order_deduction: 'bg-purple-50 text-purple-700',
   adjustment:      'bg-gray-100 text-gray-600',
 }

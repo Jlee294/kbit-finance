@@ -31,7 +31,7 @@ export function DocChecklistPicker({ label, docTypes, selected, onChange }: Prop
                 checked={selected.includes(dt.id)}
                 onChange={() => toggle(dt.id)}
               />
-              <span className="font-mono text-xs text-blue-700">[{dt.code}]</span>
+              <span className="font-mono text-xs text-brand-800">[{dt.code}]</span>
               <span className="text-xs">{dt.name}</span>
             </label>
           ))}

@@ -273,7 +273,7 @@ export function ProductCatalog({ brands, products, rates, canWrite }: Props) {
                       <td className="px-3 py-2.5 text-center">
                         <button
                           onClick={() => openEditProduct(p)}
-                          className="text-xs text-gray-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="text-xs text-gray-400 hover:text-brand-700 opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           Sửa
                         </button>

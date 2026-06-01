@@ -60,7 +60,7 @@ export function EntityFilesButton({
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); setOpen(true) }}
-        className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-blue-600"
+        className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-brand-700"
         title="Tài liệu đính kèm"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -89,7 +89,7 @@ export function EntityFilesButton({
                         href={`/api/files/${d.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-blue-600 hover:underline truncate"
+                        className="text-sm text-brand-700 hover:underline truncate"
                       >
                         {d.file_name}
                       </a>

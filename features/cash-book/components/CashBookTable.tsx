@@ -117,7 +117,7 @@ export function CashBookTable({ rows, companies, users, canWrite }: Props) {
                           defaultDocTypeName="Chứng từ khác"
                           canWrite={canWrite}
                         />
-                        <button onClick={() => openEdit(r)} className="text-xs text-gray-400 hover:text-blue-600 opacity-0 group-hover:opacity-100">Sửa</button>
+                        <button onClick={() => openEdit(r)} className="text-xs text-gray-400 hover:text-brand-700 opacity-0 group-hover:opacity-100">Sửa</button>
                         <button onClick={() => handleDelete(r.id)} className="text-xs text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100">Xoá</button>
                       </span>
                     </td>

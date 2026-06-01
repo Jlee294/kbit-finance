@@ -198,7 +198,7 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
         onDrop={handleDrop}
         onClick={() => inputRef.current?.click()}
         className={`rounded-2xl border-2 border-dashed transition-colors cursor-pointer
-          ${dragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white hover:bg-gray-50'}
+          ${dragOver ? 'border-brand-500 bg-brand-50' : 'border-gray-300 bg-white hover:bg-gray-50'}
           px-6 py-12 text-center`}
       >
         <div className="flex flex-col items-center gap-3">
@@ -210,7 +210,7 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
           </h3>
           <p className="text-sm text-gray-500">Hoặc bấm để chọn file</p>
           <Button type="button" onClick={(e) => { e.stopPropagation(); inputRef.current?.click() }}
-            className="bg-blue-600 hover:bg-blue-700">
+            className="bg-brand-800 hover:bg-brand-700">
             Chọn file
           </Button>
           <input ref={inputRef} type="file" className="hidden"
@@ -349,7 +349,7 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
                         {t.txn_time && <p className="text-[10px] text-gray-400">{t.txn_time}</p>}
                       </td>
                       <td className="px-2 py-2 text-[10px] text-gray-500 break-all">
-                        {t.reference && <div className="font-mono text-blue-700">{t.reference}</div>}
+                        {t.reference && <div className="font-mono text-brand-800">{t.reference}</div>}
                         {t.counterpart && <div className="text-gray-700 mt-0.5 leading-tight">{t.counterpart}</div>}
                       </td>
                       <td className="px-2 py-2">
@@ -451,8 +451,8 @@ function ReconciliationBox({ rec, currency }: { rec: any; currency: string }) {
                 Math.abs(rec.computed_closing - m.closing_balance) < 1
 
   return (
-    <div className="rounded-xl border-2 border-blue-200 bg-blue-50 p-4 space-y-3">
-      <p className="text-sm font-semibold text-blue-800">
+    <div className="rounded-xl border-2 border-brand-200 bg-brand-50 p-4 space-y-3">
+      <p className="text-sm font-semibold text-brand-900">
         Đối chiếu với sao kê
       </p>
 
@@ -473,7 +473,7 @@ function ReconciliationBox({ rec, currency }: { rec: any; currency: string }) {
         {/* Cột phải: Số dư cuối */}
         <div className="space-y-1.5">
           <Row label="Số dư cuối kỳ (PDF báo)" pdf={m.closing_balance} fmt={fmtCur} />
-          <div className="border-t border-blue-200 pt-1.5">
+          <div className="border-t border-brand-200 pt-1.5">
             <Row label="Tính: SDD + Có − Nợ" app={rec.computed_closing} fmt={fmtCur} />
           </div>
           <div className="rounded bg-white px-3 py-2 mt-2">
@@ -491,7 +491,7 @@ function ReconciliationBox({ rec, currency }: { rec: any; currency: string }) {
       </div>
 
       {/* Đối chiếu per-row */}
-      <div className="border-t border-blue-200 pt-2 flex items-center gap-4 text-xs">
+      <div className="border-t border-brand-200 pt-2 flex items-center gap-4 text-xs">
         <span className="text-gray-600">Đối chiếu từng dòng:</span>
         <span className="text-green-700 font-medium">✓ {rec.totalRowOk} OK</span>
         {rec.totalRowFail > 0 && (
@@ -553,7 +553,7 @@ function SummaryBanner({ result, rec, bankName }: { result: BankParseResult; rec
         <div className="grid grid-cols-4 divide-x divide-gray-100">
           <CardStat label="SỐ DƯ ĐẦU KỲ" value={fmtCur(rec.meta.opening_balance)} />
           <CardStat label="PHÁT SINH NỢ" value={fmtCur(rec.sumDebit)} color="text-red-600" />
-          <CardStat label="PHÁT SINH CÓ" value={fmtCur(rec.sumCredit)} color="text-blue-700" />
+          <CardStat label="PHÁT SINH CÓ" value={fmtCur(rec.sumCredit)} color="text-brand-800" />
           <CardStat label="SỐ DƯ CUỐI KỲ" value={fmtCur(rec.meta.closing_balance)} bold />
         </div>
       </div>

@@ -115,7 +115,7 @@ export default async function CongViecPage({
         </div>
         <button
           type="submit"
-          className="h-8 px-3 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
+          className="h-8 px-3 bg-brand-800 text-white rounded-md text-sm hover:bg-brand-700"
         >
           Tạo
         </button>

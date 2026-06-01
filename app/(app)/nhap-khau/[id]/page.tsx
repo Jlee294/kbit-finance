@@ -83,13 +83,13 @@ export default async function ImportOrderDetailPage({ params }: { params: { id: 
             <div className="flex justify-between text-gray-600">
               <span>Phí khác (HQ, vận chuyển...):</span><span>{fmtNative(order.other_fees)}</span>
             </div>
-            <div className="flex justify-between font-bold text-blue-700 border-t pt-1">
+            <div className="flex justify-between font-bold text-brand-800 border-t pt-1">
               <span>Giá vốn lô (cost_total):</span>
               <span>{fmtNative(order.cost_total)}</span>
             </div>
             <p className="text-xs text-gray-400">= Mua + thuế NK + phí khác (không gồm VAT)</p>
             {isKrw && rate > 0 && (
-              <div className="flex justify-between text-blue-600 text-xs">
+              <div className="flex justify-between text-brand-700 text-xs">
                 <span>Quy VNĐ (×{rate}):</span>
                 <span>{formatVND(order.cost_total * rate)}</span>
               </div>
@@ -162,7 +162,7 @@ export default async function ImportOrderDetailPage({ params }: { params: { id: 
                   <td className="px-4 py-3 text-right">{item.qty.toLocaleString('vi-VN')}</td>
                   <td className="px-4 py-3 text-right">{fmtNative(item.unit_price)}</td>
                   <td className="px-4 py-3 text-right">{fmtNative(item.line_total)}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-blue-700">
+                  <td className="px-4 py-3 text-right font-semibold text-brand-800">
                     {item.unit_cost != null ? formatVND(item.unit_cost) : <span className="text-gray-300">—</span>}
                   </td>
                 </tr>

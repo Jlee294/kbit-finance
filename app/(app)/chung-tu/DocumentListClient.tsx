@@ -69,14 +69,14 @@ export function DocumentListClient({ docs, docTypes: _docTypes, canWrite: _canWr
                 return (
                   <tr key={doc.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
-                      <span className="font-mono text-xs bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">
+                      <span className="font-mono text-xs bg-brand-50 text-brand-800 px-1.5 py-0.5 rounded">
                         {dt?.code ?? '—'}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-gray-700">
                       {doc.drive_file_id || doc.file_url ? (
                         <a href={`/api/files/${doc.id}`} target="_blank" rel="noopener noreferrer"
-                          className="hover:underline text-blue-600">
+                          className="hover:underline text-brand-700">
                           {doc.file_name}
                         </a>
                       ) : doc.file_name}

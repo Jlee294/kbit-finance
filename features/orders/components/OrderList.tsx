@@ -66,7 +66,7 @@ export function OrderList({ initialRows, total, canWrite }: Props) {
                   className="border-t hover:bg-brand-50/40 transition-colors cursor-pointer"
                   onClick={() => router.push(`/don-hang/${row.id}`)}
                 >
-                  <td className="px-4 py-3 font-mono font-medium text-blue-700">
+                  <td className="px-4 py-3 font-mono font-medium text-brand-800">
                     <Link
                       href={`/don-hang/${row.id}`}
                       className="hover:underline"

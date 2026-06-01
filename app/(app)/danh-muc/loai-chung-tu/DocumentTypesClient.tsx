@@ -41,12 +41,12 @@ export function DocumentTypesClient({ items, canWrite }: Props) {
           <tbody className="divide-y divide-gray-100">
             {items.map((item) => (
               <tr key={item.id} className="hover:bg-gray-50">
-                <td className="px-6 py-3 font-mono text-blue-700 font-medium">{item.code}</td>
+                <td className="px-6 py-3 font-mono text-brand-800 font-medium">{item.code}</td>
                 <td className="px-6 py-3 text-gray-700">{item.name}</td>
                 {canWrite && (
                   <td className="px-4 py-3 text-right">
                     <button
-                      className="text-xs text-gray-400 hover:text-blue-600"
+                      className="text-xs text-gray-400 hover:text-brand-700"
                       onClick={() => setEditItem(item)}
                     >
                       Sửa

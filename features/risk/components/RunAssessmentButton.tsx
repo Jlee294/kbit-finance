@@ -35,8 +35,8 @@ export function RunAssessmentButton({ companyId, period }: Props) {
     <button
       onClick={handleClick}
       disabled={pending}
-      className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg
-                 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      className="px-4 py-2 bg-brand-800 text-white text-sm font-medium rounded-lg
+                 hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
     >
       {pending ? 'Đang chấm...' : 'Chấm điểm ngay'}
     </button>

@@ -122,7 +122,7 @@ export function KrExpenseForm({ companies, krwBanks, krSuppliers, projects, onDo
             value={rate} onChange={(e) => setRate(e.target.value)}
             placeholder="VD: 18.5" required />
           {vndPreview > 0 && (
-            <p className="text-xs text-blue-600 mt-0.5 font-medium">
+            <p className="text-xs text-brand-700 mt-0.5 font-medium">
               ≈ {formatVND(vndPreview)}
             </p>
           )}

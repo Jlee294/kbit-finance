@@ -152,7 +152,7 @@ export function StockMutationForm({ mode, warehouses, products }: Props) {
 
       <button
         type="submit" disabled={saving}
-        className="w-full h-9 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50"
+        className="w-full h-9 bg-brand-800 text-white text-sm font-medium rounded-md hover:bg-brand-700 disabled:opacity-50"
       >
         {saving ? 'Đang xử lý...' : MODE_LABELS[mode]}
       </button>

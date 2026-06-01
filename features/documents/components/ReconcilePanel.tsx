@@ -82,7 +82,7 @@ export function ReconcilePanel({
             return (
               <div key={rt.id} className="flex items-center gap-2 text-sm">
                 <span>{ok ? '✅' : '⬜'}</span>
-                <span className="font-mono text-xs text-blue-700">[{rt.code}]</span>
+                <span className="font-mono text-xs text-brand-800">[{rt.code}]</span>
                 <span className={ok ? 'text-gray-700' : 'text-gray-500'}>{rt.name}</span>
               </div>
             )
@@ -107,14 +107,14 @@ export function ReconcilePanel({
               return (
                 <tr key={doc.id} className="hover:bg-gray-50">
                   <td className="py-2 pr-3">
-                    <span className="font-mono text-xs bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">
+                    <span className="font-mono text-xs bg-brand-50 text-brand-800 px-1.5 py-0.5 rounded">
                       {dt?.code ?? '—'}
                     </span>
                   </td>
                   <td className="py-2 pr-3 text-gray-700">
                     {doc.drive_file_id || doc.file_url ? (
                       <a href={`/api/files/${doc.id}`} target="_blank" rel="noopener noreferrer"
-                        className="hover:underline text-blue-600">
+                        className="hover:underline text-brand-700">
                         {doc.file_name}
                       </a>
                     ) : (

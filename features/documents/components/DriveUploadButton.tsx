@@ -166,7 +166,7 @@ export function DriveUploadButton({
       {isLoading && (
         <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
           <div
-            className="h-full bg-blue-500 transition-all"
+            className="h-full bg-brand-700 transition-all"
             style={{ width: `${progress}%` }}
           />
         </div>

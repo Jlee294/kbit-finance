@@ -107,7 +107,7 @@ export default async function BaoCaoPage({
           <h1 className="text-xl font-semibold text-gray-900">Báo cáo pháp nhân</h1>
           <p className="text-sm text-gray-500 mt-0.5">Dòng tiền và công nợ theo từng công ty</p>
         </div>
-        <Link href="/bao-cao/hop-nhat" className="text-sm text-blue-600 hover:underline">
+        <Link href="/bao-cao/hop-nhat" className="text-sm text-brand-700 hover:underline">
           Xem báo cáo hợp nhất
         </Link>
       </div>

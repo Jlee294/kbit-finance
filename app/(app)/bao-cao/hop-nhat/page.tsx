@@ -46,7 +46,7 @@ export default async function HopNhatPage({
         </div>
         <Link
           href="/bao-cao"
-          className="text-sm text-blue-600 hover:underline"
+          className="text-sm text-brand-700 hover:underline"
         >
           Báo cáo từng pháp nhân
         </Link>

@@ -99,7 +99,7 @@ export function ImportOrderTable({ rows, canWrite, companies, suppliers, product
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${row.currency === 'KRW' ? 'bg-orange-50 text-orange-700' : 'bg-blue-50 text-blue-700'}`}>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${row.currency === 'KRW' ? 'bg-orange-50 text-orange-700' : 'bg-brand-50 text-brand-800'}`}>
                       {row.currency}
                       {row.currency === 'KRW' && row.exchange_rate && (
                         <span className="ml-1 text-gray-500">@{row.exchange_rate}</span>

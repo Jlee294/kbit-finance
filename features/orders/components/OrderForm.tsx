@@ -489,7 +489,7 @@ export function OrderForm({ companies, customers, projects, products, warehouses
                 <span className="text-gray-500">%</span>
               </div>
             </div>
-            <span className="text-blue-600 font-medium">
+            <span className="text-brand-700 font-medium">
               {totals.vatAmount > 0 ? `+ ${formatVND(totals.vatAmount)}` : '—'}
             </span>
           </div>

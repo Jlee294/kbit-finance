@@ -66,7 +66,7 @@ export function BankLedgerTable({ rows }: { rows: BankRow[] }) {
                 <td className="px-3 py-2 text-xs text-gray-500">{r.company_name ?? '—'}</td>
                 <td className="px-3 py-2 text-xs text-gray-500">
                   {r.note ?? '—'}
-                  <Link href={href} className="ml-1 text-blue-500 hover:underline text-[10px]">↗</Link>
+                  <Link href={href} className="ml-1 text-brand-600 hover:underline text-[10px]">↗</Link>
                 </td>
               </tr>
             )

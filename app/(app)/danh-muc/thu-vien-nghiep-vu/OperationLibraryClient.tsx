@@ -26,7 +26,7 @@ export function OperationLibraryClient({ operations, docTypes, canWrite }: Props
         {ids.map((id) => {
           const dt = docTypeMap.get(id)
           return dt ? (
-            <span key={id} className="text-xs bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded font-mono">
+            <span key={id} className="text-xs bg-brand-50 text-brand-800 px-1.5 py-0.5 rounded font-mono">
               {dt.code}
             </span>
           ) : null
@@ -64,7 +64,7 @@ export function OperationLibraryClient({ operations, docTypes, canWrite }: Props
           <tbody className="divide-y divide-gray-100">
             {operations.map((op) => (
               <tr key={op.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 font-mono text-blue-700 font-medium text-xs">{op.code}</td>
+                <td className="px-4 py-3 font-mono text-brand-800 font-medium text-xs">{op.code}</td>
                 <td className="px-4 py-3 text-gray-700">{op.name}</td>
                 <td className="px-4 py-3 text-gray-500 text-xs">{op.group_name ?? '—'}</td>
                 <td className="px-4 py-3">{renderDocBadges(op.required_doc_type_ids)}</td>
@@ -77,7 +77,7 @@ export function OperationLibraryClient({ operations, docTypes, canWrite }: Props
                 {canWrite && (
                   <td className="px-4 py-3 text-right">
                     <button
-                      className="text-xs text-gray-400 hover:text-blue-600"
+                      className="text-xs text-gray-400 hover:text-brand-700"
                       onClick={() => setEditItem(op)}
                     >
                       Sửa

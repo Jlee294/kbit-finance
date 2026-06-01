@@ -162,7 +162,7 @@ export default async function OrderDetailPage({ params }: Props) {
                 {totals.vatAmount > 0 && (
                   <div className="flex justify-between text-gray-600">
                     <dt>VAT ({Number(order.vat_pct)}%)</dt>
-                    <dd className="text-blue-600 font-medium">+ {formatVND(totals.vatAmount)}</dd>
+                    <dd className="text-brand-700 font-medium">+ {formatVND(totals.vatAmount)}</dd>
                   </div>
                 )}
                 {totals.shippingFee > 0 && (

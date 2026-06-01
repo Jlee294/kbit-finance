@@ -96,7 +96,7 @@ export function KrSupplierPayForm({ orders, krwBanks, onDone }: Props) {
             <p>
               <span className="text-gray-500">Tỷ giá ghi nợ:</span>{' '}
               {orderHasRate
-                ? <strong className="text-blue-700">{selectedOrder.exchange_rate} VNĐ/KRW (từ đơn — không thể sửa)</strong>
+                ? <strong className="text-brand-800">{selectedOrder.exchange_rate} VNĐ/KRW (từ đơn — không thể sửa)</strong>
                 : <span className="text-amber-600">Chưa có — cần nhập thủ công</span>
               }
             </p>

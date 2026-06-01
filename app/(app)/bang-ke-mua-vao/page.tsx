@@ -48,7 +48,7 @@ export default async function BangKeMuaVaoPage({
         </div>
         <div className="rounded-xl border bg-white px-4 py-3">
           <p className="text-xs text-gray-500">Tổng VAT</p>
-          <p className="text-lg font-semibold text-blue-700">{fmtVND(totalVat)} đ</p>
+          <p className="text-lg font-semibold text-brand-800">{fmtVND(totalVat)} đ</p>
         </div>
         <div className="rounded-xl border bg-white px-4 py-3">
           <p className="text-xs text-gray-500">Tổng cộng</p>
@@ -113,7 +113,7 @@ export default async function BangKeMuaVaoPage({
                   <td className="px-2 py-1.5 font-mono text-gray-500">{r.supplier_tax_code ?? '—'}</td>
                   <td className="px-2 py-1.5 text-gray-600 max-w-[200px] truncate" title={r.noi_dung}>{r.noi_dung || '—'}</td>
                   <td className="px-2 py-1.5 text-right text-gray-700">{fmtVND(r.subtotal)}</td>
-                  <td className="px-2 py-1.5 text-right text-blue-700">{fmtVND(r.vat_amount)}</td>
+                  <td className="px-2 py-1.5 text-right text-brand-800">{fmtVND(r.vat_amount)}</td>
                   <td className="px-2 py-1.5 text-right font-medium text-gray-900">{fmtVND(r.grand_total)}</td>
                   <td className="px-2 py-1.5">
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
@@ -121,7 +121,7 @@ export default async function BangKeMuaVaoPage({
                     </span>
                   </td>
                   <td className="px-2 py-1.5">
-                    <Link href={`/nhap-khau/${r.id}`} className="font-mono text-[10px] text-blue-600 hover:underline">
+                    <Link href={`/nhap-khau/${r.id}`} className="font-mono text-[10px] text-brand-700 hover:underline">
                       {r.order_code}
                     </Link>
                   </td>
@@ -132,7 +132,7 @@ export default async function BangKeMuaVaoPage({
               <tr className="bg-gray-50 font-semibold text-gray-900">
                 <td colSpan={7} className="px-2 py-2 text-right text-xs">Tổng cộng:</td>
                 <td className="px-2 py-2 text-right text-xs">{fmtVND(totalSubtotal)}</td>
-                <td className="px-2 py-2 text-right text-xs text-blue-700">{fmtVND(totalVat)}</td>
+                <td className="px-2 py-2 text-right text-xs text-brand-800">{fmtVND(totalVat)}</td>
                 <td className="px-2 py-2 text-right text-xs">{fmtVND(totalGrand)}</td>
                 <td colSpan={2}></td>
               </tr>

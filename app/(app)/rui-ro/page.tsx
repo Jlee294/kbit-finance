@@ -30,7 +30,7 @@ export default async function RuiRoPage({
           <h1 className="text-xl font-semibold text-gray-900">Sức khỏe tài chính</h1>
           <p className="text-sm text-gray-500 mt-0.5">Chấm điểm rủi ro 5 nhóm chỉ tiêu</p>
         </div>
-        <Link href="/rui-ro/nguong" className="text-sm text-blue-600 hover:underline">
+        <Link href="/rui-ro/nguong" className="text-sm text-brand-700 hover:underline">
           Quản lý ngưỡng →
         </Link>
       </div>

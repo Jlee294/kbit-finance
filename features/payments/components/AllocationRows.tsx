@@ -128,7 +128,7 @@ export function AllocationRows({ rows, orders, totalAmount, onChange }: Props) {
           type="button"
           onClick={addRow}
           disabled={orders.length === 0}
-          className="text-sm text-blue-600 hover:underline disabled:text-gray-400 disabled:no-underline"
+          className="text-sm text-brand-700 hover:underline disabled:text-gray-400 disabled:no-underline"
         >
           + Thêm đơn phân bổ
         </button>
