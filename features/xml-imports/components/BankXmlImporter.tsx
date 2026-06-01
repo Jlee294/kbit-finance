@@ -65,9 +65,19 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
     if (!res.data) return
 
     setResult(res.data)
+    // Auto-suggest TK ngân hàng nếu file match
     if (res.data.bank_account_match) {
       setBankId(res.data.bank_account_match.id)
       setCompanyId(res.data.bank_account_match.company_id)
+    } else {
+      // Nếu chỉ có 1 công ty → tự chọn để bớt thao tác
+      if (companies.length === 1) setCompanyId(companies[0].id)
+      // Nếu chỉ có 1 TK ngân hàng cùng currency → tự chọn
+      const matchingBanks = banks.filter(b => b.currency === res.data!.currency)
+      if (matchingBanks.length === 1) {
+        setBankId(matchingBanks[0].id)
+        setCompanyId(matchingBanks[0].company_id)
+      }
     }
 
     const init: typeof perTxn = {}
@@ -166,13 +176,13 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
   return (
     <div className="space-y-5">
       <form onSubmit={handleParse} className="rounded-xl border bg-white p-4 space-y-3">
-        <div className="space-y-1">
-          <Label>File sao kê Techcombank</Label>
+        <div className="space-y-2">
+          <Label>Chọn file sao kê</Label>
           <Input ref={inputRef} type="file"
             accept=".xlsx,.xls,.csv,.xml,.pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/xml,text/xml,application/pdf"
             className="cursor-pointer" />
           <p className="text-xs text-gray-500">
-            Hỗ trợ <b>Excel</b> (.xlsx/.xls), <b>CSV</b>, <b>XML</b> hoặc <b>PDF</b>. Xuất từ Techcom Business → Truy vấn giao dịch.
+            Nhận Excel, CSV, XML hoặc PDF
           </p>
         </div>
         <Button type="submit" disabled={parsing}>{parsing ? 'Đang đọc…' : 'Đọc file'}</Button>
@@ -198,23 +208,36 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
             </div>
             <div className="flex gap-2">
               <div className="space-y-1">
-                <Label className="text-xs">Công ty *</Label>
+                <Label className="text-xs">Công ty <span className="text-red-500">*</span></Label>
                 <select value={companyId} onChange={(e) => setCompanyId(e.target.value)}
-                  className="h-8 rounded border border-input bg-white px-2 text-xs min-w-[160px]">
-                  <option value="">—</option>
+                  className={`h-8 rounded border bg-white px-2 text-xs min-w-[160px] ${
+                    companyId ? 'border-input' : 'border-red-400 ring-1 ring-red-200'
+                  }`}>
+                  <option value="">— Chọn —</option>
                   {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">TK ngân hàng *</Label>
+                <Label className="text-xs">TK ngân hàng <span className="text-red-500">*</span></Label>
                 <select value={bankId} onChange={(e) => setBankId(e.target.value)}
-                  className="h-8 rounded border border-input bg-white px-2 text-xs min-w-[200px]">
-                  <option value="">—</option>
+                  className={`h-8 rounded border bg-white px-2 text-xs min-w-[200px] ${
+                    bankId ? 'border-input' : 'border-red-400 ring-1 ring-red-200'
+                  }`}>
+                  <option value="">— Chọn —</option>
                   {banks.map(b => <option key={b.id} value={b.id}>{b.name} ({b.currency})</option>)}
                 </select>
               </div>
             </div>
           </div>
+
+          {/* Cảnh báo nếu TK trong file chưa có trong hệ thống */}
+          {result.account_number && !result.bank_account_match && (
+            <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800">
+              ⚠ Số TK <b>{result.account_number}</b> trong file chưa có trong danh mục.
+              Vui lòng chọn TK ngân hàng phù hợp ở trên,
+              hoặc <a href="/danh-muc/tai-khoan-ngan-hang" target="_blank" className="underline font-medium">thêm TK mới</a> rồi tải lại.
+            </div>
+          )}
 
           {/* ── BOX ĐỐI CHIẾU TỔNG ────────────────────────────────────── */}
           <ReconciliationBox rec={reconciliation} currency={result.currency} />
@@ -335,15 +358,21 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
             </table>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             <p className="text-xs text-gray-500">
-              💡 Có thể bấm <b>Tạo</b> ngay cả khi chưa gán KH/NCC. Phiếu thu được lưu với <code>is_unassigned=true</code>,
-              phiếu chi được lưu chưa gắn NCC — bạn vào trang Thu tiền / Chi VN để gán sau.
+              💡 Có thể để trống cột KH/NCC — gán sau ở trang Thu tiền hoặc Chi VN
             </p>
-            <Button onClick={handleCommit} disabled={committing || !bankId || !companyId}
-              className="bg-green-600 hover:bg-green-700">
-              {committing ? 'Đang tạo…' : `Tạo ${Object.values(perTxn).filter(x => x.include).length} giao dịch`}
-            </Button>
+            <div className="flex flex-col items-end gap-1">
+              {(!bankId || !companyId) && (
+                <p className="text-xs text-red-600 font-medium">
+                  ⚠ Chọn Công ty và TK ngân hàng để tiếp tục
+                </p>
+              )}
+              <Button onClick={handleCommit} disabled={committing || !bankId || !companyId}
+                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-300">
+                {committing ? 'Đang tạo…' : `Tạo ${Object.values(perTxn).filter(x => x.include).length} giao dịch`}
+              </Button>
+            </div>
           </div>
         </div>
       )}
@@ -363,8 +392,8 @@ function ReconciliationBox({ rec, currency }: { rec: any; currency: string }) {
 
   return (
     <div className="rounded-xl border-2 border-blue-200 bg-blue-50 p-4 space-y-3">
-      <p className="text-xs font-semibold text-blue-800 uppercase tracking-wider">
-        Đối chiếu tổng với sao kê
+      <p className="text-sm font-semibold text-blue-800">
+        Đối chiếu với sao kê
       </p>
 
       <div className="grid grid-cols-2 gap-4">

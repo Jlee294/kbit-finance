@@ -36,7 +36,7 @@ export default async function ImportBankXmlPage() {
       <div>
         <h1 className="text-xl font-semibold text-gray-900">Import sao kê ngân hàng</h1>
         <p className="text-sm text-gray-500 mt-0.5">
-          Upload sao kê Excel / CSV / XML từ Techcombank Business — hệ thống tự đọc và tạo phiếu thu/chi.
+          Tải file sao kê Techcombank — tự động tạo phiếu thu, chi
         </p>
       </div>
 
