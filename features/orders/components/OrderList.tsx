@@ -27,9 +27,15 @@ export function OrderList({ initialRows, total, canWrite }: Props) {
           <p className="text-sm text-gray-500 mt-0.5">{total.toLocaleString('vi-VN')} đơn / hóa đơn bán ra</p>
         </div>
         {canWrite && (
-          <Button onClick={() => router.push('/don-hang/tao-moi')}>
-            + Tạo đơn hàng
-          </Button>
+          <div className="flex gap-2">
+            <a href="/don-hang/import-xml"
+              className="h-9 px-3 inline-flex items-center text-sm rounded-md border border-input bg-white hover:bg-gray-50">
+              ↥ Import XML
+            </a>
+            <Button onClick={() => router.push('/don-hang/tao-moi')}>
+              + Tạo đơn hàng
+            </Button>
+          </div>
         )}
       </div>
 

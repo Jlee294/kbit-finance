@@ -202,6 +202,217 @@ export async function commitInvoiceImport(input: CommitInvoiceInput): Promise<Ac
 }
 
 // ════════════════════════════════════════════════════════════════════
+//  PHẦN A2 — HÓA ĐƠN BÁN RA (Sales Invoice TT 78)
+// ════════════════════════════════════════════════════════════════════
+//
+// Với hóa đơn bán ra:
+//   NBan = công ty mình (KBIT)
+//   NMua = khách hàng → lookup `customers` theo MST
+// Parser dùng chung parseInvoiceTT78, chỉ khác phần lookup + commit.
+
+export interface SalesInvoiceParseResult extends ParsedInvoice {
+  customer_match: { id: string; code: string; name: string } | null
+  product_matches: { product_id: string | null; product_name: string | null }[]
+}
+
+export async function parseSalesInvoiceFiles(
+  formData: FormData,
+): Promise<ActionResult<SalesInvoiceParseResult[]>> {
+  try {
+    const me = await getCurrentUser()
+    if (!me || !canEdit(me.role)) return { error: 'Không có quyền' }
+
+    const files = formData.getAll('files') as File[]
+    if (files.length === 0) return { error: 'Vui lòng chọn ít nhất 1 file XML' }
+
+    const supabase = await createClient()
+    const results: SalesInvoiceParseResult[] = []
+
+    for (const file of files) {
+      const xml = await file.text()
+      const parsed = parseInvoiceTT78(xml, file.name)
+
+      // Tìm KH theo MST (lưu trong NMua / buyer_tax_code)
+      let customerMatch: SalesInvoiceParseResult['customer_match'] = null
+      if (parsed.buyer_tax_code) {
+        const { data } = await supabase
+          .from('customers')
+          .select('id, code, name')
+          .eq('tax_code', parsed.buyer_tax_code)
+          .maybeSingle()
+        if (data) customerMatch = data
+      }
+
+      // Tìm products theo tên
+      const productMatches = await Promise.all(parsed.items.map(async (it) => {
+        const { data } = await supabase
+          .from('products')
+          .select('id, name')
+          .ilike('name', `%${it.name.slice(0, 50)}%`)
+          .limit(1)
+          .maybeSingle()
+        return data
+          ? { product_id: data.id, product_name: data.name }
+          : { product_id: null, product_name: null }
+      }))
+
+      results.push({
+        ...parsed,
+        customer_match: customerMatch,
+        product_matches: productMatches,
+      })
+    }
+
+    return { data: results }
+  } catch (err) {
+    console.error('[parseSalesInvoiceFiles]', err)
+    return { error: err instanceof Error ? err.message : 'Lỗi parse XML' }
+  }
+}
+
+export interface CommitSalesInvoiceInput {
+  parsed: ParsedInvoice
+  company_id: string
+  project_id?: string | null
+  warehouse_id?: string | null      // kho xuất hàng (sẽ tự trừ kho nếu có)
+  nhan_su_thuc_hien?: string | null
+  item_product_ids: (string | null)[]
+  create_customer?: {
+    code: string
+    name: string
+    tax_code: string
+  } | null
+  existing_customer_id?: string | null
+}
+
+export async function commitSalesInvoiceImport(
+  input: CommitSalesInvoiceInput,
+): Promise<ActionResult<{ orderId: string }>> {
+  try {
+    const me = await getCurrentUser()
+    if (!me || !canEdit(me.role)) return { error: 'Không có quyền' }
+    const supabase = await createClient()
+
+    // 1. Resolve customer_id
+    let customerId = input.existing_customer_id ?? null
+    if (!customerId && input.create_customer) {
+      const { data: newCust, error: cErr } = await supabase
+        .from('customers')
+        .insert({
+          code:     input.create_customer.code,
+          name:     input.create_customer.name,
+          tax_code: input.create_customer.tax_code,
+          is_active: true,
+        })
+        .select('id')
+        .single()
+      if (cErr) return { error: 'Không tạo được KH: ' + cErr.message }
+      customerId = newCust.id
+    }
+    if (!customerId) return { error: 'Chưa có KH cho hóa đơn này' }
+
+    // 2. Build items với product_id (nếu có)
+    const items = input.parsed.items.map((it, i) => ({
+      product_id:  input.item_product_ids[i] ?? null,
+      description: it.name,
+      qty:         it.qty,
+      unit_price:  it.unit_price,
+      lot_no:      null,
+      expiry_date: null,
+    }))
+
+    // 3. Tính totals
+    const grandTotal = input.parsed.grand_total
+    const vatPct = input.parsed.subtotal > 0
+      ? Math.round((input.parsed.vat_amount / input.parsed.subtotal) * 1000) / 10
+      : 0
+
+    // 4. Lấy customer code để build order_code
+    const { data: cust } = await supabase
+      .from('customers').select('code').eq('id', customerId).single()
+    if (!cust) return { error: 'KH không tồn tại' }
+
+    const orderCode = `HD-${input.parsed.invoice_symbol ?? ''}-${input.parsed.invoice_no ?? ''}`.replace(/--/g, '-').slice(0, 60) || `HD-${Date.now()}`
+
+    // 5. Insert customer_orders
+    const { data: order, error: oErr } = await supabase
+      .from('customer_orders')
+      .insert({
+        company_id:  input.company_id,
+        project_id:  input.project_id ?? null,
+        customer_id: customerId,
+        order_code:  orderCode,
+        order_date:  input.parsed.invoice_date ?? new Date().toISOString().slice(0,10),
+        delivery_date: input.parsed.invoice_date ?? null,
+        grand_total: grandTotal,
+        amount_paid: 0,
+        fulfillment_status: 'delivered',  // import từ XML thường là đã giao
+        payment_status:     'unpaid',
+        vat_pct:     vatPct,
+        // Invoice fields
+        invoice_template:  input.parsed.invoice_template,
+        invoice_symbol:    input.parsed.invoice_symbol,
+        invoice_no:        input.parsed.invoice_no,
+        invoice_date:      input.parsed.invoice_date,
+        customer_tax_code: input.parsed.buyer_tax_code,
+        vat_amount:        input.parsed.vat_amount,
+        warehouse_id:      input.warehouse_id ?? null,
+        nhan_su_thuc_hien: input.nhan_su_thuc_hien ?? null,
+        created_by:        me.id,
+      })
+      .select('id')
+      .single()
+    if (oErr) return { error: 'Không tạo được đơn: ' + oErr.message }
+
+    // 6. Insert items
+    const { error: iErr } = await supabase
+      .from('customer_order_items')
+      .insert(items.map(it => ({ ...it, order_id: order.id })))
+    if (iErr) {
+      await supabase.from('customer_orders').delete().eq('id', order.id)
+      return { error: 'Không tạo được dòng hàng: ' + iErr.message }
+    }
+
+    // 7. Tự trừ kho nếu có warehouse_id
+    if (input.warehouse_id) {
+      const stockItems = items
+        .filter(it => !!it.product_id)
+        .map(it => ({ product_id: it.product_id!, quantity: it.qty }))
+      if (stockItems.length > 0) {
+        for (const si of stockItems) {
+          const { error: rpcErr } = await supabase.rpc('kbit_adjust_stock', {
+            p_warehouse_id: input.warehouse_id,
+            p_product_id:   si.product_id,
+            p_delta:        -si.quantity,    // âm = xuất kho
+          })
+          if (rpcErr) {
+            console.error('[stock deduct]', rpcErr.message)
+            continue
+          }
+          await supabase.from('warehouse_transactions').insert({
+            txn_type:     'order_deduction',
+            warehouse_id: input.warehouse_id,
+            product_id:   si.product_id,
+            qty:          si.quantity,
+            txn_date:     input.parsed.invoice_date ?? new Date().toISOString().slice(0,10),
+            ref_order_id: order.id,
+            note:         `Xuất từ XML HĐ ${input.parsed.invoice_no ?? ''}`,
+          })
+        }
+        await supabase.from('customer_orders').update({ stock_deducted: true }).eq('id', order.id)
+      }
+    }
+
+    revalidatePath('/don-hang')
+    revalidatePath('/bang-ke-ban-ra')
+    revalidatePath('/kho')
+    return { data: { orderId: order.id } }
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Lỗi không xác định' }
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
 //  PHẦN B — SAO KÊ NGÂN HÀNG (Techcombank XML)
 // ════════════════════════════════════════════════════════════════════
 
