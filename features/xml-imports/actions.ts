@@ -6,6 +6,7 @@ import { getCurrentUser, canEdit } from '@/lib/auth'
 import { parseInvoiceTT78, type ParsedInvoice } from '@/lib/xml/invoice-tt78'
 import { parseBankTechcomXml, type ParsedBankStatement } from '@/lib/xml/bank-techcom'
 import { parseBankExcelBuffer, parseBankCsvText } from '@/lib/xml/bank-techcom-table'
+import { parseBankTechcomPdf } from '@/lib/xml/bank-techcom-pdf'
 
 export interface ActionResult<T = void> { error?: string; data?: T }
 
@@ -446,8 +447,11 @@ export async function parseBankXmlFile(
     } else if (name.endsWith('.xml')) {
       const xml = await file.text()
       parsed = parseBankTechcomXml(xml, file.name)
+    } else if (name.endsWith('.pdf')) {
+      const buf = await file.arrayBuffer()
+      parsed = await parseBankTechcomPdf(buf, file.name)
     } else {
-      return { error: 'Chỉ hỗ trợ file .xlsx / .xls / .csv / .xml' }
+      return { error: 'Chỉ hỗ trợ file .xlsx / .xls / .csv / .xml / .pdf' }
     }
 
     // Tìm tài khoản ngân hàng theo số tk

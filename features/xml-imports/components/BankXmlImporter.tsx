@@ -123,10 +123,10 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
         <div className="space-y-1">
           <Label>File sao kê Techcombank</Label>
           <Input ref={inputRef} type="file"
-            accept=".xlsx,.xls,.csv,.xml,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/xml,text/xml"
+            accept=".xlsx,.xls,.csv,.xml,.pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/xml,text/xml,application/pdf"
             className="cursor-pointer" />
           <p className="text-xs text-gray-500">
-            Hỗ trợ <b>Excel (.xlsx/.xls)</b>, <b>CSV (.csv)</b> hoặc <b>XML</b>. Xuất từ Techcom Business → Truy vấn giao dịch → tải Excel/CSV (không phải PDF).
+            Hỗ trợ <b>Excel</b> (.xlsx/.xls), <b>CSV</b>, <b>XML</b> hoặc <b>PDF</b>. Xuất từ Techcom Business → Truy vấn giao dịch → tải file.
           </p>
         </div>
         <Button type="submit" disabled={parsing}>{parsing ? 'Đang đọc…' : 'Đọc file'}</Button>
