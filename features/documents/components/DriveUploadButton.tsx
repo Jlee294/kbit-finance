@@ -104,8 +104,8 @@ export function DriveUploadButton({
     if (!fileId) return
 
     // ── Bước 3: Lưu metadata vào DB qua Server Action ─────────────────────
-    const fileUrl = `https://drive.google.com/file/d/${fileId}/view`
-
+    // KHÔNG lưu URL Drive trực tiếp — chỉ lưu drive_file_id.
+    // User truy cập qua /api/files/[docId] proxy (có authen + audit log).
     startTx(async () => {
       try {
         const docId = await uploadDocument({
@@ -113,7 +113,8 @@ export function DriveUploadButton({
           entity_type:      entityType,
           entity_id:        entityId,
           file_name:        file.name,
-          file_url:         fileUrl,
+          drive_file_id:    fileId,
+          file_url:         null,
         })
         setProgress(null)
         onDone?.(docId)

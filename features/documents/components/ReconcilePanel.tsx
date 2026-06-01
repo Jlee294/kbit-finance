@@ -112,8 +112,8 @@ export function ReconcilePanel({
                     </span>
                   </td>
                   <td className="py-2 pr-3 text-gray-700">
-                    {doc.file_url ? (
-                      <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
+                    {doc.drive_file_id || doc.file_url ? (
+                      <a href={`/api/files/${doc.id}`} target="_blank" rel="noopener noreferrer"
                         className="hover:underline text-blue-600">
                         {doc.file_name}
                       </a>

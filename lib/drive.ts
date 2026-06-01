@@ -133,8 +133,43 @@ export async function getFileWebViewLink(fileId: string): Promise<string> {
 }
 
 /**
+ * Lấy metadata file (name, mimeType, size) để proxy stream.
+ */
+export async function getFileMetadata(fileId: string): Promise<{
+  name: string
+  mimeType: string
+  size: string
+} | null> {
+  const token = await getAccessToken(DRIVE_SCOPE)
+  const res = await driveGet(`/files/${fileId}?fields=name,mimeType,size`, token)
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error(`Drive: lấy metadata thất bại (${res.status})`)
+  return await res.json() as { name: string; mimeType: string; size: string }
+}
+
+/**
+ * Stream file content từ Drive về (dùng cho proxy endpoint).
+ * Trả về Response object — caller có thể pipe body sang client.
+ *
+ * Bảo mật: chỉ Service Account access được file → server đóng vai trò
+ * gatekeeper, đã verify user authen + có quyền xem trước khi gọi.
+ */
+export async function downloadFile(fileId: string): Promise<Response> {
+  const token = await getAccessToken(DRIVE_SCOPE)
+  const res = await fetch(`${API}/files/${fileId}?alt=media`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!res.ok) throw new Error(`Drive: download thất bại (${res.status})`)
+  return res
+}
+
+/**
  * Chia sẻ file với user cụ thể (type=user, role=reader).
  * Lưu ý: KHÔNG dùng type=anyone — giữ tài liệu riêng tư trong org.
+ *
+ * NOTE: Với architecture Proxy (Cách 2), KHÔNG cần share với user nữa —
+ * vì proxy endpoint /api/files/[id] đã handle authen + stream.
+ * Function này giữ lại cho trường hợp cần grant access đặc biệt.
  */
 export async function shareWithUser(fileId: string, email: string): Promise<void> {
   const token = await getAccessToken(DRIVE_SCOPE)

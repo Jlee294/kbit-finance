@@ -7,7 +7,9 @@ export interface Document {
   entity_type: DocEntityType
   entity_id: string
   file_name: string
+  /** @deprecated — chỉ giữ tương thích ngược. UI mới dùng /api/files/[id]. */
   file_url: string | null
+  drive_file_id: string | null
   is_verified: boolean
   verified_by: string | null
   uploaded_by: string | null

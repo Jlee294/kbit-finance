@@ -28,6 +28,7 @@ export async function uploadDocument(input: unknown): Promise<string> {
       entity_id: data.entity_id,
       file_name: data.file_name,
       file_url: data.file_url ?? null,
+      drive_file_id: data.drive_file_id ?? null,
       uploaded_by: uploadedById,
     })
     .select('id')
