@@ -42,6 +42,15 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
     note: string
   }>>({})
 
+  /** Tìm KH/NCC khớp tên đối ứng nhất (simple substring match) */
+  function findMatch(counterpart: string | null, list: { id: string; name: string }[]): string {
+    if (!counterpart) return ''
+    const cp = counterpart.toLowerCase()
+    // Exact substring match
+    const hit = list.find(x => cp.includes(x.name.toLowerCase()) || x.name.toLowerCase().includes(cp.slice(0, 20)))
+    return hit?.id ?? ''
+  }
+
   async function handleParse(e: React.FormEvent) {
     e.preventDefault()
     if (!inputRef.current?.files?.[0]) { setError('Chọn file'); return }
@@ -63,11 +72,13 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
 
     const init: typeof perTxn = {}
     res.data.txns.forEach((t, i) => {
+      const direction = t.credit > 0 ? 'thu' : 'chi'
       init[i] = {
         include: true,
-        direction: t.credit > 0 ? 'thu' : 'chi',
-        customer_id: '',
-        supplier_id: '',
+        direction,
+        // Auto-suggest match từ tên đối ứng
+        customer_id: direction === 'thu' ? findMatch(t.counterpart, customers) : '',
+        supplier_id: direction === 'chi' ? findMatch(t.counterpart, suppliers) : '',
         note: t.description,
       }
     })
@@ -115,7 +126,7 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
             accept=".xlsx,.xls,.csv,.xml,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/xml,text/xml"
             className="cursor-pointer" />
           <p className="text-xs text-gray-500">
-            Hỗ trợ <b>Excel (.xlsx/.xls)</b>, <b>CSV (.csv)</b> hoặc <b>XML</b>. Xuất từ Techcom Business → Báo cáo → Sao kê.
+            Hỗ trợ <b>Excel (.xlsx/.xls)</b>, <b>CSV (.csv)</b> hoặc <b>XML</b>. Xuất từ Techcom Business → Truy vấn giao dịch → tải Excel/CSV (không phải PDF).
           </p>
         </div>
         <Button type="submit" disabled={parsing}>{parsing ? 'Đang đọc…' : 'Đọc file'}</Button>
@@ -174,6 +185,7 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
                       setPerTxn(p => Object.fromEntries(Object.entries(p).map(([k, v]) => [k, { ...v, include: c }])))
                     }} /></th>
                   <th className="px-2 py-2 text-left">Ngày</th>
+                  <th className="px-2 py-2 text-left">Đối ứng</th>
                   <th className="px-2 py-2 text-left">Diễn giải</th>
                   <th className="px-2 py-2 text-right">Chi (Nợ)</th>
                   <th className="px-2 py-2 text-right">Thu (Có)</th>
@@ -192,6 +204,9 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
                           onChange={(e) => setPerTxn(p => ({ ...p, [i]: { ...ctrl, include: e.target.checked } }))} />
                       </td>
                       <td className="px-2 py-1.5 text-gray-600">{t.txn_date}</td>
+                      <td className="px-2 py-1.5 text-gray-600 text-[11px] max-w-[200px] truncate" title={t.counterpart ?? ''}>
+                        {t.counterpart ?? '—'}
+                      </td>
                       <td className="px-2 py-1.5 text-gray-700">
                         <input value={ctrl.note}
                           onChange={(e) => setPerTxn(p => ({ ...p, [i]: { ...ctrl, note: e.target.value } }))}
