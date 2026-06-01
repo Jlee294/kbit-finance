@@ -10,17 +10,19 @@ import { createCashEntry, updateCashEntry, deleteCashEntry } from '../actions'
 import type { CashRow } from '../queries'
 
 type SimpleOption = { id: string; name: string }
+type UserOption   = { id: string; name: string }
 
 interface Props {
   rows:      CashRow[]
   companies: SimpleOption[]
+  users:     UserOption[]
   canWrite:  boolean
 }
 
 function fmtVND(v: number) { return v.toLocaleString('vi-VN') + ' đ' }
 function fmtDate(s: string) { return new Date(s).toLocaleDateString('vi-VN') }
 
-export function CashBookTable({ rows, companies, canWrite }: Props) {
+export function CashBookTable({ rows, companies, users, canWrite }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<CashRow | undefined>()
@@ -126,6 +128,7 @@ export function CashBookTable({ rows, companies, canWrite }: Props) {
           <CashForm
             initial={editing}
             companies={companies}
+            users={users}
             onDone={() => { setOpen(false); router.refresh() }}
           />
         </DialogContent>
@@ -136,9 +139,10 @@ export function CashBookTable({ rows, companies, canWrite }: Props) {
 
 // ── Inline form ─────────────────────────────────────────────────────────────
 
-function CashForm({ initial, companies, onDone }: {
+function CashForm({ initial, companies, users, onDone }: {
   initial?: CashRow
   companies: SimpleOption[]
+  users: UserOption[]
   onDone: () => void
 }) {
   const [companyId,  setCompanyId]  = useState(initial?.company_id ?? companies[0]?.id ?? '')
@@ -152,6 +156,11 @@ function CashForm({ initial, companies, onDone }: {
   const [ghiChu,     setGhiChu]     = useState(initial?.ghi_chu ?? '')
   const [no,         setNo]         = useState(initial?.dinh_khoan_no ?? '')
   const [co,         setCo]         = useState(initial?.dinh_khoan_co ?? '')
+  const [nhanSuId,   setNhanSuId]   = useState(initial?.nhan_su_thuc_hien ?? '')
+  const [isChiHo,    setIsChiHo]    = useState(initial?.is_chi_ho ?? false)
+  const [chiHoPerson, setChiHoPerson] = useState(initial?.chi_ho_person ?? '')
+  const [isThuHo,    setIsThuHo]    = useState(initial?.is_thu_ho ?? false)
+  const [thuHoPerson, setThuHoPerson] = useState(initial?.thu_ho_person ?? '')
   const [error, setError]   = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -164,6 +173,9 @@ function CashForm({ initial, companies, onDone }: {
       noi_dung: noiDung, so_tien: parseFloat(soTien) || 0,
       direction, ghi_chu: ghiChu || null,
       dinh_khoan_no: no || null, dinh_khoan_co: co || null,
+      nhan_su_thuc_hien: nhanSuId || null,
+      is_chi_ho: isChiHo, chi_ho_person: isChiHo ? (chiHoPerson || null) : null,
+      is_thu_ho: isThuHo, thu_ho_person: isThuHo ? (thuHoPerson || null) : null,
     }
     const r = initial?.id
       ? await updateCashEntry(initial.id, payload)
@@ -229,9 +241,47 @@ function CashForm({ initial, companies, onDone }: {
         </div>
       </div>
 
-      <div className="space-y-1">
-        <Label>Ghi chú</Label>
-        <Input value={ghiChu} onChange={(e) => setGhiChu(e.target.value)} />
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <Label>Nhân sự thực hiện</Label>
+          <select value={nhanSuId} onChange={(e) => setNhanSuId(e.target.value)}
+            className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm">
+            <option value="">— Không chọn —</option>
+            {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <Label>Ghi chú</Label>
+          <Input value={ghiChu} onChange={(e) => setGhiChu(e.target.value)} />
+        </div>
+      </div>
+
+      {/* Thu hộ / Chi hộ */}
+      <div className="rounded-lg border bg-amber-50 px-3 py-2 space-y-2">
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={isChiHo}
+              onChange={(e) => { setIsChiHo(e.target.checked); if (!e.target.checked) setChiHoPerson('') }}
+              className="h-4 w-4" />
+            <span>Chi hộ</span>
+          </label>
+          {isChiHo && (
+            <Input value={chiHoPerson} onChange={(e) => setChiHoPerson(e.target.value)}
+              placeholder="Tên người được chi hộ" className="h-8 text-sm flex-1 min-w-[200px]" required={isChiHo} />
+          )}
+        </div>
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={isThuHo}
+              onChange={(e) => { setIsThuHo(e.target.checked); if (!e.target.checked) setThuHoPerson('') }}
+              className="h-4 w-4" />
+            <span>Thu hộ</span>
+          </label>
+          {isThuHo && (
+            <Input value={thuHoPerson} onChange={(e) => setThuHoPerson(e.target.value)}
+              placeholder="Tên người được thu hộ" className="h-8 text-sm flex-1 min-w-[200px]" required={isThuHo} />
+          )}
+        </div>
       </div>
 
       {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}

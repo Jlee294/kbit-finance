@@ -5,6 +5,7 @@ import { listCustomers } from '@/features/customers/queries'
 import { listProjects } from '@/features/projects/queries'
 import { listProducts } from '@/features/products/queries'
 import { listWarehouses } from '@/features/warehouse/queries'
+import { listUsers } from '@/features/users/queries'
 import { OrderForm } from '@/features/orders/components/OrderForm'
 
 export const dynamic = 'force-dynamic'
@@ -13,12 +14,13 @@ export default async function NewOrderPage() {
   const me = await getCurrentUser()
   if (!me || !canEdit(me.role)) redirect('/don-hang')
 
-  const [companies, customers, projects, products, warehouses] = await Promise.all([
+  const [companies, customers, projects, products, warehouses, users] = await Promise.all([
     listCompanies(),
     listCustomers(),
     listProjects(),
     listProducts(),
     listWarehouses(),
+    listUsers(),
   ])
 
   return (
@@ -35,6 +37,7 @@ export default async function NewOrderPage() {
           projects={projects.map((p) => ({ id: p.id, code: p.code, name: p.name, company_id: p.company_id }))}
           products={products.map((p) => ({ id: p.id, code: p.code, name: p.name }))}
           warehouses={warehouses.map((w) => ({ id: w.id, code: w.code, name: w.name }))}
+          users={users.map((u) => ({ id: u.id, name: u.full_name }))}
         />
       </div>
     </div>

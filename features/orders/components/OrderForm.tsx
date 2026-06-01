@@ -18,6 +18,7 @@ type CustomerOption  = { id: string; code: string; name: string }
 type ProjectOption   = { id: string; code: string; name: string; company_id: string }
 type ProductOption   = { id: string; code: string; name: string }
 type WarehouseOption = { id: string; code: string; name: string }
+type UserOption      = { id: string; name: string }
 
 interface Props {
   companies:  SimpleOption[]
@@ -25,6 +26,7 @@ interface Props {
   projects:   ProjectOption[]
   products:   ProductOption[]
   warehouses: WarehouseOption[]
+  users?:     UserOption[]
   initial?:   OrderDetail
   onDone?:    () => void
 }
@@ -56,7 +58,7 @@ function newRow(): ItemRow {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export function OrderForm({ companies, customers, projects, products, warehouses, initial, onDone }: Props) {
+export function OrderForm({ companies, customers, projects, products, warehouses, users = [], initial, onDone }: Props) {
   const router  = useRouter()
   const isEdit  = !!initial?.id
 
@@ -83,6 +85,7 @@ export function OrderForm({ companies, customers, projects, products, warehouses
   const [vatAmount,       setVatAmount]       = useState(initial?.vat_amount != null ? String(initial.vat_amount) : '')
   const [dinhKhoanNo,     setDinhKhoanNo]     = useState(initial?.dinh_khoan_no     ?? '')
   const [dinhKhoanCo,     setDinhKhoanCo]     = useState(initial?.dinh_khoan_co     ?? '')
+  const [nhanSuId,        setNhanSuId]        = useState(initial?.nhan_su_thuc_hien ?? '')
 
   // ── Charge state ─────────────────────────────────────────────────────────
   const [discountPct,  setDiscountPct]  = useState(String(initial?.discount_pct  ?? 0))
@@ -172,6 +175,7 @@ export function OrderForm({ companies, customers, projects, products, warehouses
         vat_amount:        vatAmount ? parseFloat(vatAmount) : null,
         dinh_khoan_no:     dinhKhoanNo      || null,
         dinh_khoan_co:     dinhKhoanCo      || null,
+        nhan_su_thuc_hien: nhanSuId         || null,
         items: items.map((it) => ({
           product_id:  it.product_id  || null,
           description: it.description || null,
@@ -255,6 +259,16 @@ export function OrderForm({ companies, customers, projects, products, warehouses
           <Input type="date" value={deliveryDate}
             onChange={(e) => setDeliveryDate(e.target.value)} />
         </div>
+
+        {users.length > 0 && (
+          <div className="space-y-1 col-span-2">
+            <Label>Nhân sự thực hiện <span className="text-xs text-gray-400 font-normal">(người chốt đơn / giao hàng)</span></Label>
+            <select value={nhanSuId} onChange={(e) => setNhanSuId(e.target.value)} className={sel}>
+              <option value="">— Không gán —</option>
+              {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+            </select>
+          </div>
+        )}
 
         <div className="space-y-1">
           <Label>Số lô đơn hàng (Lot No.)</Label>

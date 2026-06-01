@@ -33,6 +33,9 @@ export type ImportOrderDetail = ImportOrderRow & {
   vat_amount:        number | null
   dinh_khoan_no:     string | null
   dinh_khoan_co:     string | null
+  nhan_su_thuc_hien: string | null
+  warehouse_id:      string | null
+  stock_added:       boolean
   supplier_order_items: ImportItemRow[]
 }
 
@@ -79,6 +82,7 @@ export async function getImportOrder(id: string): Promise<ImportOrderDetail> {
       company_id, supplier_id, project_id, counterpart_company_id,
       invoice_template, invoice_symbol, invoice_no, invoice_date,
       supplier_tax_code, vat_amount, dinh_khoan_no, dinh_khoan_co,
+      nhan_su_thuc_hien, warehouse_id, stock_added,
       suppliers!supplier_id(name, code),
       companies!company_id(name),
       supplier_order_items(

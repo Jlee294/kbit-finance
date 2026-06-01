@@ -7,6 +7,7 @@ import { listCustomers } from '@/features/customers/queries'
 import { listProjects } from '@/features/projects/queries'
 import { listProducts } from '@/features/products/queries'
 import { listWarehouses } from '@/features/warehouse/queries'
+import { listUsers } from '@/features/users/queries'
 import { FulfillmentBadge, PaymentBadge } from '@/features/orders/components/StatusBadges'
 import { OrderDetailActions } from '@/features/orders/components/OrderDetailActions'
 import { computeOrderTotals } from '@/features/orders/status'
@@ -28,9 +29,9 @@ export default async function OrderDetailPage({ params }: Props) {
   const approve = !!me && canApprove(me.role)
 
   // Fetch master data only when user can edit (for the edit form)
-  const [companies, customers, projects, products, warehouses] = write
-    ? await Promise.all([listCompanies(), listCustomers(), listProjects(), listProducts(), listWarehouses()])
-    : [[], [], [], [], []]
+  const [companies, customers, projects, products, warehouses, users] = write
+    ? await Promise.all([listCompanies(), listCustomers(), listProjects(), listProducts(), listWarehouses(), listUsers()])
+    : [[], [], [], [], [], []]
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -190,6 +191,7 @@ export default async function OrderDetailPage({ params }: Props) {
         projects={projects.map((p) => ({ id: p.id, code: p.code, name: p.name, company_id: p.company_id }))}
         products={products.map((p) => ({ id: p.id, code: p.code, name: p.name }))}
         warehouses={warehouses.map((w) => ({ id: w.id, code: w.code, name: w.name }))}
+        users={users.map((u) => ({ id: u.id, name: u.full_name }))}
       />
     </div>
   )

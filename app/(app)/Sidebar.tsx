@@ -9,6 +9,7 @@ const navGroups = [
     label: 'Tổng quan',
     items: [
       { href: '/bao-cao',          label: 'Báo cáo'         },
+      { href: '/cong-no',          label: 'Công nợ'         },
       { href: '/bang-ke-ban-ra',   label: 'Bảng kê bán ra'  },
       { href: '/bang-ke-mua-vao',  label: 'Bảng kê mua vào' },
       { href: '/rui-ro',           label: 'Sức khỏe'        },

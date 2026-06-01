@@ -40,6 +40,7 @@ export type OrderDetail = OrderListRow & {
   vat_amount:        number | null
   dinh_khoan_no:     string | null
   dinh_khoan_co:     string | null
+  nhan_su_thuc_hien: string | null
   items: OrderItem[]
 }
 
@@ -137,6 +138,7 @@ export async function getOrder(id: string): Promise<OrderDetail | null> {
        warehouse_id, stock_deducted,
        invoice_template, invoice_symbol, invoice_no, invoice_date,
        customer_tax_code, vat_amount, dinh_khoan_no, dinh_khoan_co,
+       nhan_su_thuc_hien,
        created_at,
        customer:customers!customer_id(id, code, name),
        company:companies!company_id(id, name),

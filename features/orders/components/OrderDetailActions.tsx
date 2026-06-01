@@ -13,6 +13,7 @@ type CustomerOption  = { id: string; code: string; name: string }
 type ProjectOption   = { id: string; code: string; name: string; company_id: string }
 type ProductOption   = { id: string; code: string; name: string }
 type WarehouseOption = { id: string; code: string; name: string }
+type UserOption      = { id: string; name: string }
 
 interface Props {
   order: OrderDetail
@@ -23,6 +24,7 @@ interface Props {
   projects: ProjectOption[]
   products: ProductOption[]
   warehouses: WarehouseOption[]
+  users: UserOption[]
 }
 
 // Fulfillment transitions: what a button should advance to
@@ -41,7 +43,7 @@ const NEXT_LABEL: Record<string, string> = {
 
 export function OrderDetailActions({
   order, canWrite, canApprove,
-  companies, customers, projects, products, warehouses,
+  companies, customers, projects, products, warehouses, users,
 }: Props) {
   const router = useRouter()
   const [editOpen, setEditOpen]   = useState(false)
@@ -126,6 +128,7 @@ export function OrderDetailActions({
             projects={projects}
             products={products}
             warehouses={warehouses}
+            users={users}
             onDone={() => { setEditOpen(false); router.refresh() }}
           />
         </DialogContent>

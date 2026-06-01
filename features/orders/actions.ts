@@ -96,6 +96,7 @@ export async function createOrder(raw: CreateOrderInput) {
         vat_amount:        input.vat_amount        ?? null,
         dinh_khoan_no:     input.dinh_khoan_no     ?? null,
         dinh_khoan_co:     input.dinh_khoan_co     ?? null,
+        nhan_su_thuc_hien: input.nhan_su_thuc_hien ?? null,
         created_by: user.id,
       })
       .select('id, order_code')
@@ -216,6 +217,7 @@ export async function updateOrder(id: string, raw: UpdateOrderInput) {
       vat_amount:        input.vat_amount        ?? null,
       dinh_khoan_no:     input.dinh_khoan_no     ?? null,
       dinh_khoan_co:     input.dinh_khoan_co     ?? null,
+      nhan_su_thuc_hien: input.nhan_su_thuc_hien ?? null,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)

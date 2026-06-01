@@ -17,6 +17,17 @@ export const cashBookSchema = z.object({
   ghi_chu:       z.string().optional().nullable(),
   dinh_khoan_no: z.string().optional().nullable(),
   dinh_khoan_co: z.string().optional().nullable(),
-})
+  nhan_su_thuc_hien: z.string().uuid().optional().nullable(),
+  is_chi_ho:     z.boolean().default(false),
+  chi_ho_person: z.string().optional().nullable(),
+  is_thu_ho:     z.boolean().default(false),
+  thu_ho_person: z.string().optional().nullable(),
+}).refine(
+  (d) => !d.is_chi_ho || (d.chi_ho_person && d.chi_ho_person.trim() !== ''),
+  { message: 'Nhập tên người được chi hộ', path: ['chi_ho_person'] },
+).refine(
+  (d) => !d.is_thu_ho || (d.thu_ho_person && d.thu_ho_person.trim() !== ''),
+  { message: 'Nhập tên người được thu hộ', path: ['thu_ho_person'] },
+)
 
 export type CashBookInput = z.infer<typeof cashBookSchema>

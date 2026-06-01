@@ -45,7 +45,37 @@ export async function createImportOrder(input: unknown): Promise<string> {
   const { error: e2 } = await supabase.from('supplier_order_items').insert(rows)
   if (e2) throw new Error(e2.message)
 
+  // Tự động cộng tồn kho nếu có chọn kho nhập
+  if (data.warehouse_id) {
+    for (const it of items) {
+      if (!it.product_id) continue
+      const { error: rpcErr } = await supabase.rpc('kbit_adjust_stock', {
+        p_warehouse_id: data.warehouse_id,
+        p_product_id:   it.product_id,
+        p_delta:        it.qty,   // dương = nhập kho
+      })
+      if (rpcErr) {
+        // Rollback ngược lại các SP đã cộng (best-effort)
+        console.error('[stock add fail]', rpcErr.message)
+        // Vẫn rollback đơn vừa tạo cho đồng bộ
+        await supabase.from('supplier_order_items').delete().eq('order_id', order.id)
+        await supabase.from('supplier_orders').delete().eq('id', order.id)
+        throw new Error(`Không cộng được tồn kho: ${rpcErr.message}`)
+      }
+      await supabase.from('warehouse_transactions').insert({
+        txn_type:     'receipt',
+        warehouse_id: data.warehouse_id,
+        product_id:   it.product_id,
+        qty:          it.qty,
+        txn_date:     data.order_date,
+        note:         `Nhập từ đơn ${order.id}`,
+      })
+    }
+    await supabase.from('supplier_orders').update({ stock_added: true }).eq('id', order.id)
+  }
+
   revalidatePath('/nhap-khau')
+  revalidatePath('/kho')
   return order.id
 }
 

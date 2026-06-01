@@ -12,17 +12,21 @@ type SimpleOption  = { id: string; name: string }
 type SupplierOpt   = { id: string; code: string; name: string }
 type ProductOpt    = { id: string; code: string; name: string; unit?: string | null }
 type ProjectOpt    = { id: string; code: string; name: string; company_id: string }
+type UserOpt       = { id: string; name: string }
+type WarehouseOpt  = { id: string; code: string; name: string }
 
 interface Props {
-  rows:      ImportOrderRow[]
-  canWrite:  boolean
-  companies: SimpleOption[]
-  suppliers: SupplierOpt[]
-  products:  ProductOpt[]
-  projects:  ProjectOpt[]
+  rows:        ImportOrderRow[]
+  canWrite:    boolean
+  companies:   SimpleOption[]
+  suppliers:   SupplierOpt[]
+  products:    ProductOpt[]
+  projects:    ProjectOpt[]
+  users?:      UserOpt[]
+  warehouses?: WarehouseOpt[]
 }
 
-export function ImportOrderTable({ rows, canWrite, companies, suppliers, products, projects }: Props) {
+export function ImportOrderTable({ rows, canWrite, companies, suppliers, products, projects, users = [], warehouses = [] }: Props) {
   const router = useRouter()
   const [addOpen, setAddOpen] = useState(false)
 
@@ -46,6 +50,7 @@ export function ImportOrderTable({ rows, canWrite, companies, suppliers, product
           <ImportOrderForm
             companies={companies} suppliers={suppliers}
             products={products} projects={projects}
+            users={users} warehouses={warehouses}
             onDone={() => setAddOpen(false)}
           />
         </DialogContent>

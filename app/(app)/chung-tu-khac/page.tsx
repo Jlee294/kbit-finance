@@ -1,6 +1,7 @@
 import { getCurrentUser, canEdit } from '@/lib/auth'
 import { listCashBook } from '@/features/cash-book/queries'
 import { listCompanies } from '@/features/companies/queries'
+import { listUsers } from '@/features/users/queries'
 import { CashBookTable } from '@/features/cash-book/components/CashBookTable'
 
 export const dynamic = 'force-dynamic'
@@ -11,7 +12,7 @@ export default async function ChungTuKhacPage({
   searchParams: Promise<{ company?: string; type?: string; from?: string; to?: string }>
 }) {
   const sp = await searchParams
-  const [me, rows, companies] = await Promise.all([
+  const [me, rows, companies, users] = await Promise.all([
     getCurrentUser(),
     listCashBook({
       companyId: sp.company || undefined,
@@ -21,6 +22,7 @@ export default async function ChungTuKhacPage({
       limit:     500,
     }),
     listCompanies(),
+    listUsers(),
   ])
 
   const canWrite = !!me && canEdit(me.role)
@@ -71,6 +73,7 @@ export default async function ChungTuKhacPage({
       <CashBookTable
         rows={rows}
         companies={companies.map(c => ({ id: c.id, name: c.name }))}
+        users={users.map(u => ({ id: u.id, name: u.full_name }))}
         canWrite={canWrite}
       />
     </div>

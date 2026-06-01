@@ -1,20 +1,26 @@
 import { createClient } from '@/lib/supabase/server'
 
 export interface CashRow {
-  id:             string
-  ky_hieu:        string | null
-  txn_date:       string
-  doi_tac:        string | null
-  ma_doi_tac:     string | null
-  noi_dung:       string
-  so_tien:        number
-  direction:      'thu' | 'chi'
-  ghi_chu:        string | null
-  dinh_khoan_no:  string | null
-  dinh_khoan_co:  string | null
-  status:         string
-  company_id:     string
-  company_name:   string | null
+  id:                string
+  ky_hieu:           string | null
+  txn_date:          string
+  doi_tac:           string | null
+  ma_doi_tac:        string | null
+  noi_dung:          string
+  so_tien:           number
+  direction:         'thu' | 'chi'
+  ghi_chu:           string | null
+  dinh_khoan_no:     string | null
+  dinh_khoan_co:     string | null
+  status:            string
+  company_id:        string
+  company_name:      string | null
+  nhan_su_thuc_hien: string | null
+  nhan_su_name:      string | null
+  is_chi_ho:         boolean
+  chi_ho_person:     string | null
+  is_thu_ho:         boolean
+  thu_ho_person:     string | null
 }
 
 export async function listCashBook(opts: {
@@ -30,7 +36,10 @@ export async function listCashBook(opts: {
     .select(`
       id, ky_hieu, txn_date, doi_tac, ma_doi_tac, noi_dung,
       so_tien, direction, ghi_chu, dinh_khoan_no, dinh_khoan_co, status,
-      company_id, companies!company_id ( name )
+      company_id, nhan_su_thuc_hien,
+      is_chi_ho, chi_ho_person, is_thu_ho, thu_ho_person,
+      companies!company_id ( name ),
+      users!nhan_su_thuc_hien ( full_name )
     `)
     .order('txn_date', { ascending: false })
     .order('created_at', { ascending: false })
@@ -46,19 +55,25 @@ export async function listCashBook(opts: {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (data ?? []).map((r: any) => ({
-    id:             r.id,
-    ky_hieu:        r.ky_hieu,
-    txn_date:       r.txn_date,
-    doi_tac:        r.doi_tac,
-    ma_doi_tac:     r.ma_doi_tac,
-    noi_dung:       r.noi_dung,
-    so_tien:        Number(r.so_tien),
-    direction:      r.direction,
-    ghi_chu:        r.ghi_chu,
-    dinh_khoan_no:  r.dinh_khoan_no,
-    dinh_khoan_co:  r.dinh_khoan_co,
-    status:         r.status,
-    company_id:     r.company_id,
-    company_name:   r.companies?.name ?? null,
+    id:                r.id,
+    ky_hieu:           r.ky_hieu,
+    txn_date:          r.txn_date,
+    doi_tac:           r.doi_tac,
+    ma_doi_tac:        r.ma_doi_tac,
+    noi_dung:          r.noi_dung,
+    so_tien:           Number(r.so_tien),
+    direction:         r.direction,
+    ghi_chu:           r.ghi_chu,
+    dinh_khoan_no:     r.dinh_khoan_no,
+    dinh_khoan_co:     r.dinh_khoan_co,
+    status:            r.status,
+    company_id:        r.company_id,
+    company_name:      r.companies?.name ?? null,
+    nhan_su_thuc_hien: r.nhan_su_thuc_hien,
+    nhan_su_name:      r.users?.full_name ?? null,
+    is_chi_ho:         !!r.is_chi_ho,
+    chi_ho_person:     r.chi_ho_person,
+    is_thu_ho:         !!r.is_thu_ho,
+    thu_ho_person:     r.thu_ho_person,
   }))
 }

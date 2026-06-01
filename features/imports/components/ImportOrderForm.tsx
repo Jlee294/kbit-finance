@@ -14,12 +14,16 @@ type SimpleOption  = { id: string; name: string }
 type SupplierOpt   = { id: string; code: string; name: string }
 type ProductOpt    = { id: string; code: string; name: string; unit?: string | null }
 type ProjectOpt    = { id: string; code: string; name: string; company_id: string }
+type UserOpt       = { id: string; name: string }
+type WarehouseOpt  = { id: string; code: string; name: string }
 
 interface Props {
   companies:   SimpleOption[]
   suppliers:   SupplierOpt[]
   products:    ProductOpt[]
   projects:    ProjectOpt[]
+  users?:      UserOpt[]
+  warehouses?: WarehouseOpt[]
   editOrder?:  ImportOrderDetail | null
   onDone:      () => void
 }
@@ -29,7 +33,7 @@ const newRow = (): ItemRow => ({ product_id: '', description: '', qty: '', unit_
 
 const sel = 'w-full h-9 rounded-lg border border-input bg-transparent px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50'
 
-export function ImportOrderForm({ companies, suppliers, products, projects, editOrder, onDone }: Props) {
+export function ImportOrderForm({ companies, suppliers, products, projects, users = [], warehouses = [], editOrder, onDone }: Props) {
   const router = useRouter()
   const isEdit = !!editOrder
 
@@ -57,6 +61,8 @@ export function ImportOrderForm({ companies, suppliers, products, projects, edit
   const [vatAmount,        setVatAmount]        = useState(editOrder?.vat_amount != null ? String(editOrder.vat_amount) : '')
   const [dinhKhoanNo,      setDinhKhoanNo]      = useState(editOrder?.dinh_khoan_no     ?? '')
   const [dinhKhoanCo,      setDinhKhoanCo]      = useState(editOrder?.dinh_khoan_co     ?? '')
+  const [nhanSuId,         setNhanSuId]         = useState(editOrder?.nhan_su_thuc_hien ?? '')
+  const [warehouseId,      setWarehouseId]      = useState(editOrder?.warehouse_id      ?? '')
 
   const [items, setItems] = useState<ItemRow[]>(
     editOrder?.supplier_order_items?.length
@@ -120,6 +126,8 @@ export function ImportOrderForm({ companies, suppliers, products, projects, edit
         vat_amount:        vatAmount ? parseFloat(vatAmount) : null,
         dinh_khoan_no:     dinhKhoanNo      || null,
         dinh_khoan_co:     dinhKhoanCo      || null,
+        nhan_su_thuc_hien: nhanSuId         || null,
+        warehouse_id:      warehouseId      || null,
         items: items.map((r) => ({
           product_id:  r.product_id || null,
           description: r.description || null,
@@ -177,6 +185,24 @@ export function ImportOrderForm({ companies, suppliers, products, projects, edit
             {filteredProjects.map((p) => <option key={p.id} value={p.id}>[{p.code}] {p.name}</option>)}
           </select>
         </div>
+        {users.length > 0 && (
+          <div className="space-y-1">
+            <Label>Nhân sự thực hiện</Label>
+            <select value={nhanSuId} onChange={(e) => setNhanSuId(e.target.value)} className={sel}>
+              <option value="">— Không gán —</option>
+              {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+            </select>
+          </div>
+        )}
+        {warehouses.length > 0 && (
+          <div className="space-y-1">
+            <Label>Kho nhập hàng <span className="text-xs text-gray-400 font-normal">(tự cộng tồn kho)</span></Label>
+            <select value={warehouseId} onChange={(e) => setWarehouseId(e.target.value)} className={sel}>
+              <option value="">— Không nhập kho —</option>
+              {warehouses.map((w) => <option key={w.id} value={w.id}>[{w.code}] {w.name}</option>)}
+            </select>
+          </div>
+        )}
         <div className="space-y-1">
           <Label>Loại đơn <span className="text-red-500">*</span></Label>
           <select value={orderType} onChange={(e) => setOrderType(e.target.value as 'import' | 'domestic')} className={sel}>
