@@ -38,7 +38,13 @@ export function ImportOrderTable({ rows, canWrite, companies, suppliers, product
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Nhật ký mua vào — {rows.length} hóa đơn</h2>
         {canWrite && (
-          <Button onClick={() => setAddOpen(true)}>+ Thêm hóa đơn mua vào</Button>
+          <div className="flex gap-2">
+            <a href="/nhap-khau/import-xml"
+              className="h-9 px-3 inline-flex items-center text-sm rounded-md border border-input bg-white hover:bg-gray-50">
+              ↥ Import XML
+            </a>
+            <Button onClick={() => setAddOpen(true)}>+ Thêm hóa đơn mua vào</Button>
+          </div>
         )}
       </div>
 

@@ -39,6 +39,10 @@ export function BankCreateButtons({
   return (
     <>
       <div className="flex gap-2">
+        <a href="/ngan-hang/import-xml"
+          className="h-8 px-3 inline-flex items-center text-sm rounded-md border border-input bg-white hover:bg-gray-50">
+          ↥ Import XML
+        </a>
         <Button size="sm" onClick={() => setMode('thu')}
           className="bg-green-600 hover:bg-green-700">
           + Thu tiền
