@@ -5,6 +5,10 @@ import {
   listUnassignedDeposits,
 } from '@/features/debts/queries'
 import { listCompanies } from '@/features/companies/queries'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { StatsCard } from '@/components/shared/StatsCard'
+import { FilterBar, FilterField, FilterSubmit, FILTER_CONTROL } from '@/components/shared/FilterBar'
+import { PAGE_WRAPPER } from '@/lib/ui-tokens'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,51 +41,27 @@ export default async function CongNoPage({
   const netDebt   = totalAr + totalIr - totalAp - totalDep   // ròng (+ là đối ứng cho ta nợ ta, - là ta nợ)
 
   return (
-    <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-xl font-semibold text-gray-900">Công nợ</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
-          Tổng hợp tự động từ Nhật ký bán/mua, Ngân hàng, Chứng từ khác
-        </p>
-      </div>
+    <div className={PAGE_WRAPPER}>
+      <PageHeader
+        title="Công nợ"
+        subtitle="Tổng hợp tự động từ Nhật ký bán/mua, Ngân hàng, Chứng từ khác"
+      />
 
-      {/* Filter */}
-      <form method="get" className="flex flex-wrap gap-3 bg-white rounded-xl border px-4 py-3 shadow-sm items-end">
-        <div className="space-y-1">
-          <p className="text-xs text-gray-500">Công ty</p>
-          <select name="company" defaultValue={sp.company ?? ''}
-            className="h-8 rounded-md border text-sm px-2 bg-white min-w-[180px]">
+      <FilterBar>
+        <FilterField label="Công ty">
+          <select name="company" defaultValue={sp.company ?? ''} className={`${FILTER_CONTROL} min-w-[180px]`}>
             <option value="">Tất cả</option>
             {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
-        </div>
-        <button type="submit" className="h-8 px-3 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200">
-          Lọc
-        </button>
-      </form>
+        </FilterField>
+        <FilterSubmit />
+      </FilterBar>
 
-      {/* 4 KPI cards — accent border-top theo loại */}
       <div className="grid grid-cols-4 gap-3">
-        <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 border-t-4 border-t-warning-500 shadow-sm">
-          <p className="text-xs text-gray-500 font-medium">Phải thu KH</p>
-          <p className="text-lg font-semibold text-warning-700 mt-1">{fmtVND(totalAr)}</p>
-          <p className="text-[10px] text-gray-400 mt-0.5">{ar.length} khách hàng</p>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 border-t-4 border-t-danger-500 shadow-sm">
-          <p className="text-xs text-gray-500 font-medium">Phải trả NCC</p>
-          <p className="text-lg font-semibold text-danger-700 mt-1">{fmtVND(totalAp)}</p>
-          <p className="text-[10px] text-gray-400 mt-0.5">{ap.length} nhà cung cấp</p>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 border-t-4 border-t-brand-500 shadow-sm">
-          <p className="text-xs text-gray-500 font-medium">Chi hộ chưa thu lại</p>
-          <p className="text-lg font-semibold text-brand-700 mt-1">{fmtVND(totalIr)}</p>
-          <p className="text-[10px] text-gray-400 mt-0.5">{ir.length} nhân viên</p>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 border-t-4 border-t-info-500 shadow-sm">
-          <p className="text-xs text-gray-500 font-medium">Thu cọc chưa gắn đơn</p>
-          <p className="text-lg font-semibold text-info-700 mt-1">{fmtVND(totalDep)}</p>
-          <p className="text-[10px] text-gray-400 mt-0.5">{deposits.length} phiếu</p>
-        </div>
+        <StatsCard label="Phải thu KH"          value={fmtVND(totalAr)}  accent="warning" footer={`${ar.length} khách hàng`} />
+        <StatsCard label="Phải trả NCC"         value={fmtVND(totalAp)}  accent="danger"  footer={`${ap.length} nhà cung cấp`} />
+        <StatsCard label="Chi hộ chưa thu lại"  value={fmtVND(totalIr)}  accent="brand"   footer={`${ir.length} nhân viên`} />
+        <StatsCard label="Thu cọc chưa gắn đơn" value={fmtVND(totalDep)} accent="info"    footer={`${deposits.length} phiếu`} />
       </div>
 
       {/* Net summary — gradient brand */}

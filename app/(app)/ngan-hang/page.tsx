@@ -8,6 +8,10 @@ import { listKrSuppliers, listKrwBankAccounts } from '@/features/expenses-kr/que
 import { createClient } from '@/lib/supabase/server'
 import { BankLedgerTable } from '@/features/bank/components/BankLedgerTable'
 import { BankCreateButtons } from '@/features/bank/components/BankCreateButtons'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { StatsCard } from '@/components/shared/StatsCard'
+import { FilterBar, FilterField, FilterSubmit, FILTER_CONTROL } from '@/components/shared/FilterBar'
+import { PAGE_WRAPPER } from '@/lib/ui-tokens'
 
 export const dynamic = 'force-dynamic'
 
@@ -53,15 +57,11 @@ export default async function NganHangPage({
   const totalChi = rows.filter(r => r.direction === 'chi').reduce((s, r) => s + r.amount_vnd, 0)
 
   return (
-    <div className="space-y-5 p-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900">Ngân hàng</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {rows.length} giao dịch · gộp tất cả thu / chi VN / chi KR
-          </p>
-        </div>
-        {canWrite && (
+    <div className={PAGE_WRAPPER}>
+      <PageHeader
+        title="Ngân hàng"
+        subtitle={`${rows.length} giao dịch · gộp tất cả thu / chi VN / chi KR`}
+        actions={canWrite ? (
           <BankCreateButtons
             companies={companies.map((c: any) => ({ id: c.id, name: c.name }))}
             customers={customers}
@@ -71,70 +71,49 @@ export default async function NganHangPage({
             krwBanks={krwBanks}
             projects={projects.map((p: any) => ({ id: p.id, code: p.code, name: p.name, company_id: p.company_id }))}
           />
-        )}
-      </div>
+        ) : undefined}
+      />
 
-      {/* Tổng kết */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-xl border bg-white px-4 py-3">
-          <p className="text-xs text-gray-500">Tổng thu (quy VND)</p>
-          <p className="text-lg font-semibold text-green-700">{fmtVND(totalThu)}</p>
-        </div>
-        <div className="rounded-xl border bg-white px-4 py-3">
-          <p className="text-xs text-gray-500">Tổng chi (quy VND)</p>
-          <p className="text-lg font-semibold text-red-600">{fmtVND(totalChi)}</p>
-        </div>
-        <div className="rounded-xl border bg-white px-4 py-3">
-          <p className="text-xs text-gray-500">Dòng tiền ròng</p>
-          <p className={`text-lg font-semibold ${totalThu - totalChi >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
-            {fmtVND(totalThu - totalChi)}
-          </p>
-        </div>
+        <StatsCard label="Tổng thu (quy VND)" value={fmtVND(totalThu)} accent="success" />
+        <StatsCard label="Tổng chi (quy VND)" value={fmtVND(totalChi)} accent="danger" />
+        <StatsCard
+          label="Dòng tiền ròng"
+          value={fmtVND(totalThu - totalChi)}
+          accent={totalThu - totalChi >= 0 ? 'brand' : 'danger'}
+        />
       </div>
 
-      {/* Filters */}
-      <form method="get" className="flex flex-wrap gap-3 bg-white rounded-xl border px-4 py-3 shadow-sm items-end">
-        <div className="space-y-1">
-          <p className="text-xs text-gray-500">Công ty</p>
-          <select name="company" defaultValue={sp.company ?? ''}
-            className="h-8 rounded-md border text-sm px-2 bg-white min-w-[120px]">
+      <FilterBar>
+        <FilterField label="Công ty">
+          <select name="company" defaultValue={sp.company ?? ''} className={`${FILTER_CONTROL} min-w-[140px]`}>
             <option value="">Tất cả</option>
             {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
-        </div>
-        <div className="space-y-1">
-          <p className="text-xs text-gray-500">Tài khoản NH</p>
-          <select name="bank" defaultValue={sp.bank ?? ''}
-            className="h-8 rounded-md border text-sm px-2 bg-white min-w-[180px]">
+        </FilterField>
+        <FilterField label="Tài khoản NH">
+          <select name="bank" defaultValue={sp.bank ?? ''} className={`${FILTER_CONTROL} min-w-[200px]`}>
             <option value="">Tất cả</option>
             {banks.map(b => (
               <option key={b.id} value={b.id}>{b.account_name} — {b.bank_name} ({b.currency})</option>
             ))}
           </select>
-        </div>
-        <div className="space-y-1">
-          <p className="text-xs text-gray-500">Loại</p>
-          <select name="type" defaultValue={sp.type ?? ''}
-            className="h-8 rounded-md border text-sm px-2 bg-white">
+        </FilterField>
+        <FilterField label="Loại">
+          <select name="type" defaultValue={sp.type ?? ''} className={FILTER_CONTROL}>
             <option value="">Tất cả</option>
             <option value="thu">Thu</option>
             <option value="chi">Chi</option>
           </select>
-        </div>
-        <div className="space-y-1">
-          <p className="text-xs text-gray-500">Từ ngày</p>
-          <input type="date" name="from" defaultValue={sp.from ?? ''}
-            className="h-8 rounded-md border text-sm px-2 bg-white" />
-        </div>
-        <div className="space-y-1">
-          <p className="text-xs text-gray-500">Đến ngày</p>
-          <input type="date" name="to" defaultValue={sp.to ?? ''}
-            className="h-8 rounded-md border text-sm px-2 bg-white" />
-        </div>
-        <button type="submit" className="h-8 px-3 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200">
-          Lọc
-        </button>
-      </form>
+        </FilterField>
+        <FilterField label="Từ ngày">
+          <input type="date" name="from" defaultValue={sp.from ?? ''} className={FILTER_CONTROL} />
+        </FilterField>
+        <FilterField label="Đến ngày">
+          <input type="date" name="to" defaultValue={sp.to ?? ''} className={FILTER_CONTROL} />
+        </FilterField>
+        <FilterSubmit />
+      </FilterBar>
 
       <BankLedgerTable rows={rows} />
     </div>

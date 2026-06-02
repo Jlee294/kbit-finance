@@ -1,6 +1,11 @@
 import Link from 'next/link'
 import { listPurchaseInvoices } from '@/features/invoices/queries'
 import { listCompanies } from '@/features/companies/queries'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { StatsCard } from '@/components/shared/StatsCard'
+import { FilterBar, FilterField, FilterSubmit, FILTER_CONTROL } from '@/components/shared/FilterBar'
+import { EmptyState } from '@/components/shared/EmptyState'
+import { PAGE_WRAPPER } from '@/lib/ui-tokens'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,58 +38,45 @@ export default async function BangKeMuaVaoPage({
   const totalGrand    = rows.reduce((s, r) => s + r.grand_total, 0)
 
   return (
-    <div className="space-y-5 p-6">
-      <div>
-        <h1 className="text-xl font-semibold text-gray-900">Bảng kê mua vào</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
-          Mỗi hóa đơn 1 dòng — lấy từ Nhật ký mua vào ({rows.length} hóa đơn)
-        </p>
-      </div>
+    <div className={PAGE_WRAPPER}>
+      <PageHeader
+        title="Bảng kê mua vào"
+        subtitle={`Mỗi hóa đơn 1 dòng — lấy từ Nhật ký mua vào (${rows.length} hóa đơn)`}
+      />
 
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-xl border bg-white px-4 py-3">
-          <p className="text-xs text-gray-500">Tổng tiền hàng (chưa VAT)</p>
-          <p className="text-lg font-semibold text-gray-900">{fmtVND(totalSubtotal)} đ</p>
-        </div>
-        <div className="rounded-xl border bg-white px-4 py-3">
-          <p className="text-xs text-gray-500">Tổng VAT</p>
-          <p className="text-lg font-semibold text-brand-800">{fmtVND(totalVat)} đ</p>
-        </div>
-        <div className="rounded-xl border bg-white px-4 py-3">
-          <p className="text-xs text-gray-500">Tổng cộng</p>
-          <p className="text-lg font-semibold text-gray-900">{fmtVND(totalGrand)} đ</p>
-        </div>
+        <StatsCard label="Tổng tiền hàng (chưa VAT)" value={`${fmtVND(totalSubtotal)} đ`} accent="neutral" />
+        <StatsCard label="Tổng VAT"                  value={`${fmtVND(totalVat)} đ`}      accent="info" />
+        <StatsCard label="Tổng cộng"                 value={`${fmtVND(totalGrand)} đ`}    accent="brand" />
       </div>
 
-      <form method="get" className="flex flex-wrap gap-3 bg-white rounded-xl border px-4 py-3 shadow-sm items-end">
-        <div className="space-y-1">
-          <p className="text-xs text-gray-500">Công ty</p>
-          <select name="company" defaultValue={sp.company ?? ''}
-            className="h-8 rounded-md border text-sm px-2 bg-white min-w-[140px]">
+      <FilterBar>
+        <FilterField label="Công ty">
+          <select name="company" defaultValue={sp.company ?? ''} className={`${FILTER_CONTROL} min-w-[160px]`}>
             <option value="">Tất cả</option>
             {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
-        </div>
-        <div className="space-y-1">
-          <p className="text-xs text-gray-500">Từ ngày</p>
-          <input type="date" name="from" defaultValue={sp.from ?? ''}
-            className="h-8 rounded-md border text-sm px-2 bg-white" />
-        </div>
-        <div className="space-y-1">
-          <p className="text-xs text-gray-500">Đến ngày</p>
-          <input type="date" name="to" defaultValue={sp.to ?? ''}
-            className="h-8 rounded-md border text-sm px-2 bg-white" />
-        </div>
-        <button type="submit" className="h-8 px-3 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200">Lọc</button>
-      </form>
+        </FilterField>
+        <FilterField label="Từ ngày">
+          <input type="date" name="from" defaultValue={sp.from ?? ''} className={FILTER_CONTROL} />
+        </FilterField>
+        <FilterField label="Đến ngày">
+          <input type="date" name="to" defaultValue={sp.to ?? ''} className={FILTER_CONTROL} />
+        </FilterField>
+        <FilterSubmit />
+      </FilterBar>
 
-      <div className="rounded-xl border bg-white shadow-sm overflow-x-auto">
-        {rows.length === 0 ? (
-          <div className="px-6 py-10 text-center text-sm text-gray-400">Chưa có hóa đơn mua vào nào.</div>
-        ) : (
+      {rows.length === 0 ? (
+        <EmptyState
+          icon="📥"
+          title="Chưa có hóa đơn mua vào nào"
+          description="Vào Nhật ký mua vào để tạo hóa đơn đầu tiên, hoặc import từ XML"
+        />
+      ) : (
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-x-auto">
           <table className="w-full text-xs min-w-[1400px]">
             <thead>
-              <tr className="border-b bg-gray-50 text-[10px] text-gray-500 uppercase">
+              <tr className="border-b border-brand-100 bg-brand-50/60 text-[10px] text-brand-800 font-semibold tracking-wide">
                 <th className="px-2 py-2 text-left">Mẫu HĐ</th>
                 <th className="px-2 py-2 text-left">Ký hiệu</th>
                 <th className="px-2 py-2 text-left">Số HĐ</th>
@@ -101,7 +93,7 @@ export default async function BangKeMuaVaoPage({
             </thead>
             <tbody className="divide-y divide-gray-100">
               {rows.map((r) => (
-                <tr key={r.id} className="hover:bg-gray-50">
+                <tr key={r.id} className="hover:bg-brand-50/40">
                   <td className="px-2 py-1.5 text-gray-500">{r.invoice_template ?? '—'}</td>
                   <td className="px-2 py-1.5 text-gray-500">{r.invoice_symbol ?? '—'}</td>
                   <td className="px-2 py-1.5 font-mono">{r.invoice_no ?? '—'}</td>
@@ -129,7 +121,7 @@ export default async function BangKeMuaVaoPage({
               ))}
             </tbody>
             <tfoot>
-              <tr className="bg-gray-50 font-semibold text-gray-900">
+              <tr className="bg-brand-50/40 font-semibold text-gray-900 border-t border-brand-100">
                 <td colSpan={7} className="px-2 py-2 text-right text-xs">Tổng cộng:</td>
                 <td className="px-2 py-2 text-right text-xs">{fmtVND(totalSubtotal)}</td>
                 <td className="px-2 py-2 text-right text-xs text-brand-800">{fmtVND(totalVat)}</td>
@@ -138,8 +130,8 @@ export default async function BangKeMuaVaoPage({
               </tr>
             </tfoot>
           </table>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }
