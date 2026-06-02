@@ -9,6 +9,7 @@ import { formatVND, formatKRW } from '@/lib/format'
 import { allocateUnitCost } from '../cost'
 import { createImportOrder, updateImportOrder } from '../actions'
 import type { ImportOrderDetail } from '../queries'
+import { FormSection } from '@/components/shared/FormSection'
 
 type SimpleOption  = { id: string; name: string }
 type SupplierOpt   = { id: string; code: string; name: string }
@@ -354,10 +355,7 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
       </div>
 
       {/* ── Thông tin hóa đơn ────────────────────────────────────── */}
-      <div className="rounded-lg border bg-slate-50 px-4 py-3 space-y-3">
-        <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider">
-          Thông tin hóa đơn (cho bảng kê mua vào)
-        </p>
+      <FormSection title="Thông tin hóa đơn" description="Cho bảng kê mua vào" variant="elevated">
         <div className="grid grid-cols-3 gap-3">
           <div className="space-y-1">
             <Label className="text-xs">Ký hiệu mẫu HĐ</Label>
@@ -392,7 +390,7 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
             <Input value={dinhKhoanCo} onChange={(e) => setDinhKhoanCo(e.target.value)} placeholder="331" className="h-8 text-sm" />
           </div>
         </div>
-      </div>
+      </FormSection>
 
       {/* ── Giao dịch nội bộ ──────────────────────────────────────── */}
       <div className="border rounded-lg p-4 space-y-3">

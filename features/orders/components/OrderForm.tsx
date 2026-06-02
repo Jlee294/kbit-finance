@@ -10,6 +10,7 @@ import { computeOrderTotals } from '../status'
 import { createOrder, updateOrder } from '../actions'
 import type { OrderDetail } from '../queries'
 import type { CreateOrderInput } from '../schema'
+import { FormSection } from '@/components/shared/FormSection'
 
 // ── Prop types ────────────────────────────────────────────────────────────────
 
@@ -302,8 +303,7 @@ export function OrderForm({ companies, customers, projects, products, warehouses
       </div>
 
       {/* ─ Thông tin hóa đơn ─────────────────────────────────────────────── */}
-      <div className="rounded-lg border bg-slate-50 px-4 py-3 space-y-3">
-        <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Thông tin hóa đơn (cho bảng kê bán ra)</p>
+      <FormSection title="Thông tin hóa đơn" description="Cho bảng kê bán ra — có thể bỏ trống nếu đơn nội bộ" variant="elevated">
         <div className="grid grid-cols-3 gap-3">
           <div className="space-y-1">
             <Label className="text-xs">Ký hiệu mẫu HĐ</Label>
@@ -338,7 +338,7 @@ export function OrderForm({ companies, customers, projects, products, warehouses
             <Input value={dinhKhoanCo} onChange={(e) => setDinhKhoanCo(e.target.value)} placeholder="511" className="h-8 text-sm" />
           </div>
         </div>
-      </div>
+      </FormSection>
 
       {/* ─ Kho xuất hàng ────────────────────────────────────────────────── */}
       {warehouses.length > 0 && (
