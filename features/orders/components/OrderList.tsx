@@ -6,6 +6,9 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { formatVND, formatDate } from '@/lib/format'
 import { FulfillmentBadge, PaymentBadge } from './StatusBadges'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { EmptyState } from '@/components/shared/EmptyState'
+import { PAGE_WRAPPER } from '@/lib/ui-tokens'
 import type { OrderListRow } from '../queries'
 
 interface Props {
@@ -19,31 +22,32 @@ export function OrderList({ initialRows, total, canWrite }: Props) {
   const [rows] = useState<OrderListRow[]>(initialRows)
 
   return (
-    <div className="space-y-4">
-      {/* Header bar */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900">Nhật ký bán ra</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{total.toLocaleString('vi-VN')} đơn / hóa đơn bán ra</p>
-        </div>
-        {canWrite && (
-          <div className="flex gap-2">
+    <div className={PAGE_WRAPPER}>
+      <PageHeader
+        title="Nhật ký bán ra"
+        subtitle={`${total.toLocaleString('vi-VN')} đơn / hóa đơn bán ra`}
+        actions={canWrite ? (
+          <>
             <a href="/don-hang/import-xml"
-              className="h-9 px-3 inline-flex items-center text-sm rounded-md border border-input bg-white hover:bg-gray-50">
+              className="h-9 px-3 inline-flex items-center text-sm rounded-md border border-gray-200 bg-white hover:bg-gray-50 transition-colors">
               ↥ Import XML
             </a>
             <Button onClick={() => router.push('/don-hang/tao-moi')}>
               + Tạo đơn hàng
             </Button>
-          </div>
-        )}
-      </div>
+          </>
+        ) : undefined}
+      />
 
-      {/* Table */}
       {rows.length === 0 ? (
-        <div className="rounded-xl border bg-white px-6 py-12 text-center text-gray-400">
-          Chưa có đơn hàng nào
-        </div>
+        <EmptyState
+          icon="📄"
+          title="Chưa có đơn hàng nào"
+          description="Bấm + Tạo đơn hàng để thêm đơn đầu tiên, hoặc import từ XML"
+          action={canWrite ? (
+            <Button onClick={() => router.push('/don-hang/tao-moi')}>+ Tạo đơn hàng</Button>
+          ) : undefined}
+        />
       ) : (
         <div className="overflow-x-auto rounded-xl border bg-white">
           <table className="w-full text-sm">
