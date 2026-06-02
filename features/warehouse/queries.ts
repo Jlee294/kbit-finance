@@ -62,7 +62,14 @@ export const listStock = cache(async (warehouseId?: string): Promise<StockRow[]>
   const { data, error } = await q
   if (error) { console.error('[listStock]', error.message); return [] }
 
-  return (data ?? []).map((r: any) => ({
+  interface StockRaw {
+    warehouse_id: string
+    warehouses: { code: string; name: string } | null
+    product_id: string
+    products: { code: string; name: string; unit: string | null } | null
+    qty_on_hand: number
+  }
+  return ((data ?? []) as unknown as StockRaw[]).map((r) => ({
     warehouse_id:   r.warehouse_id,
     warehouse_code: r.warehouses?.code ?? '',
     warehouse_name: r.warehouses?.name ?? '',
@@ -100,7 +107,20 @@ export async function listTransactions(opts: {
   const { data, error } = await q
   if (error) { console.error('[listTransactions]', error.message); return [] }
 
-  return (data ?? []).map((r: any) => ({
+  interface TxnRaw {
+    id: string
+    txn_date: string
+    txn_type: string
+    qty: number
+    reason: string | null
+    note: string | null
+    ref_order_id: string | null
+    warehouses: { name: string } | null
+    products: { code: string; name: string } | null
+    to_wh: { name: string } | null
+    users: { full_name: string } | null
+  }
+  return ((data ?? []) as unknown as TxnRaw[]).map((r) => ({
     id:               r.id,
     txn_date:         r.txn_date,
     txn_type:         r.txn_type,

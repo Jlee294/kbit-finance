@@ -1,12 +1,19 @@
 import OpenAI from 'openai'
 import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, canEdit } from '@/lib/auth'
 
-const openai = new OpenAI({
-  apiKey: process.env.NINE_ROUTER_API_KEY ?? 'sk-placeholder',
-  baseURL: process.env.NINE_ROUTER_BASE_URL ?? 'http://34.177.99.4:20128/v1',
-})
+const NINE_API_KEY = process.env.NINE_ROUTER_API_KEY
+const NINE_BASE_URL = process.env.NINE_ROUTER_BASE_URL
+
+function getOpenAIClient() {
+  if (!NINE_API_KEY || !NINE_BASE_URL) {
+    throw new Error('NINE_ROUTER_API_KEY and NINE_ROUTER_BASE_URL must be configured')
+  }
+  return new OpenAI({ apiKey: NINE_API_KEY, baseURL: NINE_BASE_URL })
+}
+
+const WRITE_TOOLS = new Set(['create_customer', 'create_task'])
 
 const MODEL = process.env.NINE_ROUTER_MODEL ?? 'Chatbot'
 
@@ -293,6 +300,18 @@ export async function POST(req: NextRequest) {
   const me = await getCurrentUser()
   if (!me) return new Response('Unauthorized', { status: 401 })
 
+  let openai: OpenAI
+  try {
+    openai = getOpenAIClient()
+  } catch {
+    return new Response('AI service not configured', { status: 503 })
+  }
+
+  const userCanEdit = canEdit(me.role)
+  const tools = userCanEdit
+    ? TOOLS
+    : TOOLS.filter(t => t.type !== 'function' || !WRITE_TOOLS.has(t.function.name))
+
   const supabase = await createClient()
   const { messages } = await req.json() as { messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] }
 
@@ -319,7 +338,7 @@ export async function POST(req: NextRequest) {
           const response = await openai.chat.completions.create({
             model: MODEL,
             messages: history,
-            tools: TOOLS,
+            tools,
             tool_choice: 'auto',
             stream: false,
           })

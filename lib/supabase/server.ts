@@ -29,8 +29,12 @@ export async function createClient() {
  * Bỏ qua RLS → chỉ dùng cho dữ liệu tham chiếu không nhạy cảm (companies, projects...).
  */
 export function createServiceClient() {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!serviceKey) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is required for service client')
+  }
   return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    serviceKey,
   )
 }

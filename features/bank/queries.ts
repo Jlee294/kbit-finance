@@ -62,13 +62,31 @@ export async function listBankLedger(opts: {
     wantChi ? qe : Promise.resolve({ data: [], error: null }),
   ])
 
-  if ((thuRes as any).error) console.error('[bank thu]', (thuRes as any).error.message)
-  if ((chiRes as any).error) console.error('[bank chi]', (chiRes as any).error.message)
+  interface IncomeRaw {
+    id: string; txn_date: string; company_id: string; bank_account_id: string
+    amount: number; currency: string; amount_vnd: number | null
+    note: string | null; status: string; is_unassigned: boolean
+    companies: { name: string } | null
+    bank_accounts: { account_name: string; bank_name: string; currency: string } | null
+    customers: { name: string } | null
+  }
+  interface ExpenseRaw {
+    id: string; txn_date: string; company_id: string; bank_account_id: string
+    region: string | null; amount_vnd: number | null; amount_krw: number | null
+    note: string | null; status: string
+    companies: { name: string } | null
+    bank_accounts: { account_name: string; bank_name: string; currency: string } | null
+    suppliers: { name: string } | null
+  }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const thuRows: BankRow[] = ((thuRes as any).data ?? []).map((r: any) => ({
+  const thuData = (thuRes as { data: unknown[]; error: { message: string } | null })
+  const chiData = (chiRes as { data: unknown[]; error: { message: string } | null })
+  if (thuData.error) console.error('[bank thu]', thuData.error.message)
+  if (chiData.error) console.error('[bank chi]', chiData.error.message)
+
+  const thuRows: BankRow[] = ((thuData.data ?? []) as IncomeRaw[]).map((r) => ({
     id:                r.id,
-    direction:         'thu',
+    direction:         'thu' as const,
     txn_date:          r.txn_date,
     company_id:        r.company_id,
     company_name:      r.companies?.name ?? null,
@@ -84,10 +102,9 @@ export async function listBankLedger(opts: {
     is_unassigned:     !!r.is_unassigned,
   }))
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const chiRows: BankRow[] = ((chiRes as any).data ?? []).map((r: any) => ({
+  const chiRows: BankRow[] = ((chiData.data ?? []) as ExpenseRaw[]).map((r) => ({
     id:                r.id,
-    direction:         'chi',
+    direction:         'chi' as const,
     txn_date:          r.txn_date,
     company_id:        r.company_id,
     company_name:      r.companies?.name ?? null,

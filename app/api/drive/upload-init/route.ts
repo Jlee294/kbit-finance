@@ -19,6 +19,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentUser, canEdit } from '@/lib/auth'
 import { ensureFolderPath, initResumableUpload, buildFolderPath } from '@/lib/drive'
 
 const bodySchema = z.object({
@@ -30,12 +31,15 @@ const bodySchema = z.object({
 })
 
 export async function POST(req: NextRequest) {
-  // ── Auth ──────────────────────────────────────────────────────────────────
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
+  // ── Auth + role check ──────────────────────────────────────────────────────
+  const me = await getCurrentUser()
+  if (!me) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  if (!canEdit(me.role)) {
+    return NextResponse.json({ error: 'Không có quyền upload' }, { status: 403 })
+  }
+  const supabase = await createClient()
 
   // ── Validate body ─────────────────────────────────────────────────────────
   let body: z.infer<typeof bodySchema>
@@ -49,10 +53,11 @@ export async function POST(req: NextRequest) {
 
   // ── Resolve company / year / month / project từ entity ───────────────────
   const now = new Date()
-  let companyName  = 'KBIT'
+  let companyName  = ''
   let year         = String(now.getFullYear())
   let month        = String(now.getMonth() + 1).padStart(2, '0')
   let projectName: string | null = null
+  let entityResolved = false
 
   /** Parse YYYY-MM-DD → tách year + month */
   function setDateFields(dateStr: string | undefined | null) {
@@ -69,9 +74,10 @@ export async function POST(req: NextRequest) {
         .eq('id', entity_id)
         .single()
       if (data) {
-        companyName = (data.companies as any)?.name ?? companyName
+        companyName = (data.companies as any)?.name ?? ''
         projectName = (data.projects as any)?.name ?? null
         setDateFields(data.txn_date)
+        entityResolved = !!companyName
       }
     } else if (entity_type === 'expense') {
       const { data } = await supabase
@@ -80,9 +86,10 @@ export async function POST(req: NextRequest) {
         .eq('id', entity_id)
         .single()
       if (data) {
-        companyName = (data.companies as any)?.name ?? companyName
+        companyName = (data.companies as any)?.name ?? ''
         projectName = (data.projects as any)?.name ?? null
         setDateFields(data.txn_date)
+        entityResolved = !!companyName
       }
     } else if (entity_type === 'customer_order') {
       const { data } = await supabase
@@ -91,9 +98,10 @@ export async function POST(req: NextRequest) {
         .eq('id', entity_id)
         .single()
       if (data) {
-        companyName = (data.companies as any)?.name ?? companyName
+        companyName = (data.companies as any)?.name ?? ''
         projectName = (data.projects as any)?.name ?? null
         setDateFields(data.order_date)
+        entityResolved = !!companyName
       }
     } else if (entity_type === 'supplier_order') {
       const { data } = await supabase
@@ -102,24 +110,30 @@ export async function POST(req: NextRequest) {
         .eq('id', entity_id)
         .single()
       if (data) {
-        companyName = (data.companies as any)?.name ?? companyName
+        companyName = (data.companies as any)?.name ?? ''
         projectName = (data.projects as any)?.name ?? null
         setDateFields(data.order_date)
+        entityResolved = !!companyName
       }
     } else if (entity_type === 'cash_book') {
-      // cash_book không có project_id — luôn "Chung"
       const { data } = await supabase
         .from('cash_book')
         .select('txn_date, companies!company_id(name)')
         .eq('id', entity_id)
         .single()
       if (data) {
-        companyName = (data.companies as any)?.name ?? companyName
+        companyName = (data.companies as any)?.name ?? ''
         setDateFields(data.txn_date)
+        entityResolved = !!companyName
       }
     }
-  } catch {
-    // Fallback to defaults — không throw
+  } catch (err) {
+    console.error('[drive/upload-init] entity lookup failed:', err)
+    return NextResponse.json({ error: 'Không tìm thấy entity' }, { status: 404 })
+  }
+
+  if (!entityResolved) {
+    return NextResponse.json({ error: 'Entity không tồn tại hoặc không có quyền truy cập' }, { status: 404 })
   }
 
   // ── Tạo/tìm thư mục Drive ─────────────────────────────────────────────────

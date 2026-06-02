@@ -33,12 +33,7 @@ export async function GET() {
     return NextResponse.json({ error: 'Admin only' }, { status: 403 })
   }
 
-  // ── 2. public.users ───────────────────────────────────────────────────────
-  const { data: dbUser, error: dbError } = await supabase
-    .from('users')
-    .select('id, full_name, role, is_active')
-    .eq('auth_id', user.id)
-    .single()
+  // ── 2. public.users (already fetched above for admin check) ────────────
 
   // ── 3a. companies via service client (unstable_cache path) ──────────────────
   const { data: companies, error: companiesError } = await svc
@@ -76,7 +71,7 @@ export async function GET() {
   return NextResponse.json({
     auth: { id: user.id, email: user.email },
     dbUser: dbUser ?? null,
-    dbError: dbError?.message ?? null,
+    dbError: null,
     // Service client (no auth → needs SUPABASE_SERVICE_ROLE_KEY)
     companiesSvc: companies ?? [],
     companiesSvcError: companiesError?.message ?? null,

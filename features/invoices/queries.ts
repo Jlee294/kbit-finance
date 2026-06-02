@@ -1,5 +1,46 @@
 import { createClient } from '@/lib/supabase/server'
 
+interface OrderItemRaw {
+  description: string | null
+  products: { name: string } | null
+}
+
+interface SalesOrderRaw {
+  id: string
+  order_code: string
+  order_date: string
+  invoice_template: string | null
+  invoice_symbol: string | null
+  invoice_no: string | null
+  invoice_date: string | null
+  customer_tax_code: string | null
+  vat_pct: number | null
+  vat_amount: number | null
+  grand_total: number | null
+  fulfillment_status: string
+  payment_status: string
+  customers: { code: string; name: string } | null
+  companies: { name: string } | null
+  items: OrderItemRaw[]
+}
+
+interface PurchaseOrderRaw {
+  id: string
+  order_code: string
+  order_date: string
+  order_type: string | null
+  invoice_template: string | null
+  invoice_symbol: string | null
+  invoice_no: string | null
+  invoice_date: string | null
+  supplier_tax_code: string | null
+  vat_amount: number | null
+  grand_total: number | null
+  suppliers: { code: string; name: string } | null
+  companies: { name: string } | null
+  items: OrderItemRaw[]
+}
+
 // ── Bảng kê bán ra — 1 dòng / hóa đơn ─────────────────────────────────────────
 
 export interface SalesInvoiceRow {
@@ -51,17 +92,15 @@ export async function listSalesInvoices(opts: {
   const { data, error } = await q
   if (error) { console.error('[listSalesInvoices]', error.message); return [] }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (data ?? []).map((r: any) => {
+  return ((data ?? []) as unknown as SalesOrderRaw[]).map((r) => {
     const vatPct  = Number(r.vat_pct ?? 0)
     const total   = Number(r.grand_total ?? 0)
-    // Nếu có vat_amount nhập tay thì dùng, không thì tính từ vat_pct
     const vatAmt  = r.vat_amount != null
       ? Number(r.vat_amount)
       : (vatPct > 0 ? Math.round(total * vatPct / (100 + vatPct)) : 0)
     const subtotal = total - vatAmt
     const noiDung = (r.items ?? [])
-      .map((it: any) => it.products?.name || it.description || '')
+      .map((it) => it.products?.name || it.description || '')
       .filter(Boolean)
       .join(', ')
     return {
@@ -136,14 +175,13 @@ export async function listPurchaseInvoices(opts: {
   const { data, error } = await q
   if (error) { console.error('[listPurchaseInvoices]', error.message); return [] }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (data ?? []).map((r: any) => {
+  return ((data ?? []) as unknown as PurchaseOrderRaw[]).map((r) => {
     const total  = Number(r.grand_total ?? 0)
     const vatAmt = Number(r.vat_amount ?? 0)
     const subtotal = total - vatAmt
     const vatPct = subtotal > 0 ? Math.round((vatAmt / subtotal) * 1000) / 10 : 0
     const noiDung = (r.items ?? [])
-      .map((it: any) => it.products?.name || it.description || '')
+      .map((it) => it.products?.name || it.description || '')
       .filter(Boolean)
       .join(', ')
     return {

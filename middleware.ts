@@ -44,8 +44,8 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Loại trừ thêm: _next/data (RSC prefetch), api routes (tự xử lý auth), file tĩnh
+  // Loại trừ: _next/data (RSC prefetch), file tĩnh, login
   matcher: [
-    '/((?!_next/static|_next/image|_next/data|favicon.ico|robots.txt|sitemap.xml|api/chat|login).*)',
+    '/((?!_next/static|_next/image|_next/data|favicon.ico|robots.txt|sitemap.xml|login).*)',
   ],
 }
