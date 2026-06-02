@@ -5,6 +5,8 @@ import { ThresholdForm }       from '@/features/risk/components/ThresholdForm'
 import { INDICATORS, GROUP_LABELS, type RiskGroup } from '@/features/risk/indicators'
 import { deleteThreshold }     from '@/features/risk/actions'
 import { getCurrentUser, canApprove } from '@/lib/auth'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { PAGE_WRAPPER } from '@/lib/ui-tokens'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,16 +24,16 @@ export default async function NguongPage() {
   const groups = Object.entries(GROUP_LABELS) as [RiskGroup, string][]
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900">Quản lý ngưỡng chỉ tiêu</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Đặt ngưỡng vàng / đỏ cho từng chỉ tiêu</p>
-        </div>
-        <Link href="/rui-ro" className="text-sm text-brand-700 hover:underline">
-          ← Sức khỏe tài chính
-        </Link>
-      </div>
+    <div className={PAGE_WRAPPER}>
+      <PageHeader
+        title="Quản lý ngưỡng chỉ tiêu"
+        subtitle="Đặt ngưỡng vàng / đỏ cho từng chỉ tiêu"
+        actions={
+          <Link href="/rui-ro" className="text-sm text-brand-700 hover:underline">
+            ← Sức khỏe tài chính
+          </Link>
+        }
+      />
 
       {canEdit && (
         <ThresholdForm companies={companies.map(c => ({ id: c.id, name: c.name }))} />

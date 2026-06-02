@@ -5,6 +5,8 @@ import { getLatestAssessment }    from '@/features/risk/queries'
 import { HealthDashboard }        from '@/features/risk/components/HealthDashboard'
 import { RuiRoFilters }           from '@/features/risk/components/RuiRoFilters'
 import { getCurrentUser, canApprove } from '@/lib/auth'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { PAGE_WRAPPER } from '@/lib/ui-tokens'
 
 interface SearchParams { company?: string; period?: string }
 
@@ -24,16 +26,16 @@ export default async function RuiRoPage({
   const canRun          = !!me && canApprove(me.role)
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900">Sức khỏe tài chính</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Chấm điểm rủi ro 5 nhóm chỉ tiêu</p>
-        </div>
-        <Link href="/rui-ro/nguong" className="text-sm text-brand-700 hover:underline">
-          Quản lý ngưỡng →
-        </Link>
-      </div>
+    <div className={PAGE_WRAPPER}>
+      <PageHeader
+        title="Sức khỏe tài chính"
+        subtitle="Chấm điểm rủi ro 5 nhóm chỉ tiêu"
+        actions={
+          <Link href="/rui-ro/nguong" className="text-sm text-brand-700 hover:underline">
+            Quản lý ngưỡng →
+          </Link>
+        }
+      />
 
       {/* Filter hiện ngay */}
       <Suspense fallback={null}>

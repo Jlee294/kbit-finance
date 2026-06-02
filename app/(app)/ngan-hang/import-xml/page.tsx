@@ -6,6 +6,7 @@ import { listCompanies } from '@/features/companies/queries'
 import { listCustomers } from '@/features/customers/queries'
 import { listSuppliers } from '@/features/suppliers/queries'
 import { BankXmlImporter } from '@/features/xml-imports/components/BankXmlImporter'
+import { PageHeader } from '@/components/shared/PageHeader'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,19 +27,18 @@ export default async function ImportBankXmlPage() {
   const banks = (banksRes.data ?? []) as Array<{ id: string; name: string; currency: string; company_id: string }>
 
   return (
-    <div className="space-y-5 p-6 max-w-6xl mx-auto">
-      <div className="flex items-center gap-2 text-sm text-gray-500">
-        <Link href="/ngan-hang" className="hover:text-gray-900">Ngân hàng</Link>
-        <span>/</span>
-        <span className="font-medium text-gray-900">Import sao kê</span>
-      </div>
-
-      <div>
-        <h1 className="text-xl font-semibold text-gray-900">Import sao kê ngân hàng</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
-          Tải file sao kê Techcombank — tự động tạo phiếu thu, chi
-        </p>
-      </div>
+    <div className="space-y-6 p-6 max-w-6xl mx-auto">
+      <PageHeader
+        title="Import sao kê ngân hàng"
+        subtitle="Tải file sao kê Techcombank — tự động tạo phiếu thu, chi"
+        breadcrumb={
+          <>
+            <Link href="/ngan-hang" className="hover:text-brand-700">Ngân hàng</Link>
+            <span className="mx-1.5">/</span>
+            <span className="font-medium text-gray-900">Import sao kê</span>
+          </>
+        }
+      />
 
       <BankXmlImporter
         companies={companies.map(c => ({ id: c.id, name: c.name }))}

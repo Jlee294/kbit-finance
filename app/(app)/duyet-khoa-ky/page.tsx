@@ -6,6 +6,7 @@ import { lockPeriod, unlockPeriod } from '@/features/periods/actions'
 import { ApproveButton } from '@/features/approvals/components/ApproveButton'
 import { formatVND } from '@/lib/format'
 import { Button } from '@/components/ui/button'
+import { PageHeader } from '@/components/shared/PageHeader'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,18 +22,16 @@ export default async function DuyetKhoaKyPage() {
   const totalPending = pendingIncome.length + pendingExpense.length
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Duyệt & Khóa kỳ</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Kiểm soát luồng duyệt giao dịch và khóa kỳ kế toán
-          </p>
-        </div>
-        <Link href="/duyet-khoa-ky/audit">
-          <Button variant="outline" size="sm">Lịch sử thao tác →</Button>
-        </Link>
-      </div>
+    <div className="max-w-5xl mx-auto space-y-6 p-6">
+      <PageHeader
+        title="Duyệt & Khóa kỳ"
+        subtitle="Kiểm soát luồng duyệt giao dịch và khóa kỳ kế toán"
+        actions={
+          <Link href="/duyet-khoa-ky/audit">
+            <Button variant="outline" size="sm">Lịch sử thao tác →</Button>
+          </Link>
+        }
+      />
 
       {/* ── Hàng chờ duyệt ─────────────────────────────────────────────── */}
       <section className="space-y-4">

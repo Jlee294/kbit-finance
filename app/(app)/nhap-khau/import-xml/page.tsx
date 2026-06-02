@@ -7,6 +7,7 @@ import { listProducts }  from '@/features/products/queries'
 import { listWarehouses } from '@/features/warehouse/queries'
 import { listUsers }     from '@/features/users/queries'
 import { InvoiceXmlImporter } from '@/features/xml-imports/components/InvoiceXmlImporter'
+import { PageHeader } from '@/components/shared/PageHeader'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,19 +24,18 @@ export default async function ImportInvoiceXmlPage() {
   ])
 
   return (
-    <div className="space-y-5 p-6 max-w-6xl mx-auto">
-      <div className="flex items-center gap-2 text-sm text-gray-500">
-        <Link href="/nhap-khau" className="hover:text-gray-900">Nhật ký mua vào</Link>
-        <span>/</span>
-        <span className="font-medium text-gray-900">Import XML</span>
-      </div>
-
-      <div>
-        <h1 className="text-xl font-semibold text-gray-900">Import hóa đơn mua vào từ XML</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
-          Upload file XML hóa đơn điện tử chuẩn TT 78/2021 — hệ thống tự đọc và tạo hóa đơn mua vào.
-        </p>
-      </div>
+    <div className="space-y-6 p-6 max-w-6xl mx-auto">
+      <PageHeader
+        title="Import hóa đơn mua vào từ XML"
+        subtitle="File XML chuẩn TT 78/2021 — tự đọc và tạo hóa đơn mua vào"
+        breadcrumb={
+          <>
+            <Link href="/nhap-khau" className="hover:text-brand-700">Nhật ký mua vào</Link>
+            <span className="mx-1.5">/</span>
+            <span className="font-medium text-gray-900">Import XML</span>
+          </>
+        }
+      />
 
       <InvoiceXmlImporter
         companies={companies.map(c => ({ id: c.id, name: c.name }))}

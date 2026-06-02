@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { formatVND, formatKRW } from '@/lib/format'
 import { ImportOrderForm } from './ImportOrderForm'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { PAGE_WRAPPER } from '@/lib/ui-tokens'
 import type { ImportOrderRow } from '../queries'
 
 type SimpleOption  = { id: string; name: string }
@@ -34,19 +36,20 @@ export function ImportOrderTable({ rows, canWrite, companies, suppliers, product
     row.currency === 'KRW' ? formatKRW(val) : formatVND(val)
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Nhật ký mua vào — {rows.length} hóa đơn</h2>
-        {canWrite && (
-          <div className="flex gap-2">
+    <div className={PAGE_WRAPPER}>
+      <PageHeader
+        title="Nhật ký mua vào"
+        subtitle={`${rows.length} hóa đơn`}
+        actions={canWrite ? (
+          <>
             <a href="/nhap-khau/import-xml"
-              className="h-9 px-3 inline-flex items-center text-sm rounded-md border border-input bg-white hover:bg-gray-50">
+              className="h-9 px-3 inline-flex items-center text-sm rounded-md border border-gray-200 bg-white hover:bg-gray-50 transition-colors">
               ↥ Import XML
             </a>
             <Button onClick={() => setAddOpen(true)}>+ Thêm hóa đơn mua vào</Button>
-          </div>
-        )}
-      </div>
+          </>
+        ) : undefined}
+      />
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent showCloseButton={false} className="max-w-4xl max-h-[90vh] overflow-y-auto">

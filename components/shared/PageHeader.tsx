@@ -8,7 +8,7 @@
 import type { ReactNode } from 'react'
 
 interface Props {
-  title:       string
+  title:       string | ReactNode
   subtitle?:   string | ReactNode
   actions?:    ReactNode
   breadcrumb?: ReactNode
@@ -24,7 +24,7 @@ export function PageHeader({ title, subtitle, actions, breadcrumb }: Props) {
       )}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="min-w-0">
-          <h1 className="text-xl font-semibold text-gray-900 tracking-tight">{title}</h1>
+          <h1 className="text-xl font-semibold text-gray-900 tracking-tight flex items-center">{title}</h1>
           {subtitle && (
             <p className="text-sm text-gray-500 mt-0.5">{subtitle}</p>
           )}

@@ -7,6 +7,7 @@ import { listProducts } from '@/features/products/queries'
 import { listWarehouses } from '@/features/warehouse/queries'
 import { listUsers } from '@/features/users/queries'
 import { OrderForm } from '@/features/orders/components/OrderForm'
+import { PageHeader } from '@/components/shared/PageHeader'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,13 +25,13 @@ export default async function NewOrderPage() {
   ])
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-900">Tạo đơn hàng mới</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Điền thông tin bên dưới và nhấn Tạo đơn hàng</p>
-      </div>
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <PageHeader
+        title="Tạo đơn hàng mới"
+        subtitle="Điền thông tin bên dưới và nhấn Tạo đơn hàng"
+      />
 
-      <div className="rounded-xl border bg-white p-6">
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
         <OrderForm
           companies={companies.map((c) => ({ id: c.id, name: c.name }))}
           customers={customers}

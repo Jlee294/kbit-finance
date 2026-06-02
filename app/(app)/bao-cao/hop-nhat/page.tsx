@@ -6,6 +6,8 @@ import { ReportFilters }            from '@/features/reports/components/ReportFi
 
 export const dynamic = 'force-dynamic'
 import Link                         from 'next/link'
+import { PageHeader }               from '@/components/shared/PageHeader'
+import { PAGE_WRAPPER }             from '@/lib/ui-tokens'
 
 interface SearchParams {
   from?: string
@@ -35,22 +37,16 @@ export default async function HopNhatPage({
   ]
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900">Báo cáo hợp nhất Group</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Tổng hợp toàn bộ pháp nhân, đã loại trừ giao dịch nội bộ, quy đổi về VND
-          </p>
-        </div>
-        <Link
-          href="/bao-cao"
-          className="text-sm text-brand-700 hover:underline"
-        >
-          Báo cáo từng pháp nhân
-        </Link>
-      </div>
+    <div className={PAGE_WRAPPER}>
+      <PageHeader
+        title="Báo cáo hợp nhất Group"
+        subtitle="Tổng hợp toàn bộ pháp nhân, đã loại trừ giao dịch nội bộ, quy đổi về VND"
+        actions={
+          <Link href="/bao-cao" className="text-sm text-brand-700 hover:underline font-medium">
+            ← Báo cáo từng pháp nhân
+          </Link>
+        }
+      />
 
       {/* Missing rate warning */}
       {report.missing_rate && (

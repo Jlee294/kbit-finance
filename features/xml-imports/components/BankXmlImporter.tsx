@@ -241,7 +241,7 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
       {/* ─ Action button ──────────────────────────────────────────── */}
       {selectedFile && !result && (
         <Button onClick={() => handleParse()} disabled={parsing}
-          className="w-full h-12 text-base bg-green-600 hover:bg-green-700 disabled:bg-gray-300">
+          className="w-full h-12 text-base bg-brand-800 hover:bg-brand-700 disabled:bg-gray-300">
           {parsing ? 'Đang đọc file...' : 'Bắt đầu đọc'}
         </Button>
       )}
@@ -429,7 +429,7 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
                 </p>
               )}
               <Button onClick={handleCommit} disabled={committing || !bankId || !companyId}
-                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-300">
+                className="bg-brand-800 hover:bg-brand-700 disabled:bg-gray-300">
                 {committing ? 'Đang tạo…' : `Tạo ${Object.values(perTxn).filter(x => x.include).length} giao dịch`}
               </Button>
             </div>

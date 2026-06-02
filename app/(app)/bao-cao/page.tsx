@@ -7,6 +7,9 @@ import { ArDebtTable, ApDebtTable }            from '@/features/reports/componen
 import { ReportFilters }                       from '@/features/reports/components/ReportFilters'
 import Link                                    from 'next/link'
 import { createClient }                        from '@/lib/supabase/server'
+import { PageHeader }                          from '@/components/shared/PageHeader'
+import { EmptyState }                          from '@/components/shared/EmptyState'
+import { PAGE_WRAPPER }                        from '@/lib/ui-tokens'
 
 export const dynamic = 'force-dynamic'
 
@@ -101,16 +104,16 @@ export default async function BaoCaoPage({
   const projects: Array<{ id: string; name: string }> = projectsRes.data ?? []
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900">Báo cáo pháp nhân</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Dòng tiền và công nợ theo từng công ty</p>
-        </div>
-        <Link href="/bao-cao/hop-nhat" className="text-sm text-brand-700 hover:underline">
-          Xem báo cáo hợp nhất
-        </Link>
-      </div>
+    <div className={PAGE_WRAPPER}>
+      <PageHeader
+        title="Báo cáo pháp nhân"
+        subtitle="Dòng tiền và công nợ theo từng công ty"
+        actions={
+          <Link href="/bao-cao/hop-nhat" className="text-sm text-brand-700 hover:underline font-medium">
+            Xem báo cáo hợp nhất →
+          </Link>
+        }
+      />
 
       {/* Filter hiện ngay — không bị block bởi report query */}
       <Suspense fallback={null}>
@@ -126,9 +129,11 @@ export default async function BaoCaoPage({
       </Suspense>
 
       {!companyId ? (
-        <div className="rounded-xl border bg-white shadow-sm px-6 py-10 text-center text-sm text-gray-400">
-          Chọn một công ty để xem báo cáo.
-        </div>
+        <EmptyState
+          icon="📊"
+          title="Chọn một công ty để xem báo cáo"
+          description="Sử dụng bộ lọc bên trên để chọn công ty + khoảng thời gian"
+        />
       ) : (
         /* Stream report content — skeleton hiện trong lúc chờ */
         <Suspense fallback={<ReportSkeleton />}>

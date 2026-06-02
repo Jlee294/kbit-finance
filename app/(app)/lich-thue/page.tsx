@@ -4,6 +4,9 @@ import { TaxCalendarTable }     from '@/features/tax-calendar/components/TaxCale
 import { upsertCalendarItem }   from '@/features/tax-calendar/actions'
 import { getCurrentUser, canApprove } from '@/lib/auth'
 import { TAX_TYPES, TAX_TYPE_LABELS } from '@/features/tax-plans/schema'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { FilterBar, FilterField, FilterSubmit, FILTER_CONTROL } from '@/components/shared/FilterBar'
+import { PAGE_WRAPPER } from '@/lib/ui-tokens'
 
 interface SearchParams { company?: string }
 
@@ -28,52 +31,35 @@ export default async function LichThuePage({
   const dueSoonCount  = items.filter(i => i.status === 'pending' && i.due_date >= today && i.due_date <= soon).length
 
   return (
-    <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-xl font-semibold text-gray-900">Lịch tuân thủ thuế</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Theo dõi nghĩa vụ thuế, nhắc hạn nộp</p>
-      </div>
-
-      {/* Bộ lọc công ty — form GET */}
-      <div className="flex flex-wrap gap-3 items-center bg-white rounded-xl border px-4 py-3 shadow-sm">
-        <form method="get" className="flex gap-3 items-end">
-          <div className="space-y-1">
-            <p className="text-xs text-gray-500">Công ty</p>
-            <select
-              name="company"
-              defaultValue={companyId ?? ''}
-              className="h-8 rounded-md border text-sm px-2 bg-white min-w-[160px]"
-            >
-              <option value="">— Chọn công ty —</option>
-              {companies.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </div>
-          <button
-            type="submit"
-            className="h-8 px-3 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200"
-          >
-            Xem
-          </button>
-        </form>
-
-        {/* Summary badges */}
-        {companyId && (
-          <div className="flex gap-2 ml-auto">
+    <div className={PAGE_WRAPPER}>
+      <PageHeader
+        title="Lịch tuân thủ thuế"
+        subtitle="Theo dõi nghĩa vụ thuế, nhắc hạn nộp"
+        actions={companyId ? (
+          <div className="flex gap-2">
             {overdueCount > 0 && (
-              <span className="text-xs bg-red-100 text-red-700 font-semibold px-2.5 py-1 rounded-full">
+              <span className="text-xs bg-danger-50 text-danger-700 ring-1 ring-danger-500/30 font-semibold px-2.5 py-1 rounded-full">
                 {overdueCount} quá hạn
               </span>
             )}
             {dueSoonCount > 0 && (
-              <span className="text-xs bg-amber-100 text-amber-700 font-semibold px-2.5 py-1 rounded-full">
+              <span className="text-xs bg-warning-50 text-warning-700 ring-1 ring-warning-500/30 font-semibold px-2.5 py-1 rounded-full">
                 {dueSoonCount} đến hạn ≤7 ngày
               </span>
             )}
           </div>
-        )}
-      </div>
+        ) : undefined}
+      />
+
+      <FilterBar>
+        <FilterField label="Công ty">
+          <select name="company" defaultValue={companyId ?? ''} className={`${FILTER_CONTROL} min-w-[180px]`}>
+            <option value="">— Chọn công ty —</option>
+            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </FilterField>
+        <FilterSubmit>Xem</FilterSubmit>
+      </FilterBar>
 
       {/* Form thêm nghĩa vụ */}
       {canEdit && companyId && (

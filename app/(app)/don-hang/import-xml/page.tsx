@@ -7,6 +7,7 @@ import { listProducts }  from '@/features/products/queries'
 import { listWarehouses } from '@/features/warehouse/queries'
 import { listUsers }     from '@/features/users/queries'
 import { SalesInvoiceXmlImporter } from '@/features/xml-imports/components/SalesInvoiceXmlImporter'
+import { PageHeader } from '@/components/shared/PageHeader'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,19 +24,18 @@ export default async function ImportSalesInvoiceXmlPage() {
   ])
 
   return (
-    <div className="space-y-5 p-6 max-w-6xl mx-auto">
-      <div className="flex items-center gap-2 text-sm text-gray-500">
-        <Link href="/don-hang" className="hover:text-gray-900">Nhật ký bán ra</Link>
-        <span>/</span>
-        <span className="font-medium text-gray-900">Import XML</span>
-      </div>
-
-      <div>
-        <h1 className="text-xl font-semibold text-gray-900">Import hóa đơn bán ra từ XML</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
-          Upload file XML hóa đơn bán ra (xuất từ phần mềm hóa đơn điện tử) — hệ thống tự đọc và tạo đơn hàng.
-        </p>
-      </div>
+    <div className="space-y-6 p-6 max-w-6xl mx-auto">
+      <PageHeader
+        title="Import hóa đơn bán ra từ XML"
+        subtitle="File XML từ phần mềm hóa đơn điện tử — tự đọc và tạo đơn bán"
+        breadcrumb={
+          <>
+            <Link href="/don-hang" className="hover:text-brand-700">Nhật ký bán ra</Link>
+            <span className="mx-1.5">/</span>
+            <span className="font-medium text-gray-900">Import XML</span>
+          </>
+        }
+      />
 
       <SalesInvoiceXmlImporter
         companies={companies.map(c => ({ id: c.id, name: c.name }))}

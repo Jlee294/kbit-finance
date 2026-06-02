@@ -153,7 +153,7 @@ export function SalesInvoiceXmlImporter({ companies, projects, warehouses, produ
               Đã đọc <b>{results.length}</b> hóa đơn. Kiểm tra rồi bấm "Tạo" hoặc "Tạo tất cả".
             </p>
             <Button onClick={commitAll} disabled={committing}
-              className="bg-green-600 hover:bg-green-700">
+              className="bg-brand-800 hover:bg-brand-700">
               {committing ? 'Đang tạo…' : `Tạo tất cả (${results.filter((_, i) => !perInvoice[i]?.committed).length})`}
             </Button>
           </div>

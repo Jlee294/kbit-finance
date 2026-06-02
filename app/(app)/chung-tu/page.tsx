@@ -2,6 +2,7 @@ import { getCurrentUser, canEdit, canApprove } from '@/lib/auth'
 import { listAllDocuments } from '@/features/documents/queries'
 import { listDocumentTypes } from '@/features/document-types/queries'
 import { DocumentListClient } from './DocumentListClient'
+import { PageHeader } from '@/components/shared/PageHeader'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,11 +17,11 @@ export default async function ChungTuPage() {
   const canVerify  = !!me && canApprove(me.role)
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-gray-900">Chứng từ</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Danh sách chứng từ đính kèm trong hệ thống</p>
-      </div>
+    <div className="max-w-5xl mx-auto space-y-6 p-6">
+      <PageHeader
+        title="Chứng từ"
+        subtitle={`${docs.length} chứng từ đính kèm trong hệ thống`}
+      />
       <DocumentListClient docs={docs} docTypes={docTypes} canWrite={canWrite} canVerify={canVerify} />
     </div>
   )

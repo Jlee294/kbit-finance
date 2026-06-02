@@ -3,6 +3,11 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
+  // Chỉ cho phép trong development
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not available in production' }, { status: 404 })
+  }
+
   const supabase = await createClient()
   const svc = createServiceClient()
 
@@ -15,6 +20,17 @@ export async function GET() {
       status: 'FAIL — không tìm thấy session. Hãy đăng nhập trước rồi mở lại URL này.',
       authError,
     })
+  }
+
+  // ── 1b. Admin-only ──────────────────────────────────────────────────────
+  const { data: dbUser } = await supabase
+    .from('users')
+    .select('id, full_name, role, is_active')
+    .eq('auth_id', user.id)
+    .single()
+
+  if (dbUser?.role !== 'admin') {
+    return NextResponse.json({ error: 'Admin only' }, { status: 403 })
   }
 
   // ── 2. public.users ───────────────────────────────────────────────────────

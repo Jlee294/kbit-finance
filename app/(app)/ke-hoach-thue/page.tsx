@@ -3,6 +3,9 @@ import { getTaxPlan, computeActualTax }        from '@/features/tax-plans/querie
 import { TaxPlanForm }                         from '@/features/tax-plans/components/TaxPlanForm'
 import { PlanVsActualTable }                   from '@/features/tax-plans/components/PlanVsActualTable'
 import { getCurrentUser, canApprove }          from '@/lib/auth'
+import { PageHeader }                          from '@/components/shared/PageHeader'
+import { FilterBar, FilterField, FilterSubmit, FILTER_CONTROL } from '@/components/shared/FilterBar'
+import { PAGE_WRAPPER }                        from '@/lib/ui-tokens'
 
 interface SearchParams { company?: string; year?: string }
 
@@ -25,48 +28,28 @@ export default async function KeHoachThuePage({
   const lines   = plan?.plan_data?.lines ?? []
 
   return (
-    <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-xl font-semibold text-gray-900">Kế hoạch thuế</h1>
-        <p className="text-sm text-gray-500 mt-0.5">So sánh kế hoạch thuế vs thực tế</p>
-      </div>
+    <div className={PAGE_WRAPPER}>
+      <PageHeader
+        title="Kế hoạch thuế"
+        subtitle="So sánh kế hoạch thuế vs thực tế"
+      />
 
-      {/* Bộ lọc — form GET, submit bằng nút */}
-      <form method="get" className="flex flex-wrap gap-3 items-end bg-white rounded-xl border px-4 py-3 shadow-sm">
-        <div className="space-y-1">
-          <p className="text-xs text-gray-500">Công ty</p>
-          <select
-            name="company"
-            defaultValue={companyId ?? ''}
-            className="h-8 rounded-md border text-sm px-2 bg-white min-w-[160px]"
-          >
+      <FilterBar>
+        <FilterField label="Công ty">
+          <select name="company" defaultValue={companyId ?? ''} className={`${FILTER_CONTROL} min-w-[180px]`}>
             <option value="">— Chọn công ty —</option>
-            {companies.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
+            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
-        </div>
-        <div className="space-y-1">
-          <p className="text-xs text-gray-500">Năm</p>
-          <input
-            type="number"
-            name="year"
-            className="h-8 w-24 rounded-md border text-sm px-2"
-            defaultValue={year}
-            min={2020}
-            max={2100}
-          />
-        </div>
-        <button
-          type="submit"
-          className="h-8 px-3 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200 self-end"
-        >
-          Xem
-        </button>
-      </form>
+        </FilterField>
+        <FilterField label="Năm">
+          <input type="number" name="year" defaultValue={year} min={2020} max={2100}
+            className={`${FILTER_CONTROL} w-24`} />
+        </FilterField>
+        <FilterSubmit>Xem</FilterSubmit>
+      </FilterBar>
 
       {!companyId && (
-        <div className="rounded-xl border bg-white shadow-sm px-6 py-10 text-center text-sm text-gray-400">
+        <div className="rounded-xl border border-dashed border-gray-300 bg-white px-6 py-12 text-center text-sm text-gray-400">
           Chọn công ty để xem kế hoạch thuế.
         </div>
       )}
