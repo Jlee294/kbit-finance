@@ -167,7 +167,7 @@ export function ExpenseVnForm({ companies, bankAccounts, projects, suppliers, on
       </div>
 
       {/* ── Trục 1: Hóa đơn VAT ────────────────────────────────── */}
-      <div className="border rounded-lg p-4 space-y-3">
+      <div className="border border-gray-200 rounded-lg p-4 space-y-3 border-l-2 border-l-brand-500">
         <div className="flex items-center gap-2">
           <input id="hasVat" type="checkbox" checked={hasVat}
             onChange={(e) => { setHasVat(e.target.checked); if (!e.target.checked) setVatAmount('') }}
@@ -198,7 +198,7 @@ export function ExpenseVnForm({ companies, bankAccounts, projects, suppliers, on
       </div>
 
       {/* ── Trục 2: Chi hộ ─────────────────────────────────────── */}
-      <div className="border rounded-lg p-4 space-y-3">
+      <div className="border border-gray-200 rounded-lg p-4 space-y-3 border-l-2 border-l-brand-500">
         <div className="flex items-center gap-2">
           <input id="isChiHo" type="checkbox" checked={isChiHo}
             onChange={(e) => { setIsChiHo(e.target.checked); if (!e.target.checked) setChiHoPerson('') }}
@@ -222,7 +222,7 @@ export function ExpenseVnForm({ companies, bankAccounts, projects, suppliers, on
       </div>
 
       {/* ── Giao dịch nội bộ ──────────────────────────────────── */}
-      <div className="border rounded-lg p-4 space-y-3">
+      <div className="border border-gray-200 rounded-lg p-4 space-y-3 border-l-2 border-l-brand-500">
         <div className="flex items-center gap-2">
           <input id="isInterco" type="checkbox" checked={isIntercompany}
             onChange={(e) => { setIsIntercompany(e.target.checked); if (!e.target.checked) setCounterpartCompanyId('') }}
@@ -273,7 +273,7 @@ export function ExpenseVnForm({ companies, bankAccounts, projects, suppliers, on
       )}
 
       {error && (
-        <p className="rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>
+        <p className="rounded-md bg-danger-50 px-4 py-2 text-sm text-danger-700">{error}</p>
       )}
 
       <div className="flex justify-end gap-2">

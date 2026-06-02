@@ -216,7 +216,7 @@ export function IncomeForm({ companies, customers, bankAccounts, projects, onDon
 
       {/* ─ Error / actions ─────────────────────────────────────────── */}
       {error && (
-        <p className="rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>
+        <p className="rounded-md bg-danger-50 px-4 py-2 text-sm text-danger-700">{error}</p>
       )}
 
       <div className="flex justify-end gap-2">

@@ -170,7 +170,7 @@ export function KrExpenseForm({ companies, krwBanks, krSuppliers, projects, onDo
       </div>
 
       {/* ── Hóa đơn VAT ─────────────────────────────────────────── */}
-      <div className="border rounded-lg p-4 space-y-3">
+      <div className="border border-gray-200 rounded-lg p-4 space-y-3 border-l-2 border-l-brand-500">
         <div className="flex items-center gap-2">
           <input id="hasVatKr" type="checkbox" checked={hasVat}
             onChange={(e) => { setHasVat(e.target.checked); if (!e.target.checked) setVatAmount('') }}
@@ -188,7 +188,7 @@ export function KrExpenseForm({ companies, krwBanks, krSuppliers, projects, onDo
       </div>
 
       {/* ── Giao dịch nội bộ ────────────────────────────────────── */}
-      <div className="border rounded-lg p-4 space-y-3">
+      <div className="border border-gray-200 rounded-lg p-4 space-y-3 border-l-2 border-l-brand-500">
         <div className="flex items-center gap-2">
           <input id="isIntercoKr" type="checkbox" checked={isInterco}
             onChange={(e) => { setIsInterco(e.target.checked); if (!e.target.checked) setCounterpartId('') }}
@@ -227,7 +227,7 @@ export function KrExpenseForm({ companies, krwBanks, krSuppliers, projects, onDo
         </div>
       )}
 
-      {error && <p className="rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>}
+      {error && <p className="rounded-md bg-danger-50 px-4 py-2 text-sm text-danger-700">{error}</p>}
 
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" onClick={onDone} disabled={saving}>Hủy</Button>

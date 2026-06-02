@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { createCashEntry, updateCashEntry, deleteCashEntry } from '../actions'
 import type { CashRow } from '../queries'
 import { EntityFilesButton } from '@/features/documents/components/EntityFilesButton'
+import { StatsCard } from '@/components/shared/StatsCard'
+import { FormSection } from '@/components/shared/FormSection'
 
 type SimpleOption = { id: string; name: string }
 type UserOption   = { id: string; name: string }
@@ -41,22 +43,10 @@ export function CashBookTable({ rows, companies, users, canWrite }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* Summary */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-xl border bg-white px-4 py-3">
-          <p className="text-xs text-gray-500">Tổng thu</p>
-          <p className="text-base font-semibold text-green-700">{fmtVND(totalThu)}</p>
-        </div>
-        <div className="rounded-xl border bg-white px-4 py-3">
-          <p className="text-xs text-gray-500">Tổng chi</p>
-          <p className="text-base font-semibold text-red-600">{fmtVND(totalChi)}</p>
-        </div>
-        <div className="rounded-xl border bg-white px-4 py-3">
-          <p className="text-xs text-gray-500">Chênh lệch</p>
-          <p className={`text-base font-semibold ${totalThu - totalChi >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
-            {fmtVND(totalThu - totalChi)}
-          </p>
-        </div>
+        <StatsCard label="Tổng thu"   value={fmtVND(totalThu)}            accent="success" />
+        <StatsCard label="Tổng chi"   value={fmtVND(totalChi)}            accent="danger" />
+        <StatsCard label="Chênh lệch" value={fmtVND(totalThu - totalChi)} accent={totalThu - totalChi >= 0 ? 'brand' : 'danger'} />
       </div>
 
       <div className="flex items-center justify-between">
@@ -267,7 +257,8 @@ function CashForm({ initial, companies, users, onDone }: {
       </div>
 
       {/* Thu hộ / Chi hộ */}
-      <div className="rounded-lg border bg-amber-50 px-3 py-2 space-y-2">
+      <FormSection title="Thu hộ / Chi hộ" description="Tích nếu giao dịch này là thu/chi giùm người khác">
+        <div className="rounded-lg border border-warning-500/20 bg-warning-50 px-3 py-2 space-y-2">
         <div className="flex flex-wrap gap-x-6 gap-y-2">
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={isChiHo}
@@ -292,9 +283,10 @@ function CashForm({ initial, companies, users, onDone }: {
               placeholder="Tên người được thu hộ" className="h-8 text-sm flex-1 min-w-[200px]" required={isThuHo} />
           )}
         </div>
-      </div>
+        </div>
+      </FormSection>
 
-      {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+      {error && <p className="rounded-md bg-danger-50 px-3 py-2 text-sm text-danger-700">{error}</p>}
 
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="outline" onClick={onDone}>Hủy</Button>
