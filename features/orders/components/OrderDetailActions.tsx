@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { OrderForm } from './OrderForm'
+import { DIALOG_LG } from '@/lib/ui-tokens'
 import { setFulfillmentStatus, deleteOrder } from '../actions'
 import type { OrderDetail } from '../queries'
 
@@ -12,7 +13,7 @@ type SimpleOption    = { id: string; name: string }
 type CustomerOption  = { id: string; code: string; name: string }
 type ProjectOption   = { id: string; code: string; name: string; company_id: string }
 type ProductOption   = { id: string; code: string; name: string }
-type WarehouseOption = { id: string; code: string; name: string }
+type WarehouseOption = { id: string; code: string; name: string; company_id?: string; is_default?: boolean }
 type UserOption      = { id: string; name: string }
 
 interface Props {
@@ -25,6 +26,7 @@ interface Props {
   products: ProductOption[]
   warehouses: WarehouseOption[]
   users: UserOption[]
+  autoEdit?: boolean
 }
 
 // Fulfillment transitions: what a button should advance to
@@ -43,10 +45,10 @@ const NEXT_LABEL: Record<string, string> = {
 
 export function OrderDetailActions({
   order, canWrite, canApprove,
-  companies, customers, projects, products, warehouses, users,
+  companies, customers, projects, products, warehouses, users, autoEdit,
 }: Props) {
   const router = useRouter()
-  const [editOpen, setEditOpen]   = useState(false)
+  const [editOpen, setEditOpen]   = useState(!!autoEdit && order.fulfillment_status !== 'delivered')
   const [busy, setBusy]           = useState(false)
   const [error, setError]         = useState('')
 
@@ -116,7 +118,7 @@ export function OrderDetailActions({
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent
           showCloseButton={false}
-          className="max-w-3xl max-h-[90vh] overflow-y-auto"
+          className={DIALOG_LG}
         >
           <DialogHeader>
             <DialogTitle>Sửa đơn {order.order_code}</DialogTitle>

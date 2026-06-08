@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { createClient } from '@/lib/supabase/client'
 import { createPeriod } from '../actions'
 
@@ -23,6 +22,8 @@ export function PeriodForm({ onDone }: Props) {
   const [period, setPeriod] = useState('')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+
+  const sel = 'w-full h-9 rounded-lg border border-input bg-transparent px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50'
 
   useEffect(() => {
     const sb = createClient()
@@ -50,14 +51,12 @@ export function PeriodForm({ onDone }: Props) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1">
         <Label>Công ty</Label>
-        <Select value={companyId} onValueChange={(v) => setCompanyId(v ?? '')} required>
-          <SelectTrigger><SelectValue placeholder="Chọn công ty" /></SelectTrigger>
-          <SelectContent>
-            {companies.map((c) => (
-              <SelectItem key={c.id} value={c.id}>{c.code} — {c.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <select value={companyId} onChange={(e) => setCompanyId(e.target.value)} required className={sel}>
+          <option value="">Chọn công ty</option>
+          {companies.map((c) => (
+            <option key={c.id} value={c.id}>{c.code} — {c.name}</option>
+          ))}
+        </select>
       </div>
       <div className="space-y-1">
         <Label>Kỳ (YYYY-MM)</Label>

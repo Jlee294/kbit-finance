@@ -5,20 +5,22 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { formatVND } from '@/lib/format'
-import { createExpenseVn } from '../actions'
+import { formatVND, todayLocal } from '@/lib/format'
+import { createExpenseVn, payVnSupplier } from '../actions'
 
 type SimpleOption  = { id: string; name: string }
 type BankOption    = { id: string; name: string; currency: string; company_id: string }
 type ProjectOption = { id: string; code: string; name: string; company_id: string }
 type SupplierOption = { id: string; code: string; name: string }
+type SupplierOrderOption = { id: string; order_code: string; supplier_id: string; outstanding: number }
 
 interface Props {
-  companies:    SimpleOption[]
-  bankAccounts: BankOption[]
-  projects:     ProjectOption[]
-  suppliers:    SupplierOption[]
-  onDone:       () => void
+  companies:      SimpleOption[]
+  bankAccounts:   BankOption[]
+  projects:       ProjectOption[]
+  suppliers:      SupplierOption[]
+  supplierOrders?: SupplierOrderOption[]
+  onDone:         () => void
 }
 
 const EXPENSE_CATEGORIES = [
@@ -27,17 +29,18 @@ const EXPENSE_CATEGORIES = [
   'R&D', 'Khác',
 ]
 
-export function ExpenseVnForm({ companies, bankAccounts, projects, suppliers, onDone }: Props) {
+export function ExpenseVnForm({ companies, bankAccounts, projects, suppliers, supplierOrders = [], onDone }: Props) {
   const router = useRouter()
 
   // Header
   const [companyId,   setCompanyId]   = useState('')
   const [bankId,      setBankId]      = useState('')
-  const [txnDate,     setTxnDate]     = useState(new Date().toISOString().slice(0, 10))
+  const [txnDate,     setTxnDate]     = useState(todayLocal())
   const [amountVnd,   setAmountVnd]   = useState('')
   const [note,        setNote]        = useState('')
   const [projectId,   setProjectId]   = useState('')
   const [supplierId,  setSupplierId]  = useState('')
+  const [supplierOrderId, setSupplierOrderId] = useState('')
   const [category,    setCategory]    = useState('')
 
   // Trục 1: VAT
@@ -52,6 +55,10 @@ export function ExpenseVnForm({ companies, bankAccounts, projects, suppliers, on
   const [isIntercompany,          setIsIntercompany]          = useState(false)
   const [counterpartCompanyId, setCounterpartCompanyId] = useState('')
 
+  // Định khoản tay (áp cho cả chi thường lẫn trả nợ NCC)
+  const [dinhKhoanNo, setDinhKhoanNo] = useState('')
+  const [dinhKhoanCo, setDinhKhoanCo] = useState('')
+
   const [error,  setError]  = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -60,6 +67,9 @@ export function ExpenseVnForm({ companies, bankAccounts, projects, suppliers, on
   const filteredBanks    = companyId ? bankAccounts.filter((b) => b.company_id === companyId) : bankAccounts
   const filteredProjects = companyId ? projects.filter((p) => p.company_id === companyId)     : projects
   const counterpartCompanies = companies.filter((c) => c.id !== companyId)
+  // Đơn NCC (VNĐ) còn nợ của nhà cung cấp đã chọn — để trả công nợ
+  const ordersForSupplier = supplierId ? supplierOrders.filter((o) => o.supplier_id === supplierId) : []
+  const isPayingDebt = !!supplierOrderId
 
   const amt = parseFloat(amountVnd) || 0
   const vat = parseFloat(vatAmount) || 0
@@ -68,6 +78,21 @@ export function ExpenseVnForm({ companies, bankAccounts, projects, suppliers, on
     e.preventDefault()
     setSaving(true); setError('')
     try {
+      if (isPayingDebt) {
+        // Thanh toán công nợ NCC: vừa ghi phiếu chi vừa giảm nợ (atomic)
+        await payVnSupplier({
+          supplier_order_id: supplierOrderId,
+          bank_account_id:   bankId,
+          amount_vnd:        amt,
+          txn_date:          txnDate,
+          note:              note || null,
+          dinh_khoan_no:     dinhKhoanNo || null,
+          dinh_khoan_co:     dinhKhoanCo || null,
+        })
+        router.refresh()
+        onDone()
+        return
+      }
       await createExpenseVn({
         company_id:               companyId,
         bank_account_id:          bankId,
@@ -83,6 +108,8 @@ export function ExpenseVnForm({ companies, bankAccounts, projects, suppliers, on
         counterpart_company_id:   isIntercompany ? counterpartCompanyId : null,
         project_id:               projectId || null,
         supplier_id:              supplierId || null,
+        dinh_khoan_no:            dinhKhoanNo || null,
+        dinh_khoan_co:            dinhKhoanCo || null,
       })
       router.refresh()
       onDone()
@@ -123,7 +150,7 @@ export function ExpenseVnForm({ companies, bankAccounts, projects, suppliers, on
 
           <div className="space-y-1">
             <Label>Số tiền chi (VNĐ) <span className="text-red-500">*</span></Label>
-            <Input type="number" min="1" step="1000"
+            <Input type="number" min="1" step="1"
               value={amountVnd} onChange={(e) => setAmountVnd(e.target.value)}
               placeholder="VD: 5000000" required />
             {amt > 0 && <p className="text-xs text-gray-500 mt-0.5">{formatVND(amt)}</p>}
@@ -136,11 +163,30 @@ export function ExpenseVnForm({ companies, bankAccounts, projects, suppliers, on
 
           <div className="space-y-1">
             <Label>Nhà cung cấp</Label>
-            <select value={supplierId} onChange={(e) => setSupplierId(e.target.value)} className={sel}>
+            <select value={supplierId} onChange={(e) => { setSupplierId(e.target.value); setSupplierOrderId('') }} className={sel}>
               <option value="">— Không có —</option>
               {suppliers.map((s) => <option key={s.id} value={s.id}>[{s.code}] {s.name}</option>)}
             </select>
           </div>
+
+          {ordersForSupplier.length > 0 && (
+            <div className="space-y-1">
+              <Label>Trả cho đơn mua <span className="text-xs text-gray-400 font-normal">(giảm công nợ)</span></Label>
+              <select value={supplierOrderId}
+                onChange={(e) => {
+                  const oid = e.target.value
+                  setSupplierOrderId(oid)
+                  const o = supplierOrders.find((x) => x.id === oid)
+                  if (o && !amountVnd) setAmountVnd(String(o.outstanding))
+                }}
+                className={sel}>
+                <option value="">— Không (chi phí thường) —</option>
+                {ordersForSupplier.map((o) => (
+                  <option key={o.id} value={o.id}>{o.order_code} — còn nợ {formatVND(o.outstanding)}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="space-y-1">
             <Label>Dự án</Label>
@@ -158,6 +204,16 @@ export function ExpenseVnForm({ companies, bankAccounts, projects, suppliers, on
             </select>
           </div>
 
+          <div className="space-y-1">
+            <Label>Định khoản Nợ</Label>
+            <Input value={dinhKhoanNo} onChange={(e) => setDinhKhoanNo(e.target.value)} placeholder="VD: 642" />
+          </div>
+
+          <div className="space-y-1">
+            <Label>Định khoản Có</Label>
+            <Input value={dinhKhoanCo} onChange={(e) => setDinhKhoanCo(e.target.value)} placeholder="VD: 112" />
+          </div>
+
           <div className="space-y-1 col-span-2">
             <Label>Ghi chú</Label>
             <Input value={note} onChange={(e) => setNote(e.target.value)}
@@ -166,6 +222,14 @@ export function ExpenseVnForm({ companies, bankAccounts, projects, suppliers, on
         </div>
       </div>
 
+      {isPayingDebt && (
+        <div className="rounded-lg bg-brand-50 border border-brand-100 px-4 py-3 text-sm text-brand-800">
+          Đang <strong>thanh toán công nợ</strong> cho đơn mua đã chọn — phiếu chi này sẽ tự động <strong>giảm nợ phải trả</strong> của đơn đó.
+          <span className="block text-xs text-gray-500 mt-1">(Các mục VAT / chi hộ / nội bộ không áp dụng khi trả công nợ.)</span>
+        </div>
+      )}
+
+      {!isPayingDebt && (<>
       {/* ── Trục 1: Hóa đơn VAT ────────────────────────────────── */}
       <div className="border border-gray-200 rounded-lg p-4 space-y-3 border-l-2 border-l-brand-500">
         <div className="flex items-center gap-2">
@@ -180,7 +244,7 @@ export function ExpenseVnForm({ companies, bankAccounts, projects, suppliers, on
           <div className="grid grid-cols-2 gap-4 pl-6">
             <div className="space-y-1">
               <Label>Số tiền VAT <span className="text-red-500">*</span></Label>
-              <Input type="number" min="1" step="1000"
+              <Input type="number" min="1" step="1"
                 value={vatAmount} onChange={(e) => setVatAmount(e.target.value)}
                 placeholder="VD: 500000" required={hasVat} />
               {vat > 0 && <p className="text-xs text-gray-500 mt-0.5">{formatVND(vat)}</p>}
@@ -271,6 +335,7 @@ export function ExpenseVnForm({ companies, bankAccounts, projects, suppliers, on
           )}
         </div>
       )}
+      </>)}
 
       {error && (
         <p className="rounded-md bg-danger-50 px-4 py-2 text-sm text-danger-700">{error}</p>
@@ -279,7 +344,7 @@ export function ExpenseVnForm({ companies, bankAccounts, projects, suppliers, on
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" onClick={onDone} disabled={saving}>Hủy</Button>
         <Button type="submit" disabled={saving}>
-          {saving ? 'Đang lưu...' : 'Ghi phiếu chi'}
+          {saving ? 'Đang lưu...' : (isPayingDebt ? 'Ghi chi & giảm nợ NCC' : 'Ghi phiếu chi')}
         </Button>
       </div>
     </form>

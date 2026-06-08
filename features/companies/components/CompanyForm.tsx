@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { createCompany, updateCompany } from '../actions'
+import { FORM_GRID } from '@/lib/ui-tokens'
 
 interface Props {
   initial?: { id?: string; code?: string; name?: string; country?: string; base_currency?: string }
@@ -21,6 +21,8 @@ export function CompanyForm({ initial, onDone }: Props) {
   const [currency, setCurrency] = useState<'VND' | 'KRW'>((initial?.base_currency as 'VND' | 'KRW') ?? 'VND')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+
+  const sel = 'w-full h-9 rounded-lg border border-input bg-transparent px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50'
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -46,34 +48,28 @@ export function CompanyForm({ initial, onDone }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-1">
-        <Label>Mã công ty</Label>
-        <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="KBIT" required />
-      </div>
-      <div className="space-y-1">
-        <Label>Tên công ty</Label>
-        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="KBIT Holdings" required />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className={FORM_GRID}>
+        <div className="space-y-1">
+          <Label>Mã công ty</Label>
+          <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="KBIT" required />
+        </div>
+        <div className="space-y-1">
+          <Label>Tên công ty</Label>
+          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="KBIT Holdings" required />
+        </div>
         <div className="space-y-1">
           <Label>Quốc gia</Label>
-          <Select value={country} onValueChange={(v) => setCountry(v as 'VN' | 'KR')}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="VN">Việt Nam</SelectItem>
-              <SelectItem value="KR">Hàn Quốc</SelectItem>
-            </SelectContent>
-          </Select>
+          <select value={country} onChange={(e) => setCountry(e.target.value as 'VN' | 'KR')} className={sel}>
+            <option value="VN">Việt Nam</option>
+            <option value="KR">Hàn Quốc</option>
+          </select>
         </div>
         <div className="space-y-1">
           <Label>Tiền tệ gốc</Label>
-          <Select value={currency} onValueChange={(v) => setCurrency(v as 'VND' | 'KRW')}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="VND">VNĐ</SelectItem>
-              <SelectItem value="KRW">KRW</SelectItem>
-            </SelectContent>
-          </Select>
+          <select value={currency} onChange={(e) => setCurrency(e.target.value as 'VND' | 'KRW')} className={sel}>
+            <option value="VND">VNĐ</option>
+            <option value="KRW">KRW</option>
+          </select>
         </div>
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}

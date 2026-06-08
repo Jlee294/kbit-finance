@@ -13,7 +13,9 @@ import {
 import { computeOrderTotals, derivePaymentStatus } from './status'
 import { buildOrderCode, orderCodePrefix } from './order-code'
 import { getNextOrderSeq } from './queries'
-import { deductOrderStock } from '@/features/warehouse/actions'
+import { defaultWarehouseId } from '@/features/warehouse/queries'
+import { computeStockDeltas } from './stock-deltas'
+import { maybeDeductOrderStock } from './stock-sync'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -44,6 +46,19 @@ export async function createOrder(raw: CreateOrderInput) {
   const supabase = await createClient()
 
   const input = createOrderSchema.parse(raw)
+
+  // C1: chặn chọn kho thuộc CÔNG TY KHÁC (kbit_deduct_order_item suy công ty TỪ kho
+  // → nếu kho khác công ty của đơn sẽ trừ nhầm tồn + sai giá vốn). Chốt ở server.
+  if (input.warehouse_id) {
+    const { data: wh } = await supabase.from('warehouses').select('company_id').eq('id', input.warehouse_id).single()
+    if (wh && wh.company_id !== input.company_id) {
+      throw new Error('Kho xuất hàng không thuộc công ty của đơn. Vui lòng chọn kho của đúng công ty.')
+    }
+  }
+
+  // B: không chọn kho → tự dùng kho chính của công ty (để tự đồng bộ kho theo mã hàng).
+  if (!input.warehouse_id) input.warehouse_id = await defaultWarehouseId(input.company_id)
+
   const { grandTotal } = computeOrderTotals(
     input.items,
     input.discount_pct,
@@ -129,23 +144,16 @@ export async function createOrder(raw: CreateOrderInput) {
       throw new Error(itemsErr.message)
     }
 
-    // Tự động trừ kho nếu đơn không phải nháp và có chọn kho
-    if (input.warehouse_id && input.fulfillment_status !== 'draft') {
-      const stockItems = input.items
-        .filter((it) => !!it.product_id)
-        .map((it) => ({ product_id: it.product_id!, quantity: it.qty }))
-
-      if (stockItems.length > 0) {
-        const deductResult = await deductOrderStock(order.id, input.warehouse_id, stockItems)
-        if (deductResult.error) {
-          // Rollback: xoá đơn vừa tạo
-          await supabase.from('customer_orders').delete().eq('id', order.id)
-          throw new Error(deductResult.error)
-        }
-      }
+    // Tự động trừ kho theo mã hàng (kho chính nếu không chọn) — 1 nguồn sự thật ở stock-sync.
+    // Dòng không mã hàng bị bỏ qua; đơn Nháp chưa trừ; cho phép kho âm.
+    const ds = await maybeDeductOrderStock(order.id)
+    if (ds.error) {
+      await supabase.from('customer_orders').delete().eq('id', order.id)  // rollback đơn vừa tạo
+      throw new Error(ds.error)
     }
 
     revalidatePath('/don-hang')
+    revalidatePath('/kho')
     return { id: order.id, orderCode: order.order_code }
   }
 
@@ -175,10 +183,28 @@ export async function updateOrder(id: string, raw: UpdateOrderInput) {
   if (existing.fulfillment_status === 'delivered') {
     throw new Error('Không thể sửa đơn đã giao')
   }
-  // Nếu đã trừ kho, không cho thay đổi kho hoặc số lượng
+
+  // C1: chặn chọn kho thuộc CÔNG TY KHÁC (kbit_deduct_order_item / kbit_adjust_stock
+  // suy công ty TỪ kho → trừ nhầm tồn + sai giá vốn). Chốt ở server trước khi điều chỉnh tồn.
+  if (input.warehouse_id) {
+    const { data: wh } = await supabase.from('warehouses').select('company_id').eq('id', input.warehouse_id).single()
+    if (wh && wh.company_id !== input.company_id) {
+      throw new Error('Kho xuất hàng không thuộc công ty của đơn. Vui lòng chọn kho của đúng công ty.')
+    }
+  }
+
+  // B: giữ kho cũ nếu không chọn; đơn cũ chưa có kho → dùng kho chính của công ty.
+  if (!input.warehouse_id) input.warehouse_id = existing.warehouse_id ?? await defaultWarehouseId(input.company_id)
+
+  // BLOCKER 6: nếu đơn ĐÃ trừ kho, đọc dòng hàng CŨ trước khi xóa để điều chỉnh
+  // tồn theo số mới (hoàn phần cũ, trừ phần mới — cho phép âm).
+  let oldStockItems: { product_id: string | null; qty: number }[] = []
   if (existing.stock_deducted) {
-    const warehouseChanged = (input.warehouse_id ?? null) !== (existing.warehouse_id ?? null)
-    if (warehouseChanged) throw new Error('Đơn đã xuất kho — không thể đổi kho')
+    const { data: oldRows } = await supabase
+      .from('customer_order_items')
+      .select('product_id, qty')
+      .eq('order_id', id)
+    oldStockItems = (oldRows ?? []).map((r) => ({ product_id: r.product_id, qty: Number(r.qty) }))
   }
 
   const { grandTotal } = computeOrderTotals(
@@ -248,8 +274,40 @@ export async function updateOrder(id: string, raw: UpdateOrderInput) {
 
   if (itemsErr) throw new Error(itemsErr.message)
 
+  // BLOCKER 6: điều chỉnh tồn kho theo chênh lệch dòng hàng cũ ↔ mới (cho phép âm).
+  if (existing.stock_deducted) {
+    const deltas = computeStockDeltas(
+      oldStockItems,
+      input.items.map((it) => ({ product_id: it.product_id ?? null, qty: it.qty })),
+      existing.warehouse_id,
+      input.warehouse_id ?? null,
+    )
+    if (deltas.length > 0) {
+      const me = await getCurrentUser()
+      for (const d of deltas) {
+        // kbit_adjust_stock TỰ ghi dòng sổ 'adjustment' (qty mang dấu + unit_cost) atomic;
+        // không ghi tay nữa để báo cáo NXT/khóa sổ tính đúng (0032).
+        const { error: adjErr } = await supabase.rpc('kbit_adjust_stock', {
+          p_warehouse_id: d.warehouse_id,
+          p_product_id:   d.product_id,
+          p_delta:        d.delta,
+          p_txn_date:     input.order_date,
+          p_note:         d.delta > 0 ? `Hoàn kho do sửa đơn ${id}` : `Trừ thêm kho do sửa đơn ${id}`,
+          p_created_by:   me?.id ?? null,
+        })
+        if (adjErr) throw new Error(`Không điều chỉnh được tồn kho: ${adjErr.message}`)
+      }
+    }
+  } else {
+    // Đơn CHƯA trừ kho → chỉ trừ nếu TRƯỚC khi sửa là Nháp (vừa xác nhận).
+    // Đơn cũ "không trừ kho" (đã non-draft từ trước) KHÔNG bị trừ hồi tố → giữ số lịch sử.
+    const ds = await maybeDeductOrderStock(id, { previousStatus: existing.fulfillment_status })
+    if (ds.error) throw new Error(ds.error)
+  }
+
   revalidatePath('/don-hang')
   revalidatePath(`/don-hang/${id}`)
+  revalidatePath('/kho')
 }
 
 // ── setFulfillmentStatus ──────────────────────────────────────────────────────
@@ -298,8 +356,13 @@ export async function setFulfillmentStatus(
 
   if (updateErr) throw new Error(updateErr.message)
 
+  // Bịt lỗ hổng: chuyển TỪ Nháp sang xác nhận → tự trừ kho. Đơn cũ đã non-draft KHÔNG trừ hồi tố.
+  const ds = await maybeDeductOrderStock(id, { previousStatus: order.fulfillment_status })
+  if (ds.error) throw new Error(ds.error)
+
   revalidatePath('/don-hang')
   revalidatePath(`/don-hang/${id}`)
+  revalidatePath('/kho')
 }
 
 // ── deleteOrder ───────────────────────────────────────────────────────────────

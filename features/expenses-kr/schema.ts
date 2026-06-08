@@ -15,6 +15,8 @@ export const krExpenseSchema = z.object({
   project_id:      z.string().uuid().optional().nullable(),
   is_intercompany: z.boolean().default(false),
   counterpart_company_id: z.string().uuid().optional().nullable(),
+  dinh_khoan_no:   z.string().optional().nullable(),
+  dinh_khoan_co:   z.string().optional().nullable(),
 })
   .refine(
     (d) => !d.is_intercompany || !!d.counterpart_company_id,
@@ -38,6 +40,8 @@ export const krSupplierPaySchema = z.object({
   rate_booked:       z.coerce.number().positive().optional().nullable(),
   txn_date:          z.string().min(1, 'Chọn ngày'),
   note:              z.string().optional().nullable(),
+  dinh_khoan_no:     z.string().optional().nullable(),
+  dinh_khoan_co:     z.string().optional().nullable(),
 })
 
 export type KrSupplierPayInput = z.infer<typeof krSupplierPaySchema>

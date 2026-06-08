@@ -8,6 +8,7 @@ import { ProductForm } from './ProductForm'
 import { BrandForm } from '@/features/brands/components/BrandForm'
 import type { Brand } from '@/features/brands/queries'
 import type { ProductRow, ExchangeRates } from '../queries'
+import { DIALOG_MD, DIALOG_SM } from '@/lib/ui-tokens'
 
 // ── Currency helpers ──────────────────────────────────────────────────────────
 
@@ -292,7 +293,7 @@ export function ProductCatalog({ brands, products, rates, canWrite }: Props) {
         open={dialog === 'addProduct' || dialog === 'editProduct'}
         onOpenChange={(o) => { if (!o) setDialog('none') }}
       >
-        <DialogContent className="max-w-lg">
+        <DialogContent className={DIALOG_MD}>
           <DialogHeader>
             <DialogTitle>
               {dialog === 'editProduct' ? 'Cập nhật sản phẩm' : 'Thêm sản phẩm mới'}
@@ -311,7 +312,7 @@ export function ProductCatalog({ brands, products, rates, canWrite }: Props) {
         open={dialog === 'addBrand' || dialog === 'editBrand'}
         onOpenChange={(o) => { if (!o) setDialog('none') }}
       >
-        <DialogContent className="max-w-sm">
+        <DialogContent className={DIALOG_SM}>
           <DialogHeader>
             <DialogTitle>
               {dialog === 'editBrand' ? 'Cập nhật brand' : 'Thêm brand mới'}

@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { OperationForm } from '@/features/operation-library/components/OperationForm'
 import type { Operation } from '@/features/operation-library/queries'
 import type { DocumentType } from '@/features/document-types/queries'
+import { DIALOG_LG } from '@/lib/ui-tokens'
 
 interface Props {
   operations: Operation[]
@@ -92,7 +93,7 @@ export function OperationLibraryClient({ operations, docTypes, canWrite }: Props
 
       {/* Add dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent showCloseButton={false} className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent showCloseButton={false} className={DIALOG_LG}>
           <DialogHeader><DialogTitle>Thêm nghiệp vụ</DialogTitle></DialogHeader>
           <OperationForm docTypes={docTypes} onDone={() => setAddOpen(false)} />
         </DialogContent>
@@ -100,7 +101,7 @@ export function OperationLibraryClient({ operations, docTypes, canWrite }: Props
 
       {/* Edit dialog */}
       <Dialog open={!!editItem} onOpenChange={(o) => !o && setEditItem(null)}>
-        <DialogContent showCloseButton={false} className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent showCloseButton={false} className={DIALOG_LG}>
           <DialogHeader><DialogTitle>Sửa nghiệp vụ — {editItem?.code}</DialogTitle></DialogHeader>
           {editItem && (
             <OperationForm editItem={editItem} docTypes={docTypes} onDone={() => setEditItem(null)} />

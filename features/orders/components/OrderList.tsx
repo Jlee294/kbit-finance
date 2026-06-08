@@ -8,18 +8,34 @@ import { formatVND, formatDate } from '@/lib/format'
 import { FulfillmentBadge, PaymentBadge } from './StatusBadges'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { EmptyState } from '@/components/shared/EmptyState'
-import { PAGE_WRAPPER } from '@/lib/ui-tokens'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { OrderForm } from './OrderForm'
+import { PAGE_WRAPPER, DIALOG_LG, LIST_WRAP, LIST_THEAD, LIST_ROW } from '@/lib/ui-tokens'
 import type { OrderListRow } from '../queries'
+
+type SimpleOption    = { id: string; name: string }
+type CustomerOption  = { id: string; code: string; name: string }
+type ProjectOption   = { id: string; code: string; name: string; company_id: string }
+type ProductOption   = { id: string; code: string; name: string }
+type WarehouseOption = { id: string; code: string; name: string; company_id?: string; is_default?: boolean }
+type UserOption      = { id: string; name: string }
 
 interface Props {
   initialRows: OrderListRow[]
   total: number
   canWrite: boolean
+  companies:  SimpleOption[]
+  customers:  CustomerOption[]
+  projects:   ProjectOption[]
+  products:   ProductOption[]
+  warehouses: WarehouseOption[]
+  users:      UserOption[]
 }
 
-export function OrderList({ initialRows, total, canWrite }: Props) {
+export function OrderList({ initialRows, total, canWrite, companies, customers, projects, products, warehouses, users }: Props) {
   const router = useRouter()
   const [rows] = useState<OrderListRow[]>(initialRows)
+  const [addOpen, setAddOpen] = useState(false)
 
   return (
     <div className={PAGE_WRAPPER}>
@@ -32,12 +48,29 @@ export function OrderList({ initialRows, total, canWrite }: Props) {
               className="h-9 px-3 inline-flex items-center text-sm rounded-md border border-gray-200 bg-white hover:bg-gray-50 transition-colors">
               ↥ Import XML
             </a>
-            <Button onClick={() => router.push('/don-hang/tao-moi')}>
+            <Button onClick={() => setAddOpen(true)}>
               + Tạo đơn hàng
             </Button>
           </>
         ) : undefined}
       />
+
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent showCloseButton={false} className={DIALOG_LG}>
+          <DialogHeader>
+            <DialogTitle>Tạo đơn hàng bán ra</DialogTitle>
+          </DialogHeader>
+          <OrderForm
+            companies={companies}
+            customers={customers}
+            projects={projects}
+            products={products}
+            warehouses={warehouses}
+            users={users}
+            onDone={() => setAddOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
 
       {rows.length === 0 ? (
         <EmptyState
@@ -45,13 +78,13 @@ export function OrderList({ initialRows, total, canWrite }: Props) {
           title="Chưa có đơn hàng nào"
           description="Bấm + Tạo đơn hàng để thêm đơn đầu tiên, hoặc import từ XML"
           action={canWrite ? (
-            <Button onClick={() => router.push('/don-hang/tao-moi')}>+ Tạo đơn hàng</Button>
+            <Button onClick={() => setAddOpen(true)}>+ Tạo đơn hàng</Button>
           ) : undefined}
         />
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-white">
+        <div className={LIST_WRAP}>
           <table className="w-full text-sm">
-            <thead className="border-b border-brand-100 bg-brand-50/60 text-brand-800 text-xs font-semibold tracking-wide">
+            <thead className={LIST_THEAD}>
               <tr>
                 <th className="px-4 py-3 text-left">Mã đơn</th>
                 <th className="px-4 py-3 text-left">Khách hàng</th>
@@ -61,13 +94,14 @@ export function OrderList({ initialRows, total, canWrite }: Props) {
                 <th className="px-4 py-3 text-right">Còn lại</th>
                 <th className="px-4 py-3 text-center">Giao hàng</th>
                 <th className="px-4 py-3 text-center">Thanh toán</th>
+                {canWrite && <th className="px-4 py-3 text-center">Sửa</th>}
               </tr>
             </thead>
             <tbody>
               {rows.map((row) => (
                 <tr
                   key={row.id}
-                  className="border-t hover:bg-brand-50/40 transition-colors cursor-pointer"
+                  className={LIST_ROW}
                   onClick={() => router.push(`/don-hang/${row.id}`)}
                 >
                   <td className="px-4 py-3 font-mono font-medium text-brand-800">
@@ -101,6 +135,20 @@ export function OrderList({ initialRows, total, canWrite }: Props) {
                   <td className="px-4 py-3 text-center">
                     <PaymentBadge status={row.payment_status} />
                   </td>
+                  {canWrite && (
+                    <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                      {row.fulfillment_status !== 'delivered' ? (
+                        <Link
+                          href={`/don-hang/${row.id}?edit=1`}
+                          className="text-xs font-medium text-brand-700 hover:underline"
+                        >
+                          Sửa
+                        </Link>
+                      ) : (
+                        <span className="text-xs text-gray-300">—</span>
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

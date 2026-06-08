@@ -1,5 +1,5 @@
 import { Suspense }                          from 'react'
-import { listCompanies }                       from '@/features/companies/queries'
+import { getGlobalFilter }                     from '@/lib/global-filter'
 import { getCompanyReport }                    from '@/features/reports/queries'
 import { CompanyKpiCards }                     from '@/features/reports/components/KpiCards'
 import { CashFlowTable }                       from '@/features/reports/components/CashFlowTable'
@@ -88,19 +88,15 @@ export default async function BaoCaoPage({
   searchParams: Promise<SearchParams>
 }) {
   const sp        = await searchParams
-  const companyId = sp.company
+  const { companyId } = await getGlobalFilter()
   const projectId = sp.project
   const from      = sp.from
   const to        = sp.to
 
-  // Chạy song song: listCompanies + projects (nếu có companyId)
   const supabase = await createClient()
-  const [companies, projectsRes] = await Promise.all([
-    listCompanies(),
-    companyId
-      ? supabase.from('projects').select('id, name').eq('company_id', companyId).order('name')
-      : Promise.resolve({ data: [] as Array<{ id: string; name: string }> }),
-  ])
+  const projectsRes = companyId
+    ? await supabase.from('projects').select('id, name').eq('company_id', companyId).order('name')
+    : { data: [] as Array<{ id: string; name: string }> }
   const projects: Array<{ id: string; name: string }> = projectsRes.data ?? []
 
   return (
@@ -119,9 +115,8 @@ export default async function BaoCaoPage({
       <Suspense fallback={null}>
         <ReportFilters
           mode="company"
-          companies={companies.map((c) => ({ id: c.id, name: c.name }))}
           projects={projects}
-          companyId={companyId}
+          companyId={companyId ?? undefined}
           projectId={projectId}
           from={from}
           to={to}

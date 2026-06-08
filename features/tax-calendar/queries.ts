@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { todayLocal, formatLocalDate } from '@/lib/format'
 
 export interface CalendarItem {
   id:         string
@@ -23,8 +24,8 @@ export async function listCalendar(companyId: string): Promise<CalendarItem[]> {
 
 export async function listDueSoon(companyId: string): Promise<CalendarItem[]> {
   const supabase = await createClient()
-  const today    = new Date().toISOString().slice(0, 10)
-  const soon     = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10)
+  const today    = todayLocal()
+  const soon     = formatLocalDate(new Date(Date.now() + 7 * 86_400_000))
   const { data, error } = await supabase
     .from('tax_compliance_calendar')
     .select('id, company_id, tax_type, period, due_date, status, note')
@@ -39,7 +40,7 @@ export async function listDueSoon(companyId: string): Promise<CalendarItem[]> {
 
 export async function listOverdue(companyId: string): Promise<CalendarItem[]> {
   const supabase = await createClient()
-  const today    = new Date().toISOString().slice(0, 10)
+  const today    = todayLocal()
   const { data, error } = await supabase
     .from('tax_compliance_calendar')
     .select('id, company_id, tax_type, period, due_date, status, note')

@@ -3,6 +3,7 @@
 import { revalidatePath }  from 'next/cache'
 import { createClient }    from '@/lib/supabase/server'
 import { createTaskSchema } from './schema'
+import { todayLocal, formatLocalDate } from '@/lib/format'
 
 // ── Tạo task thủ công ─────────────────────────────────────────────────────────
 export async function createTask(raw: unknown) {
@@ -90,8 +91,8 @@ export async function generateAutoTasks(companyId: string): Promise<{ created: n
   }
 
   // ── (b) Nghĩa vụ thuế đến hạn ≤7 ngày ────────────────────────────────────
-  const soon = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10)
-  const today = new Date().toISOString().slice(0, 10)
+  const soon = formatLocalDate(new Date(Date.now() + 7 * 86_400_000))
+  const today = todayLocal()
   const { data: taxes } = await supabase
     .from('tax_compliance_calendar')
     .select('id, tax_type, period, due_date')

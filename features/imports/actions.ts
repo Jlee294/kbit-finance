@@ -5,21 +5,68 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { supplierImportSchema } from './schema'
 import { allocateUnitCost } from './cost'
+import { buildOrderCode } from '@/features/orders/order-code'
+import { getNextSupplierOrderSeq } from './queries'
+import { defaultWarehouseId } from '@/features/warehouse/queries'
 
 /** Tạo đơn nhập khẩu mới. Trả về id đơn vừa tạo. */
 export async function createImportOrder(input: unknown): Promise<string> {
   const data = supplierImportSchema.parse(input)
   const supabase = await createClient()
 
+  // C-1: chặn chọn kho thuộc CÔNG TY KHÁC (kbit_receive_stock suy công ty TỪ kho
+  // → nếu kho khác công ty của đơn sẽ cộng nhầm tồn + sai giá vốn). Chốt ở server.
+  if (data.warehouse_id) {
+    const { data: wh } = await supabase.from('warehouses').select('company_id').eq('id', data.warehouse_id).single()
+    if (wh && wh.company_id !== data.company_id) {
+      throw new Error('Kho nhập hàng không thuộc công ty của đơn. Vui lòng chọn kho của đúng công ty.')
+    }
+  }
+
+  // B: không chọn kho → tự dùng kho chính của công ty (tự cộng tồn theo mã hàng).
+  if (!data.warehouse_id) {
+    const def = await defaultWarehouseId(data.company_id)
+    if (def) data.warehouse_id = def
+  }
+
   // (1) Chèn header. KHÔNG gửi cost_total / outstanding (GENERATED ALWAYS).
   //     order_type cố định 'import'. C4/D4: ghi exchange_rate khi KRW.
-  const { items, ...header } = data
-  const { data: order, error: e1 } = await supabase
-    .from('supplier_orders')
-    .insert({ ...header, order_type: header.order_type ?? 'import' })
-    .select('id')
-    .single()
-  if (e1) throw new Error(e1.message)
+  const { items, order_code: rawCode, ...rest } = data
+  const header = { ...rest, order_type: rest.order_type ?? 'import' }
+  const manualCode = rawCode?.trim() || null
+
+  // Mã đơn: nếu người dùng để trống → tự sinh <mãNCC>-MMYY-NN, retry chống trùng
+  // (sao quy ước createOrder bên bán). Nếu gõ tay → dùng thẳng mã đó.
+  let order: { id: string } | null = null
+  if (manualCode) {
+    const { data: o, error } = await supabase
+      .from('supplier_orders')
+      .insert({ ...header, order_code: manualCode })
+      .select('id')
+      .single()
+    if (error) throw new Error(error.message)
+    order = o
+  } else {
+    const { data: sup } = await supabase
+      .from('suppliers').select('code').eq('id', header.supplier_id).single()
+    const supCode = (sup?.code as string | undefined)?.trim() || 'NCC'
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const seq  = await getNextSupplierOrderSeq(supCode, header.order_date)
+      const code = buildOrderCode(supCode, header.order_date, seq)
+      const { data: o, error } = await supabase
+        .from('supplier_orders')
+        .insert({ ...header, order_code: code })
+        .select('id')
+        .single()
+      if (error) {
+        if (error.code === '23505' && attempt < 2) continue  // trùng mã (race) → thử lại
+        throw new Error(error.message)
+      }
+      order = o
+      break
+    }
+  }
+  if (!order) throw new Error('Không thể tạo mã đơn — vui lòng thử lại')
 
   // (2) Tính costTotalVnd để phân bổ unit_cost (C3/D3):
   //     cost_total lô NGUYÊN TỆ = goods_value + import_duty + other_fees (KHÔNG gồm vat_import)
@@ -45,33 +92,29 @@ export async function createImportOrder(input: unknown): Promise<string> {
   const { error: e2 } = await supabase.from('supplier_order_items').insert(rows)
   if (e2) throw new Error(e2.message)
 
-  // Tự động cộng tồn kho nếu có chọn kho nhập
+  // Tự động cộng tồn kho nếu có chọn kho nhập — dùng kbit_receive_stock_batch: ghi CẢ LÔ
+  // trong 1 giao dịch (nguyên tử). unitCosts đã phân bổ THẤM vào bình quân liên hoàn; RPC
+  // tự ghi sổ 'receipt'. Lỗi giữa chừng → toàn bộ rollback (kho sạch), chỉ cần xóa đơn.
   if (data.warehouse_id) {
-    for (const it of items) {
-      if (!it.product_id) continue
-      const { error: rpcErr } = await supabase.rpc('kbit_adjust_stock', {
+    const stockItems = items
+      .map((it, i) => ({ product_id: it.product_id, qty: it.qty, unit_cost: unitCosts[i] }))
+      .filter((it) => it.product_id)
+    if (stockItems.length > 0) {
+      const { error: rpcErr } = await supabase.rpc('kbit_receive_stock_batch', {
         p_warehouse_id: data.warehouse_id,
-        p_product_id:   it.product_id,
-        p_delta:        it.qty,   // dương = nhập kho
+        p_items:        stockItems,
+        p_txn_date:     data.order_date,
+        p_note:         `Nhập từ đơn ${order.id}`,
+        p_created_by:   null,
       })
       if (rpcErr) {
-        // Rollback ngược lại các SP đã cộng (best-effort)
-        console.error('[stock add fail]', rpcErr.message)
-        // Vẫn rollback đơn vừa tạo cho đồng bộ
+        // Batch nguyên tử: kho CHƯA ghi gì → chỉ xóa đơn vừa tạo cho sạch.
         await supabase.from('supplier_order_items').delete().eq('order_id', order.id)
         await supabase.from('supplier_orders').delete().eq('id', order.id)
         throw new Error(`Không cộng được tồn kho: ${rpcErr.message}`)
       }
-      await supabase.from('warehouse_transactions').insert({
-        txn_type:     'receipt',
-        warehouse_id: data.warehouse_id,
-        product_id:   it.product_id,
-        qty:          it.qty,
-        txn_date:     data.order_date,
-        note:         `Nhập từ đơn ${order.id}`,
-      })
+      await supabase.from('supplier_orders').update({ stock_added: true }).eq('id', order.id)
     }
-    await supabase.from('supplier_orders').update({ stock_added: true }).eq('id', order.id)
   }
 
   revalidatePath('/nhap-khau')
@@ -85,9 +128,53 @@ export async function updateImportOrder(id: string, input: unknown): Promise<voi
   const supabase = await createClient()
   const { items, ...header } = data
 
+  // C-1: chặn chọn kho thuộc CÔNG TY KHÁC (kbit_receive_stock suy công ty TỪ kho).
+  // Chốt ở server trước khi đụng tồn.
+  if (data.warehouse_id) {
+    const { data: wh } = await supabase.from('warehouses').select('company_id').eq('id', data.warehouse_id).single()
+    if (wh && wh.company_id !== data.company_id) {
+      throw new Error('Kho nhập hàng không thuộc công ty của đơn. Vui lòng chọn kho của đúng công ty.')
+    }
+  }
+
+  // Bảo vệ tồn kho: nếu đơn ĐÃ nhập kho, không cho đổi mã hàng / số lượng / kho
+  // (vì updateImportOrder không tự điều chỉnh tồn kho → sẽ làm lệch số). Vẫn cho
+  // sửa thông tin hóa đơn, đơn giá, ghi chú... (không ảnh hưởng tồn kho).
+  const { data: cur } = await supabase
+    .from('supplier_orders')
+    .select('stock_added, warehouse_id')
+    .eq('id', id)
+    .single()
+  if (cur?.stock_added) {
+    const { data: oldItems } = await supabase
+      .from('supplier_order_items')
+      .select('product_id, qty')
+      .eq('order_id', id)
+    const stockSignature = (rows: { product_id?: string | null; qty: number | string }[]) => {
+      const m = new Map<string, number>()
+      for (const r of rows) {
+        if (!r.product_id) continue
+        m.set(r.product_id, (m.get(r.product_id) ?? 0) + Number(r.qty))
+      }
+      return JSON.stringify([...m.entries()].sort())
+    }
+    const warehouseChanged = (header.warehouse_id ?? null) !== (cur.warehouse_id ?? null)
+    const itemsChanged = stockSignature(oldItems ?? []) !== stockSignature(items)
+    if (warehouseChanged || itemsChanged) {
+      throw new Error(
+        'Đơn này đã nhập kho nên không thể đổi mã hàng, số lượng hoặc kho (sẽ làm sai tồn kho). ' +
+        'Bạn vẫn sửa được thông tin hóa đơn, đơn giá, ghi chú. Nếu cần đổi mã hàng/số lượng, hãy ' +
+        'điều chỉnh ở mục Kho (Nhập/Xuất kho) rồi thử lại, hoặc liên hệ admin.',
+      )
+    }
+  }
+
+  // Sửa đơn KHÔNG đổi mã đơn (giữ mã gốc đã phát hành) → loại order_code khỏi payload update.
+  const updateHeader = { ...header, order_type: header.order_type ?? 'import' }
+  delete updateHeader.order_code
   const { error: e1 } = await supabase
     .from('supplier_orders')
-    .update({ ...header, order_type: header.order_type ?? 'import' })
+    .update(updateHeader)
     .eq('id', id)
   if (e1) throw new Error(e1.message)
 

@@ -1,10 +1,6 @@
-import { listSuppliers } from '@/features/suppliers/queries'
-import { getCurrentUser, canApprove } from '@/lib/auth'
-import { SupplierCatalog } from '@/features/suppliers/components/SupplierCatalog'
+import { redirect } from 'next/navigation'
 
-export const dynamic = 'force-dynamic'
-
-export default async function SupplierPage() {
-  const [me, rows] = await Promise.all([getCurrentUser(), listSuppliers()])
-  return <SupplierCatalog rows={rows} canWrite={me ? canApprove(me.role) : false} />
+// Gộp vào trang "Đối tác" (2 tab). Giữ route cũ để link/bookmark cũ vẫn chạy.
+export default function NhaCungCapRedirect() {
+  redirect('/danh-muc/doi-tac?tab=nha-cung-cap')
 }

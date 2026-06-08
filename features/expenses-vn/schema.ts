@@ -27,6 +27,10 @@ export const expenseVnSchema = z.object({
   project_id: z.string().uuid().optional().nullable(),
   supplier_id: z.string().uuid().optional().nullable(),
   supplier_order_id: z.string().uuid().optional().nullable(),
+
+  // Định khoản tay (Nợ/Có) — tùy chọn
+  dinh_khoan_no: z.string().optional().nullable(),
+  dinh_khoan_co: z.string().optional().nullable(),
 })
   .refine(
     (d) => !d.is_chi_ho || (d.chi_ho_person && d.chi_ho_person.trim() !== ''),
@@ -49,3 +53,16 @@ export const collectReceivableSchema = z.object({
 })
 
 export type CollectReceivableInput = z.infer<typeof collectReceivableSchema>
+
+/** Trả công nợ NCC trong nước (VNĐ): vừa ghi phiếu chi vừa giảm nợ đơn. */
+export const payVnSupplierSchema = z.object({
+  supplier_order_id: z.string().uuid('Chọn đơn mua cần trả'),
+  bank_account_id:   z.string().uuid('Chọn tài khoản chi'),
+  amount_vnd:        z.coerce.number().positive('Số tiền phải > 0'),
+  txn_date:          z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày không hợp lệ'),
+  note:              z.string().optional().nullable(),
+  dinh_khoan_no:     z.string().optional().nullable(),
+  dinh_khoan_co:     z.string().optional().nullable(),
+})
+
+export type PayVnSupplierInput = z.infer<typeof payVnSupplierSchema>

@@ -1,23 +1,6 @@
-import { listWarehouses } from '@/features/warehouse/queries'
-import { PageHeader } from '@/components/shared/PageHeader'
-import { createClient } from '@/lib/supabase/server'
-import { StockMutationForm } from '@/features/warehouse/components/StockMutationForm'
+import { redirect } from 'next/navigation'
 
-export const dynamic = 'force-dynamic'
-
-export default async function XuatKhoPage() {
-  const supabase = await createClient()
-  const [warehouses, { data: products }] = await Promise.all([
-    listWarehouses(),
-    supabase.from('products').select('id, code, name, unit').eq('is_active', true).order('name'),
-  ])
-
-  return (
-    <div className="p-6 max-w-lg mx-auto space-y-5">
-      <PageHeader title="Xuất kho" subtitle="Xuất hàng khỏi kho, ghi lý do" />
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-        <StockMutationForm mode="issue" warehouses={warehouses} products={products ?? []} />
-      </div>
-    </div>
-  )
+// Gộp vào trang Tồn kho (G3): xuất kho nay làm qua nút + popup tại /kho.
+export default function XuatKhoRedirect() {
+  redirect('/kho')
 }

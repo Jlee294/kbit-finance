@@ -5,6 +5,7 @@
 
 import { createClient }    from '@/lib/supabase/server'
 import { getCompanyReport } from '@/features/reports/queries'
+import { todayLocal, formatLocalDate } from '@/lib/format'
 
 // ── OVERDUE_DEBT ─────────────────────────────────────────────────────────────
 // Tổng outstanding đơn KH quá hạn giao = delivery_date < today, outstanding > 0.
@@ -12,7 +13,7 @@ import { getCompanyReport } from '@/features/reports/queries'
 // I2: loại đơn draft chưa phát sinh công nợ.
 export async function computeOverdueDebt(companyId: string): Promise<number> {
   const supabase = await createClient()
-  const today    = new Date().toISOString().slice(0, 10)
+  const today    = todayLocal()
   const { data, error } = await supabase
     .from('customer_orders')
     .select('outstanding')
@@ -77,8 +78,8 @@ export async function computeCashBalance(companyId: string): Promise<number> {
 // Đếm tax_compliance_calendar pending, due_date ∈ [today, today+7].
 export async function computeTaxDueSoon(companyId: string): Promise<number> {
   const supabase = await createClient()
-  const today  = new Date().toISOString().slice(0, 10)
-  const soon   = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10)
+  const today  = todayLocal()
+  const soon   = formatLocalDate(new Date(Date.now() + 7 * 86_400_000))
   const { count, error } = await supabase
     .from('tax_compliance_calendar')
     .select('id', { count: 'exact', head: true })
@@ -94,7 +95,7 @@ export async function computeTaxDueSoon(companyId: string): Promise<number> {
 // Đếm tax_compliance_calendar pending, due_date < today.
 export async function computeTaxOverdue(companyId: string): Promise<number> {
   const supabase = await createClient()
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayLocal()
   const { count, error } = await supabase
     .from('tax_compliance_calendar')
     .select('id', { count: 'exact', head: true })

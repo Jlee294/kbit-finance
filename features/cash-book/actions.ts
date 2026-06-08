@@ -14,6 +14,7 @@ export async function createCashEntry(input: unknown): Promise<ActionResult> {
     const me = await getCurrentUser()
     const { error } = await supabase.from('cash_book').insert({
       ...data,
+      status: 'confirmed',          // vào báo cáo dòng tiền + công nợ (0040); cash_book không có luồng duyệt riêng
       created_by: me?.id ?? null,
     })
     if (error) return { error: error.message }

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { formatVND, formatKRW } from '@/lib/format'
+import { formatVND, formatKRW, todayLocal } from '@/lib/format'
 import { fxGainLoss, krwToVnd } from '../fx'
 import { payKrSupplierOrder } from '../actions'
 import type { KrUnpaidOrder } from '../queries'
@@ -24,8 +24,10 @@ export function KrSupplierPayForm({ orders, krwBanks, onDone }: Props) {
   const [amountKrw,   setAmountKrw]   = useState('')
   const [rateSettled, setRateSettled] = useState('')
   const [rateBooked,  setRateBooked]  = useState('')  // fallback — chỉ khi đơn null
-  const [txnDate,     setTxnDate]     = useState(new Date().toISOString().slice(0, 10))
+  const [txnDate,     setTxnDate]     = useState(todayLocal())
   const [note,        setNote]        = useState('')
+  const [dinhKhoanNo, setDinhKhoanNo] = useState('')
+  const [dinhKhoanCo, setDinhKhoanCo] = useState('')
 
   const [error,  setError]  = useState('')
   const [saving, setSaving] = useState(false)
@@ -65,6 +67,8 @@ export function KrSupplierPayForm({ orders, krwBanks, onDone }: Props) {
         // D4: chỉ gửi rate_booked khi đơn chưa có (fallback)
         rate_booked:       orderHasRate ? null : (parseFloat(rateBooked) || null),
         note:              note || null,
+        dinh_khoan_no:     dinhKhoanNo || null,
+        dinh_khoan_co:     dinhKhoanCo || null,
       })
       router.refresh()
       onDone()
@@ -150,6 +154,16 @@ export function KrSupplierPayForm({ orders, krwBanks, onDone }: Props) {
               placeholder="VD: 18" required={!orderHasRate} />
           </div>
         )}
+
+        <div className="space-y-1">
+          <Label>Định khoản Nợ</Label>
+          <Input value={dinhKhoanNo} onChange={(e) => setDinhKhoanNo(e.target.value)} placeholder="VD: 331" />
+        </div>
+
+        <div className="space-y-1">
+          <Label>Định khoản Có</Label>
+          <Input value={dinhKhoanCo} onChange={(e) => setDinhKhoanCo(e.target.value)} placeholder="VD: 112" />
+        </div>
 
         <div className="space-y-1 col-span-2">
           <Label>Ghi chú</Label>

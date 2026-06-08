@@ -1,16 +1,33 @@
-import Link from 'next/link'
-import { listWarehouses, listStock } from '@/features/warehouse/queries'
-import { StockTable } from '@/features/warehouse/components/StockTable'
+import { getCurrentUser, canEdit } from '@/lib/auth'
+import { listWarehouses, listInventoryNxt } from '@/features/warehouse/queries'
+import { listProducts } from '@/features/products/queries'
+import { listCompanies } from '@/features/companies/queries'
+import { NxtTable } from '@/features/warehouse/components/NxtTable'
+import { StockActions } from '@/features/warehouse/components/StockActions'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { PAGE_WRAPPER } from '@/lib/ui-tokens'
+import { todayLocal } from '@/lib/format'
+import { getGlobalFilter } from '@/lib/global-filter'
 
 export const dynamic = 'force-dynamic'
 
-export default async function KhoPage() {
-  const [warehouses, stock] = await Promise.all([listWarehouses(), listStock()])
-
-  const totalSkus = new Set(stock.map(r => r.product_id)).size
-  const lowStock = stock.filter(r => r.qty_on_hand <= 5)
+export default async function KhoPage({ searchParams }: { searchParams: Promise<{ period?: string; wh?: string }> }) {
+  const sp = await searchParams
+  const { companyId: gCompany, year } = await getGlobalFilter()
+  const companies = await listCompanies()
+  const companyId = gCompany || companies[0]?.id
+  // Kho theo KỲ THÁNG (snapshot NXT). Mặc định: tháng hiện tại nếu là năm nay, ngược lại tháng 1 của năm chọn.
+  const defMonth = year === todayLocal().slice(0, 4) ? todayLocal().slice(5, 7) : '01'
+  const period = sp.period || `${year}-${defMonth}`
+  const wh = sp.wh && sp.wh !== 'all' ? sp.wh : undefined
+  const [me, warehouses, products, rows] = await Promise.all([
+    getCurrentUser(),
+    listWarehouses(companyId),
+    listProducts(),
+    listInventoryNxt(period, wh, companyId),
+  ])
+  const canWrite = !!me && canEdit(me.role)
+  const negative = rows.filter(r => r.qty_close < 0)
 
   return (
     <div className={PAGE_WRAPPER}>
@@ -18,35 +35,16 @@ export default async function KhoPage() {
         title="Kho hàng"
         subtitle={
           <>
-            {totalSkus} mặt hàng · {warehouses.length} kho
-            {lowStock.length > 0 && (
-              <span className="ml-2 text-warning-700 font-medium">⚠ {lowStock.length} mặt hàng sắp hết</span>
+            {rows.length} mặt hàng · {warehouses.length} kho
+            {negative.length > 0 && (
+              <span className="ml-2 text-red-600 font-medium">⚠ {negative.length} mặt hàng tồn âm</span>
             )}
           </>
         }
-        actions={
-          <>
-            <Link href="/kho/nhap"
-              className="h-9 px-3.5 bg-success-500 text-white rounded-lg text-sm font-medium hover:bg-success-700 transition-colors flex items-center">
-              Nhập kho
-            </Link>
-            <Link href="/kho/xuat"
-              className="h-9 px-3.5 bg-danger-500 text-white rounded-lg text-sm font-medium hover:bg-danger-700 transition-colors flex items-center">
-              Xuất kho
-            </Link>
-            <Link href="/kho/luan-chuyen"
-              className="h-9 px-3.5 bg-brand-800 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition-colors flex items-center">
-              Luân chuyển
-            </Link>
-            <Link href="/kho/lich-su"
-              className="h-9 px-3.5 bg-white text-gray-700 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors flex items-center">
-              Lịch sử
-            </Link>
-          </>
-        }
+        actions={<StockActions warehouses={warehouses} products={products} period={period} canWrite={canWrite} companyId={companyId ?? ''} />}
       />
 
-      <StockTable warehouses={warehouses} stock={stock} />
+      <NxtTable period={period} warehouseId={sp.wh || 'all'} warehouses={warehouses} rows={rows} />
     </div>
   )
 }

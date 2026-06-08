@@ -12,9 +12,11 @@ export function PeriodCatalog({ rows, canWrite }: { rows: Period[]; canWrite: bo
   return (
     <CatalogPage
       title="Kỳ kế toán"
+      subtitle="Quản lý kỳ kế toán theo tháng (mỗi công ty). Khóa kỳ để CHẶN thêm/sửa mọi giao dịch có ngày thuộc kỳ đó — bảo vệ số liệu đã chốt khỏi bị thay đổi."
       rows={rows}
       canWrite={canWrite}
       FormComponent={PeriodForm}
+      dialogSize="sm"
       columns={[
         { key: 'period', label: 'Kỳ' },
         { key: 'companies', label: 'Công ty', render: (r) => r.companies?.code ?? '' },

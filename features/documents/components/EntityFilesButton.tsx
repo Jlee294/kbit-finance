@@ -10,6 +10,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { DIALOG_MD } from '@/lib/ui-tokens'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DriveUploadButton } from './DriveUploadButton'
 import { listDocumentsAction, getOrCreateDocTypeId } from '../actions'
@@ -69,7 +70,7 @@ export function EntityFilesButton({
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className={DIALOG_MD}>
           <DialogHeader>
             <DialogTitle>Tài liệu đính kèm</DialogTitle>
           </DialogHeader>

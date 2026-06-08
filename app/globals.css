@@ -6,27 +6,27 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ── KBIT Brand Design Tokens ──────────────────────────────────────────────
- * Brand: #201b51 (Navy KBIT) — sang trọng, chuyên nghiệp
- * Scale 50→950 build quanh brand-800 (#201b51)
- * Dùng: bg-brand-50, text-brand-800, border-brand-200, ...
+ * Brand: #059669 (Xanh ngọc / Emerald KBIT) — tươi sáng, sạch, chuyên nghiệp
+ * Scale 50→950 build quanh brand-600 (#059669)
+ * Dùng: bg-brand-50, text-brand-700, border-brand-200, ...
  */
 @theme {
-  --color-brand-50:  #f3f2fb;
-  --color-brand-100: #e7e5f6;
-  --color-brand-200: #cfcbed;
-  --color-brand-300: #a9a3d8;
-  --color-brand-400: #7e76bd;
-  --color-brand-500: #5b51a3;
-  --color-brand-600: #463d87;
-  --color-brand-700: #36306c;
-  --color-brand-800: #201b51;  /* ★ Brand chính */
-  --color-brand-900: #181341;
-  --color-brand-950: #0d0925;
+  --color-brand-50:  #ecfdf5;
+  --color-brand-100: #d1fae5;
+  --color-brand-200: #a7f3d0;
+  --color-brand-300: #6ee7b7;
+  --color-brand-400: #34d399;
+  --color-brand-500: #10b981;
+  --color-brand-600: #059669;  /* ★ Brand chính (xanh ngọc) */
+  --color-brand-700: #047857;
+  --color-brand-800: #065f46;
+  --color-brand-900: #064e3b;
+  --color-brand-950: #022c22;
 
   /* Semantic accents — dùng cho status */
-  --color-success-50:  #ecfdf5;
-  --color-success-500: #10b981;
-  --color-success-700: #047857;
+  --color-success-50:  #f0fdf4;
+  --color-success-500: #22c55e;
+  --color-success-700: #15803d;
 
   --color-warning-50:  #fffbeb;
   --color-warning-500: #f59e0b;
@@ -92,8 +92,8 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  /* Primary = KBIT brand navy #201b51 */
-  --primary: #201b51;
+  /* Primary = KBIT brand xanh ngọc #059669 */
+  --primary: #059669;
   --primary-foreground: #ffffff;
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -104,7 +104,7 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: #201b51;
+  --ring: #059669;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);

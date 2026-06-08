@@ -7,25 +7,30 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { createCashEntry, updateCashEntry, deleteCashEntry } from '../actions'
+import { DIALOG_MD } from '@/lib/ui-tokens'
 import type { CashRow } from '../queries'
 import { EntityFilesButton } from '@/features/documents/components/EntityFilesButton'
 import { StatsCard } from '@/components/shared/StatsCard'
 import { FormSection } from '@/components/shared/FormSection'
+import { todayLocal } from '@/lib/format'
 
 type SimpleOption = { id: string; name: string }
 type UserOption   = { id: string; name: string }
+type PartyOption  = { id: string; code: string; name: string }
 
 interface Props {
   rows:      CashRow[]
   companies: SimpleOption[]
   users:     UserOption[]
+  customers: PartyOption[]
+  suppliers: PartyOption[]
   canWrite:  boolean
 }
 
 function fmtVND(v: number) { return v.toLocaleString('vi-VN') + ' đ' }
 function fmtDate(s: string) { return new Date(s).toLocaleDateString('vi-VN') }
 
-export function CashBookTable({ rows, companies, users, canWrite }: Props) {
+export function CashBookTable({ rows, companies, users, customers, suppliers, canWrite }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<CashRow | undefined>()
@@ -79,8 +84,10 @@ export function CashBookTable({ rows, companies, users, canWrite }: Props) {
                   <td className="px-3 py-2 font-mono text-xs text-gray-700">{r.ky_hieu ?? '—'}</td>
                   <td className="px-3 py-2 text-gray-500 text-xs whitespace-nowrap">{fmtDate(r.txn_date)}</td>
                   <td className="px-3 py-2 text-gray-700">
-                    {r.doi_tac ?? '—'}
-                    {r.ma_doi_tac && <span className="text-[10px] text-gray-400 ml-1">[{r.ma_doi_tac}]</span>}
+                    {r.party_name ?? r.doi_tac ?? '—'}
+                    {r.customer_id && <span className="text-[10px] text-blue-500 ml-1">(KH)</span>}
+                    {r.supplier_id && <span className="text-[10px] text-amber-600 ml-1">(NCC)</span>}
+                    {!r.party_name && r.ma_doi_tac && <span className="text-[10px] text-gray-400 ml-1">[{r.ma_doi_tac}]</span>}
                   </td>
                   <td className="px-3 py-2 text-gray-800">{r.noi_dung}</td>
                   <td className={`px-3 py-2 text-right font-medium ${r.direction === 'thu' ? 'text-green-700' : 'text-red-600'}`}>
@@ -121,7 +128,7 @@ export function CashBookTable({ rows, companies, users, canWrite }: Props) {
 
       {/* Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-xl">
+        <DialogContent className={DIALOG_MD}>
           <DialogHeader>
             <DialogTitle>{editing ? 'Cập nhật' : 'Thêm'} chứng từ khác</DialogTitle>
           </DialogHeader>
@@ -129,6 +136,8 @@ export function CashBookTable({ rows, companies, users, canWrite }: Props) {
             initial={editing}
             companies={companies}
             users={users}
+            customers={customers}
+            suppliers={suppliers}
             onDone={() => { setOpen(false); router.refresh() }}
           />
         </DialogContent>
@@ -139,15 +148,17 @@ export function CashBookTable({ rows, companies, users, canWrite }: Props) {
 
 // ── Inline form ─────────────────────────────────────────────────────────────
 
-function CashForm({ initial, companies, users, onDone }: {
+function CashForm({ initial, companies, users, customers, suppliers, onDone }: {
   initial?: CashRow
   companies: SimpleOption[]
   users: UserOption[]
+  customers: PartyOption[]
+  suppliers: PartyOption[]
   onDone: () => void
 }) {
   const [companyId,  setCompanyId]  = useState(initial?.company_id ?? companies[0]?.id ?? '')
   const [kyHieu,     setKyHieu]     = useState(initial?.ky_hieu ?? '')
-  const [date,       setDate]       = useState(initial?.txn_date ?? new Date().toISOString().slice(0,10))
+  const [date,       setDate]       = useState(initial?.txn_date ?? todayLocal())
   const [doiTac,     setDoiTac]     = useState(initial?.doi_tac ?? '')
   const [maDoiTac,   setMaDoiTac]   = useState(initial?.ma_doi_tac ?? '')
   const [noiDung,    setNoiDung]    = useState(initial?.noi_dung ?? '')
@@ -161,6 +172,9 @@ function CashForm({ initial, companies, users, onDone }: {
   const [chiHoPerson, setChiHoPerson] = useState(initial?.chi_ho_person ?? '')
   const [isThuHo,    setIsThuHo]    = useState(initial?.is_thu_ho ?? false)
   const [thuHoPerson, setThuHoPerson] = useState(initial?.thu_ho_person ?? '')
+  const [partyType,  setPartyType]  = useState<'' | 'customer' | 'supplier'>(
+    initial?.customer_id ? 'customer' : initial?.supplier_id ? 'supplier' : '')
+  const [partyId,    setPartyId]    = useState(initial?.customer_id ?? initial?.supplier_id ?? '')
   const [error, setError]   = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -176,6 +190,8 @@ function CashForm({ initial, companies, users, onDone }: {
       nhan_su_thuc_hien: nhanSuId || null,
       is_chi_ho: isChiHo, chi_ho_person: isChiHo ? (chiHoPerson || null) : null,
       is_thu_ho: isThuHo, thu_ho_person: isThuHo ? (thuHoPerson || null) : null,
+      customer_id: partyType === 'customer' ? (partyId || null) : null,
+      supplier_id: partyType === 'supplier' ? (partyId || null) : null,
     }
     const r = initial?.id
       ? await updateCashEntry(initial.id, payload)
@@ -219,7 +235,36 @@ function CashForm({ initial, companies, users, onDone }: {
           <Label>Mã đối tác</Label>
           <Input value={maDoiTac} onChange={(e) => setMaDoiTac(e.target.value)} placeholder="VD: KH001" />
         </div>
+        <div className="space-y-1">
+          <Label>Đối tượng công nợ <span className="text-xs text-gray-400 font-normal">(để vào Công nợ)</span></Label>
+          <select value={partyType}
+            onChange={(e) => { setPartyType(e.target.value as '' | 'customer' | 'supplier'); setPartyId('') }}
+            className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm">
+            <option value="">— Không gắn —</option>
+            <option value="customer">Khách hàng (Thu → giảm phải thu)</option>
+            <option value="supplier">Nhà cung cấp (Chi → giảm phải trả)</option>
+          </select>
+        </div>
+        {partyType !== '' && (
+          <div className="space-y-1">
+            <Label>{partyType === 'customer' ? 'Chọn khách hàng' : 'Chọn nhà cung cấp'} <span className="text-red-500">*</span></Label>
+            <select required value={partyId} onChange={(e) => setPartyId(e.target.value)}
+              className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm">
+              <option value="">—</option>
+              {(partyType === 'customer' ? customers : suppliers).map((p) => (
+                <option key={p.id} value={p.id}>[{p.code}] {p.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
+
+      {partyType !== '' && (
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded px-3 py-2">
+          ⚠ Khoản này sẽ tính vào <strong>Công nợ</strong> của đối tượng đã chọn (Thu → giảm phải thu, Chi → giảm phải trả).
+          Đừng nhập trùng nếu khoản này đã được ghi ở phiếu thu / phiếu chi.
+        </p>
+      )}
 
       <div className="space-y-1">
         <Label>Nội dung <span className="text-red-500">*</span></Label>

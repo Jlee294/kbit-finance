@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { formatVND, formatDate } from '@/lib/format'
 import { IncomeForm } from './IncomeForm'
+import { DIALOG_MD } from '@/lib/ui-tokens'
 import type { IncomeRow, BankBalance } from '../queries'
 
 type SimpleOption   = { id: string; name: string }
@@ -138,7 +139,7 @@ export function IncomeList({
 
       {/* ─ Dialog thêm phiếu thu ───────────────────────────────────── */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent showCloseButton={false} className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent showCloseButton={false} className={DIALOG_MD}>
           <DialogHeader>
             <DialogTitle>Thêm phiếu thu</DialogTitle>
           </DialogHeader>

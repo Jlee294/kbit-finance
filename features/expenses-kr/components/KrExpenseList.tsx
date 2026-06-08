@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { formatVND, formatKRW } from '@/lib/format'
 import { KrExpenseForm } from './KrExpenseForm'
 import { KrSupplierPayForm } from './KrSupplierPayForm'
+import { DIALOG_MD } from '@/lib/ui-tokens'
 import type { KrExpenseRow, KrUnpaidOrder } from '../queries'
 
 const STATUS_LABEL: Record<string, string> = {
@@ -82,7 +83,7 @@ export function KrExpenseList({
 
       {/* ── Add expense dialog ───────────────────────────────────── */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent showCloseButton={false} className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent showCloseButton={false} className={DIALOG_MD}>
           <DialogHeader>
             <DialogTitle>Tạo phiếu chi Hàn Quốc</DialogTitle>
           </DialogHeader>
@@ -98,7 +99,7 @@ export function KrExpenseList({
 
       {/* ── Pay supplier dialog ─────────────────────────────────── */}
       <Dialog open={payOpen} onOpenChange={setPayOpen}>
-        <DialogContent showCloseButton={false} className="max-w-xl max-h-[90vh] overflow-y-auto">
+        <DialogContent showCloseButton={false} className={DIALOG_MD}>
           <DialogHeader>
             <DialogTitle>Trả công nợ NCC ngoại tệ KRW</DialogTitle>
           </DialogHeader>

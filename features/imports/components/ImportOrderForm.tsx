@@ -5,18 +5,22 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { formatVND, formatKRW } from '@/lib/format'
+import { formatVND, formatKRW, todayLocal } from '@/lib/format'
 import { allocateUnitCost } from '../cost'
 import { createImportOrder, updateImportOrder } from '../actions'
 import type { ImportOrderDetail } from '../queries'
 import { FormSection } from '@/components/shared/FormSection'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { QuickProductForm } from '@/features/products/components/QuickProductForm'
+import { DIALOG_SM } from '@/lib/ui-tokens'
+import { toast } from 'sonner'
 
 type SimpleOption  = { id: string; name: string }
 type SupplierOpt   = { id: string; code: string; name: string }
 type ProductOpt    = { id: string; code: string; name: string; unit?: string | null }
 type ProjectOpt    = { id: string; code: string; name: string; company_id: string }
 type UserOpt       = { id: string; name: string }
-type WarehouseOpt  = { id: string; code: string; name: string }
+type WarehouseOpt  = { id: string; code: string; name: string; company_id?: string; is_default?: boolean }
 
 interface Props {
   companies:   SimpleOption[]
@@ -34,6 +38,14 @@ const newRow = (): ItemRow => ({ product_id: '', description: '', qty: '', unit_
 
 const sel = 'w-full h-9 rounded-lg border border-input bg-transparent px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50'
 
+// Chọn kho mặc định (kho chính) của công ty trong danh sách kho đã nạp.
+function pickDefaultWarehouse(warehouses: WarehouseOpt[], companyId: string): string {
+  if (!companyId) return ''
+  const list = warehouses.filter((w) => w.company_id === companyId)
+  if (list.length === 0) return ''
+  return (list.find((w) => w.is_default) ?? list[0]).id
+}
+
 export function ImportOrderForm({ companies, suppliers, products, projects, users = [], warehouses = [], editOrder, onDone }: Props) {
   const router = useRouter()
   const isEdit = !!editOrder
@@ -42,7 +54,7 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
   const [supplierId,      setSupplierId]      = useState(editOrder?.supplier_id ?? '')
   const [projectId,       setProjectId]       = useState(editOrder?.project_id ?? '')
   const [orderCode,       setOrderCode]       = useState(editOrder?.order_code ?? '')
-  const [orderDate,       setOrderDate]       = useState(editOrder?.order_date ?? new Date().toISOString().slice(0, 10))
+  const [orderDate,       setOrderDate]       = useState(editOrder?.order_date ?? todayLocal())
   const [orderType,       setOrderType]       = useState<'import' | 'domestic'>((editOrder?.order_type as 'import' | 'domestic') ?? 'import')
   const [currency,        setCurrency]        = useState<'VND' | 'KRW'>((editOrder?.currency as 'VND' | 'KRW') ?? 'VND')
   const [exchangeRate,    setExchangeRate]    = useState(editOrder?.exchange_rate ? String(editOrder.exchange_rate) : '')
@@ -63,7 +75,8 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
   const [dinhKhoanNo,      setDinhKhoanNo]      = useState(editOrder?.dinh_khoan_no     ?? '')
   const [dinhKhoanCo,      setDinhKhoanCo]      = useState(editOrder?.dinh_khoan_co     ?? '')
   const [nhanSuId,         setNhanSuId]         = useState(editOrder?.nhan_su_thuc_hien ?? '')
-  const [warehouseId,      setWarehouseId]      = useState(editOrder?.warehouse_id      ?? '')
+  const [warehouseId,      setWarehouseId]      = useState<string>(() =>
+    editOrder?.warehouse_id ?? pickDefaultWarehouse(warehouses, editOrder?.company_id ?? ''))
 
   const [items, setItems] = useState<ItemRow[]>(
     editOrder?.supplier_order_items?.length
@@ -78,9 +91,13 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
 
   const [error,  setError]  = useState('')
   const [saving, setSaving] = useState(false)
+  const [productList, setProductList] = useState<ProductOpt[]>(products)
+  const [quickOpen, setQuickOpen] = useState(false)
 
   const filteredProjects = companyId ? projects.filter((p) => p.company_id === companyId) : projects
   const counterpartList  = companies.filter((c) => c.id !== companyId)
+  // C-1: kho phải thuộc công ty đang chọn (tồn/giá vốn suy công ty TỪ kho).
+  const filteredWarehouses = companyId ? warehouses.filter((w) => w.company_id === companyId) : warehouses
 
   // ── Preview giá vốn (client-side, hàm thuần)
   const gv   = parseFloat(goodsValue) || 0
@@ -107,7 +124,7 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
         company_id:   companyId,
         supplier_id:  supplierId,
         project_id:   projectId || null,
-        order_code:   orderCode,
+        order_code:   orderCode.trim() || null,
         order_date:   orderDate,
         order_type:   orderType,
         currency,
@@ -153,13 +170,14 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
   const fmtCurrency = (n: number) => currency === 'KRW' ? formatKRW(n) : formatVND(n)
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="space-y-6">
 
       {/* ── Header ────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1">
           <Label>Công ty <span className="text-red-500">*</span></Label>
-          <select value={companyId} onChange={(e) => { setCompanyId(e.target.value); setProjectId('') }} required className={sel}>
+          <select value={companyId} onChange={(e) => { setCompanyId(e.target.value); setProjectId(''); setWarehouseId(pickDefaultWarehouse(warehouses, e.target.value)) }} required className={sel}>
             <option value="">— Chọn công ty —</option>
             {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
@@ -172,8 +190,8 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
           </select>
         </div>
         <div className="space-y-1">
-          <Label>Mã đơn <span className="text-red-500">*</span></Label>
-          <Input value={orderCode} onChange={(e) => setOrderCode(e.target.value)} placeholder="VD: IMP-0526-01" required />
+          <Label>Mã đơn <span className="text-xs text-gray-400 font-normal">(để trống = tự sinh)</span></Label>
+          <Input value={orderCode} onChange={(e) => setOrderCode(e.target.value)} placeholder="Để trống để tự sinh" />
         </div>
         <div className="space-y-1">
           <Label>Ngày đặt hàng <span className="text-red-500">*</span></Label>
@@ -195,12 +213,11 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
             </select>
           </div>
         )}
-        {warehouses.length > 0 && (
+        {companyId && filteredWarehouses.length > 0 && (
           <div className="space-y-1">
-            <Label>Kho nhập hàng <span className="text-xs text-gray-400 font-normal">(tự cộng tồn kho)</span></Label>
+            <Label>Kho nhập hàng <span className="text-xs text-gray-400 font-normal">(tự cộng tồn theo mã hàng)</span></Label>
             <select value={warehouseId} onChange={(e) => setWarehouseId(e.target.value)} className={sel}>
-              <option value="">— Không nhập kho —</option>
-              {warehouses.map((w) => <option key={w.id} value={w.id}>[{w.code}] {w.name}</option>)}
+              {filteredWarehouses.map((w) => <option key={w.id} value={w.id}>[{w.code}] {w.name}{w.is_default ? ' (kho chính)' : ''}</option>)}
             </select>
           </div>
         )}
@@ -289,7 +306,10 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
       <div>
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-semibold text-gray-700">Dòng hàng</h3>
-          <Button type="button" variant="outline" size="sm" onClick={addItem}>+ Thêm dòng</Button>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => setQuickOpen(true)}>+ Tạo mã hàng</Button>
+            <Button type="button" variant="outline" size="sm" onClick={addItem}>+ Thêm dòng</Button>
+          </div>
         </div>
         <div className="rounded-lg border overflow-hidden">
           <table className="w-full text-sm">
@@ -317,7 +337,7 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
                       <select value={row.product_id} onChange={(e) => updateItem(i, 'product_id', e.target.value)}
                         className="w-full h-8 rounded border border-input bg-transparent px-2 text-xs focus:outline-none">
                         <option value="">— Chọn SP —</option>
-                        {products.map((p) => <option key={p.id} value={p.id}>[{p.code}] {p.name}</option>)}
+                        {productList.map((p) => <option key={p.id} value={p.id}>[{p.code}] {p.name}</option>)}
                       </select>
                     </td>
                     <td className="px-3 py-2">
@@ -423,5 +443,21 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
         </Button>
       </div>
     </form>
+
+    <Dialog open={quickOpen} onOpenChange={setQuickOpen}>
+      <DialogContent showCloseButton={false} className={DIALOG_SM}>
+        <DialogHeader>
+          <DialogTitle>Tạo mã hàng mới</DialogTitle>
+        </DialogHeader>
+        <QuickProductForm
+          onDone={() => setQuickOpen(false)}
+          onCreated={(p) => {
+            setProductList((prev) => [{ id: p.id, code: p.code, name: p.name, unit: p.unit }, ...prev])
+            toast.success(`Đã tạo mã hàng [${p.code}] ${p.name}`)
+          }}
+        />
+      </DialogContent>
+    </Dialog>
+    </>
   )
 }

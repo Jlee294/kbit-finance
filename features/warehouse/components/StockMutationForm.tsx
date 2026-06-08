@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation'
 import { receiveStock, issueStock, transferStock } from '../actions'
 import { ISSUE_REASONS, ISSUE_REASON_LABELS } from '../schema'
 import type { Warehouse } from '../queries'
+import { todayLocal } from '@/lib/format'
 
 interface Product { id: string; code: string; name: string; unit: string | null }
 
 type Mode = 'receipt' | 'issue' | 'transfer'
 
 interface Props {
-  mode: Mode
+  initialMode?: Mode
   warehouses: Warehouse[]
   products: Product[]
 }
@@ -22,14 +23,16 @@ const MODE_LABELS: Record<Mode, string> = {
   transfer: '⇄ Luân chuyển',
 }
 
-export function StockMutationForm({ mode, warehouses, products }: Props) {
+export function StockMutationForm({ initialMode = 'receipt', warehouses, products }: Props) {
   const router = useRouter()
-  const today = new Date().toISOString().split('T')[0]
+  const today = todayLocal()
 
+  const [mode, setMode] = useState<Mode>(initialMode)
   const [warehouseId, setWarehouseId] = useState('')
   const [toWarehouseId, setToWarehouseId] = useState('')
   const [productId, setProductId] = useState('')
   const [qty, setQty] = useState('')
+  const [unitCost, setUnitCost] = useState('')
   const [reason, setReason] = useState<string>('sale')
   const [txnDate, setTxnDate] = useState(today)
   const [note, setNote] = useState('')
@@ -46,7 +49,7 @@ export function StockMutationForm({ mode, warehouses, products }: Props) {
     let result: { error?: string }
 
     if (mode === 'receipt') {
-      result = await receiveStock({ warehouse_id: warehouseId, product_id: productId, qty, txn_date: txnDate, note })
+      result = await receiveStock({ warehouse_id: warehouseId, product_id: productId, qty, txn_date: txnDate, note, unit_cost: unitCost || null })
     } else if (mode === 'issue') {
       result = await issueStock({ warehouse_id: warehouseId, product_id: productId, qty, reason, txn_date: txnDate, note })
     } else {
@@ -60,6 +63,7 @@ export function StockMutationForm({ mode, warehouses, products }: Props) {
       setSuccess(`✅ ${MODE_LABELS[mode]} thành công!`)
       setProductId('')
       setQty('')
+      setUnitCost('')
       setNote('')
       router.refresh()
     }
@@ -69,6 +73,16 @@ export function StockMutationForm({ mode, warehouses, products }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Loại phiếu — chọn ngay trong popup (gộp Nhập/Xuất/Luân chuyển) */}
+      <div className="space-y-1">
+        <label className="text-xs text-gray-500">Loại phiếu</label>
+        <select value={mode} onChange={e => setMode(e.target.value as Mode)} className={fieldCls}>
+          <option value="receipt">+ Nhập kho</option>
+          <option value="issue">− Xuất kho</option>
+          <option value="transfer">⇄ Luân chuyển</option>
+        </select>
+      </div>
+
       {/* Kho nguồn */}
       <div className="space-y-1">
         <label className="text-xs text-gray-500">
@@ -124,6 +138,19 @@ export function StockMutationForm({ mode, warehouses, products }: Props) {
           <input type="date" value={txnDate} onChange={e => setTxnDate(e.target.value)} required className={fieldCls} />
         </div>
       </div>
+
+      {/* Đơn giá vốn (chỉ cho nhập kho) */}
+      {mode === 'receipt' && (
+        <div className="space-y-1">
+          <label className="text-xs text-gray-500">Đơn giá vốn (₫/đơn vị)</label>
+          <input
+            type="number" min="0" step="any"
+            value={unitCost} onChange={e => setUnitCost(e.target.value)}
+            placeholder="Giá vốn nhập / đơn vị"
+            className={fieldCls}
+          />
+        </div>
+      )}
 
       {/* Lý do (chỉ cho issue) */}
       {mode === 'issue' && (

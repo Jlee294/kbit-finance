@@ -22,12 +22,18 @@ export const cashBookSchema = z.object({
   chi_ho_person: z.string().optional().nullable(),
   is_thu_ho:     z.boolean().default(false),
   thu_ho_person: z.string().optional().nullable(),
+  // Đối tượng công nợ (gắn 1 phía) — để Chứng từ khác đổ vào Công nợ
+  customer_id:   z.string().uuid().optional().nullable(),
+  supplier_id:   z.string().uuid().optional().nullable(),
 }).refine(
   (d) => !d.is_chi_ho || (d.chi_ho_person && d.chi_ho_person.trim() !== ''),
   { message: 'Nhập tên người được chi hộ', path: ['chi_ho_person'] },
 ).refine(
   (d) => !d.is_thu_ho || (d.thu_ho_person && d.thu_ho_person.trim() !== ''),
   { message: 'Nhập tên người được thu hộ', path: ['thu_ho_person'] },
+).refine(
+  (d) => !(d.customer_id && d.supplier_id),
+  { message: 'Chỉ gắn 1 đối tượng: khách hàng HOẶC nhà cung cấp', path: ['supplier_id'] },
 )
 
 export type CashBookInput = z.infer<typeof cashBookSchema>

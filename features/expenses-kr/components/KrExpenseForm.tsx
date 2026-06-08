@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { formatVND, formatKRW } from '@/lib/format'
+import { formatVND, formatKRW, todayLocal } from '@/lib/format'
 import { krwToVnd } from '../fx'
 import { createKrExpense } from '../actions'
 
@@ -30,7 +30,7 @@ export function KrExpenseForm({ companies, krwBanks, krSuppliers, projects, onDo
   const [supplierId,  setSupplierId]  = useState('')
   const [amountKrw,   setAmountKrw]   = useState('')
   const [rate,        setRate]        = useState('')
-  const [txnDate,     setTxnDate]     = useState(new Date().toISOString().slice(0, 10))
+  const [txnDate,     setTxnDate]     = useState(todayLocal())
   const [kind,        setKind]        = useState<'goods' | 'service'>('goods')
   const [hasVat,      setHasVat]      = useState(false)
   const [vatAmount,   setVatAmount]   = useState('')
@@ -38,6 +38,8 @@ export function KrExpenseForm({ companies, krwBanks, krSuppliers, projects, onDo
   const [projectId,   setProjectId]   = useState('')
   const [isInterco,   setIsInterco]   = useState(false)
   const [counterpartId, setCounterpartId] = useState('')
+  const [dinhKhoanNo, setDinhKhoanNo] = useState('')
+  const [dinhKhoanCo, setDinhKhoanCo] = useState('')
 
   const [error,  setError]  = useState('')
   const [saving, setSaving] = useState(false)
@@ -70,6 +72,8 @@ export function KrExpenseForm({ companies, krwBanks, krSuppliers, projects, onDo
         project_id:             projectId || null,
         is_intercompany:        isInterco,
         counterpart_company_id: isInterco ? counterpartId : null,
+        dinh_khoan_no:          dinhKhoanNo || null,
+        dinh_khoan_co:          dinhKhoanCo || null,
       })
       router.refresh()
       if (result.fctWarning) {
@@ -161,6 +165,16 @@ export function KrExpenseForm({ companies, krwBanks, krSuppliers, projects, onDo
             <option value="">— Không có —</option>
             {filteredProjects.map((p) => <option key={p.id} value={p.id}>[{p.code}] {p.name}</option>)}
           </select>
+        </div>
+
+        <div className="space-y-1">
+          <Label>Định khoản Nợ</Label>
+          <Input value={dinhKhoanNo} onChange={(e) => setDinhKhoanNo(e.target.value)} placeholder="VD: 642" />
+        </div>
+
+        <div className="space-y-1">
+          <Label>Định khoản Có</Label>
+          <Input value={dinhKhoanCo} onChange={(e) => setDinhKhoanCo(e.target.value)} placeholder="VD: 112" />
         </div>
 
         <div className="space-y-1 col-span-2">

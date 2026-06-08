@@ -33,7 +33,7 @@ export async function listBankLedger(opts: {
     id, txn_date, company_id, bank_account_id, customer_id, amount, currency, amount_vnd,
     note, status, is_unassigned,
     companies!company_id ( name ),
-    bank_accounts!bank_account_id ( account_name, bank_name, currency ),
+    bank_accounts!bank_account_id ( name, currency ),
     customers!customer_id ( name )
   `)
   if (opts.companyId)     qi = qi.eq('company_id', opts.companyId)
@@ -46,7 +46,7 @@ export async function listBankLedger(opts: {
     id, txn_date, company_id, bank_account_id, supplier_id, region,
     amount_vnd, amount_krw, note, status,
     companies!company_id ( name ),
-    bank_accounts!bank_account_id ( account_name, bank_name, currency ),
+    bank_accounts!bank_account_id ( name, currency ),
     suppliers!supplier_id ( name )
   `)
   if (opts.companyId)     qe = qe.eq('company_id', opts.companyId)
@@ -67,7 +67,7 @@ export async function listBankLedger(opts: {
     amount: number; currency: string; amount_vnd: number | null
     note: string | null; status: string; is_unassigned: boolean
     companies: { name: string } | null
-    bank_accounts: { account_name: string; bank_name: string; currency: string } | null
+    bank_accounts: { name: string; currency: string } | null
     customers: { name: string } | null
   }
   interface ExpenseRaw {
@@ -75,7 +75,7 @@ export async function listBankLedger(opts: {
     region: string | null; amount_vnd: number | null; amount_krw: number | null
     note: string | null; status: string
     companies: { name: string } | null
-    bank_accounts: { account_name: string; bank_name: string; currency: string } | null
+    bank_accounts: { name: string; currency: string } | null
     suppliers: { name: string } | null
   }
 
@@ -91,7 +91,7 @@ export async function listBankLedger(opts: {
     company_id:        r.company_id,
     company_name:      r.companies?.name ?? null,
     bank_account_id:   r.bank_account_id,
-    bank_account_name: r.bank_accounts ? `${r.bank_accounts.account_name} — ${r.bank_accounts.bank_name}` : null,
+    bank_account_name: r.bank_accounts ? r.bank_accounts.name : null,
     partner_name:      r.customers?.name ?? null,
     amount_local:      Number(r.amount),
     amount_vnd:        Number(r.amount_vnd ?? r.amount),
@@ -109,7 +109,7 @@ export async function listBankLedger(opts: {
     company_id:        r.company_id,
     company_name:      r.companies?.name ?? null,
     bank_account_id:   r.bank_account_id,
-    bank_account_name: r.bank_accounts ? `${r.bank_accounts.account_name} — ${r.bank_accounts.bank_name}` : null,
+    bank_account_name: r.bank_accounts ? r.bank_accounts.name : null,
     partner_name:      r.suppliers?.name ?? null,
     amount_local:      r.region === 'KR' ? Number(r.amount_krw ?? 0) : Number(r.amount_vnd ?? 0),
     amount_vnd:        Number(r.amount_vnd ?? 0),
@@ -130,7 +130,7 @@ export async function listBankAccounts() {
   const supabase = await createClient()
   const { data } = await supabase
     .from('bank_accounts')
-    .select('id, account_name, bank_name, currency')
-    .order('account_name')
-  return (data ?? []) as Array<{ id: string; account_name: string; bank_name: string; currency: string }>
+    .select('id, name, currency')
+    .order('name')
+  return (data ?? []) as Array<{ id: string; name: string; currency: string }>
 }

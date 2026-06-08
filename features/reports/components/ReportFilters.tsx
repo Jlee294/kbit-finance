@@ -7,7 +7,6 @@ interface Company  { id: string; name: string }
 interface Project  { id: string; name: string }
 
 interface Props {
-  companies:  Company[]
   projects:   Project[]
   /** current values */
   companyId?: string
@@ -18,7 +17,7 @@ interface Props {
   mode:       'company' | 'consolidated'
 }
 
-export function ReportFilters({ companies, projects, companyId, projectId, from, to, mode }: Props) {
+export function ReportFilters({ projects, companyId, projectId, from, to, mode }: Props) {
   const router       = useRouter()
   const searchParams = useSearchParams()
 
@@ -34,22 +33,6 @@ export function ReportFilters({ companies, projects, companyId, projectId, from,
 
   return (
     <div className="flex flex-wrap gap-3 items-end bg-white rounded-xl border px-4 py-3 shadow-sm">
-      {mode === 'company' && (
-        <div className="space-y-1">
-          <p className="text-xs text-gray-500">Pháp nhân</p>
-          <select
-            className="h-8 rounded-md border text-sm px-2 bg-white min-w-[160px]"
-            value={companyId ?? ''}
-            onChange={(e) => push('company', e.target.value)}
-          >
-            <option value="">— Chọn công ty —</option>
-            {companies.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-        </div>
-      )}
-
       {mode === 'company' && projects.length > 0 && (
         <div className="space-y-1">
           <p className="text-xs text-gray-500">Dự án</p>

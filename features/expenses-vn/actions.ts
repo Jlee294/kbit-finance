@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { expenseVnSchema, collectReceivableSchema } from './schema'
+import { expenseVnSchema, collectReceivableSchema, payVnSupplierSchema } from './schema'
 
 export async function createExpenseVn(input: unknown): Promise<string> {
   const data = expenseVnSchema.parse(input)
@@ -25,12 +25,41 @@ export async function createExpenseVn(input: unknown): Promise<string> {
     p_project_id:             data.project_id ?? null,
     p_supplier_id:            data.supplier_id ?? null,
     p_supplier_order_id:      data.supplier_order_id ?? null,
+    p_dinh_khoan_no:          data.dinh_khoan_no ?? null,
+    p_dinh_khoan_co:          data.dinh_khoan_co ?? null,
   })
 
   if (error) throw new Error(error.message)
 
   revalidatePath('/chi-vn')
   revalidatePath('/thu-tien') // bank balance changes
+  return expenseId as string
+}
+
+/**
+ * Trả công nợ NCC trong nước (VNĐ): gọi RPC atomic kbit_pay_vn_supplier —
+ * vừa ghi 1 phiếu chi (expense_transactions) vừa cộng supplier_orders.amount_paid
+ * (giảm công nợ phải trả). Dùng chung cho cả phiếu chi gắn đơn và nút trả NCC.
+ */
+export async function payVnSupplier(input: unknown): Promise<string> {
+  const data = payVnSupplierSchema.parse(input)
+  const supabase = await createClient()
+
+  const { data: expenseId, error } = await supabase.rpc('kbit_pay_vn_supplier', {
+    p_supplier_order_id: data.supplier_order_id,
+    p_bank_account_id:   data.bank_account_id,
+    p_amount_vnd:        data.amount_vnd,
+    p_txn_date:          data.txn_date,
+    p_note:              data.note ?? null,
+    p_dinh_khoan_no:     data.dinh_khoan_no ?? null,
+    p_dinh_khoan_co:     data.dinh_khoan_co ?? null,
+  })
+
+  if (error) throw new Error(error.message)
+
+  revalidatePath('/chi-vn')
+  revalidatePath('/cong-no')
+  revalidatePath('/nhap-khau')
   return expenseId as string
 }
 

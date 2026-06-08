@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { formatVND, formatKRW } from '@/lib/format'
 import { ImportOrderForm } from './ImportOrderForm'
 import { PageHeader } from '@/components/shared/PageHeader'
-import { PAGE_WRAPPER } from '@/lib/ui-tokens'
+import { PAGE_WRAPPER, DIALOG_LG, LIST_WRAP, LIST_THEAD, LIST_ROW } from '@/lib/ui-tokens'
 import type { ImportOrderRow } from '../queries'
 
 type SimpleOption  = { id: string; name: string }
@@ -15,7 +15,7 @@ type SupplierOpt   = { id: string; code: string; name: string }
 type ProductOpt    = { id: string; code: string; name: string; unit?: string | null }
 type ProjectOpt    = { id: string; code: string; name: string; company_id: string }
 type UserOpt       = { id: string; name: string }
-type WarehouseOpt  = { id: string; code: string; name: string }
+type WarehouseOpt  = { id: string; code: string; name: string; company_id?: string; is_default?: boolean }
 
 interface Props {
   rows:        ImportOrderRow[]
@@ -52,7 +52,7 @@ export function ImportOrderTable({ rows, canWrite, companies, suppliers, product
       />
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent showCloseButton={false} className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent showCloseButton={false} className={DIALOG_LG}>
           <DialogHeader>
             <DialogTitle>Tạo hóa đơn mua vào (nhập khẩu / mua trong nước)</DialogTitle>
           </DialogHeader>
@@ -70,10 +70,10 @@ export function ImportOrderTable({ rows, canWrite, companies, suppliers, product
           Chưa có hóa đơn mua vào nào
         </div>
       ) : (
-        <div className="rounded-xl border bg-white overflow-hidden shadow-sm">
+        <div className={LIST_WRAP}>
           <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide">
+            <thead className={LIST_THEAD}>
+              <tr>
                 <th className="px-4 py-3 text-left">Mã đơn</th>
                 <th className="px-4 py-3 text-left">Ngày</th>
                 <th className="px-4 py-3 text-left">NCC</th>
@@ -82,12 +82,13 @@ export function ImportOrderTable({ rows, canWrite, companies, suppliers, product
                 <th className="px-4 py-3 text-right">Giá vốn lô</th>
                 <th className="px-4 py-3 text-right">Còn nợ NCC</th>
                 <th className="px-4 py-3 text-center">Nội bộ</th>
+                {canWrite && <th className="px-4 py-3 text-center">Sửa</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody>
               {rows.map((row) => (
                 <tr key={row.id}
-                  className="hover:bg-gray-50 transition-colors cursor-pointer"
+                  className={LIST_ROW}
                   onClick={() => router.push(`/nhap-khau/${row.id}`)}>
                   <td className="px-4 py-3 font-mono text-gray-800">{row.order_code}</td>
                   <td className="px-4 py-3 text-gray-600">{row.order_date}</td>
@@ -122,6 +123,16 @@ export function ImportOrderTable({ rows, canWrite, companies, suppliers, product
                       ? <span className="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full">Nội bộ</span>
                       : <span className="text-gray-300">—</span>}
                   </td>
+                  {canWrite && (
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); router.push(`/nhap-khau/${row.id}?edit=1`) }}
+                        className="text-xs font-medium text-brand-700 hover:underline"
+                      >
+                        Sửa
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

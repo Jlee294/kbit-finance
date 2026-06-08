@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { IncomeForm } from '@/features/payments/components/IncomeForm'
 import { ExpenseVnForm } from '@/features/expenses-vn/components/ExpenseVnForm'
 import { KrExpenseForm } from '@/features/expenses-kr/components/KrExpenseForm'
+import { DIALOG_MD } from '@/lib/ui-tokens'
 
 type SimpleOption    = { id: string; name: string }
 type CustomerOption  = { id: string; code: string; name: string }
@@ -14,6 +15,7 @@ type SupplierOption  = { id: string; code: string; name: string }
 type BankOption      = { id: string; name: string; currency: string; company_id: string }
 type KrBankOption    = { id: string; name: string; company_id: string }
 type ProjectOption   = { id: string; code: string; name: string; company_id: string }
+type SupplierOrderOption = { id: string; order_code: string; supplier_id: string; outstanding: number }
 
 interface Props {
   companies:    SimpleOption[]
@@ -23,13 +25,14 @@ interface Props {
   bankAccounts: BankOption[]
   krwBanks:     KrBankOption[]
   projects:     ProjectOption[]
+  supplierOrders: SupplierOrderOption[]
 }
 
 type DialogMode = 'none' | 'thu' | 'chi-vn' | 'chi-kr'
 
 export function BankCreateButtons({
   companies, customers, suppliers, krSuppliers,
-  bankAccounts, krwBanks, projects,
+  bankAccounts, krwBanks, projects, supplierOrders,
 }: Props) {
   const router = useRouter()
   const [mode, setMode] = useState<DialogMode>('none')
@@ -59,7 +62,7 @@ export function BankCreateButtons({
 
       {/* Thu tiền */}
       <Dialog open={mode === 'thu'} onOpenChange={(o) => { if (!o) setMode('none') }}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" showCloseButton={false}>
+        <DialogContent className={DIALOG_MD} showCloseButton={false}>
           <DialogHeader>
             <DialogTitle>Tạo phiếu thu tiền</DialogTitle>
           </DialogHeader>
@@ -75,7 +78,7 @@ export function BankCreateButtons({
 
       {/* Chi VN */}
       <Dialog open={mode === 'chi-vn'} onOpenChange={(o) => { if (!o) setMode('none') }}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" showCloseButton={false}>
+        <DialogContent className={DIALOG_MD} showCloseButton={false}>
           <DialogHeader>
             <DialogTitle>Tạo phiếu chi VN (VNĐ)</DialogTitle>
           </DialogHeader>
@@ -84,6 +87,7 @@ export function BankCreateButtons({
             bankAccounts={bankAccounts.filter((b) => b.currency === 'VND')}
             projects={projects}
             suppliers={suppliers}
+            supplierOrders={supplierOrders}
             onDone={close}
           />
         </DialogContent>
@@ -91,7 +95,7 @@ export function BankCreateButtons({
 
       {/* Chi KR */}
       <Dialog open={mode === 'chi-kr'} onOpenChange={(o) => { if (!o) setMode('none') }}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" showCloseButton={false}>
+        <DialogContent className={DIALOG_MD} showCloseButton={false}>
           <DialogHeader>
             <DialogTitle>Tạo phiếu chi KR (KRW)</DialogTitle>
           </DialogHeader>

@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUser } from '@/lib/auth'
-import { receiptSchema, issueSchema, transferSchema } from './schema'
+import { receiptSchema, issueSchema, transferSchema, warehouseAdminSchema } from './schema'
 
 export interface ActionResult { error?: string }
 
@@ -22,6 +22,7 @@ export async function receiveStock(input: unknown): Promise<ActionResult> {
       p_txn_date:     data.txn_date,
       p_note:         data.note ?? null,
       p_created_by:   me?.id ?? null,
+      p_unit_cost:    data.unit_cost ?? null,
     })
     if (error) return { error: error.message }
 
@@ -93,38 +94,27 @@ export async function deductOrderStock(
   orderId: string,
   warehouseId: string,
   items: { product_id: string; quantity: number }[],
+  orderDate?: string,   // ghi đúng ngày đơn vào sổ kho → chốt giá vốn lọc đúng kỳ
 ): Promise<ActionResult> {
   try {
     const supabase = await createClient()
     const me = await getCurrentUser()
 
-    // Kiểm tra tồn kho tất cả mặt hàng trước
-    for (const item of items) {
-      if (!item.product_id) continue
-      const { data: stock } = await supabase
-        .from('warehouse_stock')
-        .select('qty_on_hand')
-        .eq('warehouse_id', warehouseId)
-        .eq('product_id', item.product_id)
-        .single()
+    // CHO PHÉP KHO ÂM (Anh Thịnh chốt): bán quá tồn vẫn ghi nhận, tồn xuống âm và hiện đỏ
+    // ở trang Kho. KHÔNG chặn báo lỗi nữa — RPC kbit_deduct_order_batch tự cho âm (mig 0027).
 
-      const available = stock?.qty_on_hand ?? 0
-      if (available < item.quantity) {
-        const { data: prod } = await supabase.from('products').select('name').eq('id', item.product_id).single()
-        return { error: `Không đủ tồn kho cho "${prod?.name ?? item.product_id}". Có: ${available}` }
-      }
-    }
-
-    // Trừ từng mặt hàng qua atomic RPC (stock + ledger trong 1 transaction mỗi item)
-    for (const item of items) {
-      if (!item.product_id) continue
-
-      const { error } = await supabase.rpc('kbit_deduct_order_item', {
+    // Trừ CẢ LÔ qua kbit_deduct_order_batch: ghi sổ kho nhiều dòng trong 1 GIAO DỊCH
+    // (nguyên tử) — lỗi giữa chừng → toàn bộ rollback, không để dòng trước trừ lén tồn.
+    const stockItems = items
+      .filter((it) => it.product_id)
+      .map((it) => ({ product_id: it.product_id, qty: it.quantity }))
+    if (stockItems.length > 0) {
+      const { error } = await supabase.rpc('kbit_deduct_order_batch', {
         p_warehouse_id: warehouseId,
-        p_product_id:   item.product_id,
-        p_qty:          item.quantity,
         p_order_id:     orderId,
+        p_items:        stockItems,
         p_created_by:   me?.id ?? null,
+        ...(orderDate ? { p_txn_date: orderDate } : {}),
       })
       if (error) return { error: error.message }
     }
@@ -135,6 +125,46 @@ export async function deductOrderStock(
       .update({ stock_deducted: true })
       .eq('id', orderId)
 
+    revalidatePath('/kho')
+    return {}
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Lỗi không xác định' }
+  }
+}
+
+// ── Quản lý kho (danh mục) ────────────────────────────────────────────────────
+
+export async function createWarehouse(input: unknown): Promise<ActionResult> {
+  try {
+    const data = warehouseAdminSchema.parse(input)
+    const supabase = await createClient()
+    // Đặt làm kho chính → gỡ cờ chính ở các kho khác cùng công ty (ràng buộc 1 chính/công ty).
+    if (data.is_default) {
+      await supabase.from('warehouses').update({ is_default: false })
+        .eq('company_id', data.company_id).eq('is_default', true)
+    }
+    const { error } = await supabase.from('warehouses').insert(data)
+    if (error) return { error: error.message }
+    revalidatePath('/danh-muc/kho')
+    revalidatePath('/kho')
+    return {}
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Lỗi không xác định' }
+  }
+}
+
+export async function updateWarehouse(id: string, input: unknown): Promise<ActionResult> {
+  try {
+    const data = warehouseAdminSchema.parse(input)
+    const supabase = await createClient()
+    // Đặt làm kho chính → gỡ cờ chính ở các kho KHÁC cùng công ty trước khi lưu.
+    if (data.is_default) {
+      await supabase.from('warehouses').update({ is_default: false })
+        .eq('company_id', data.company_id).eq('is_default', true).neq('id', id)
+    }
+    const { error } = await supabase.from('warehouses').update(data).eq('id', id)
+    if (error) return { error: error.message }
+    revalidatePath('/danh-muc/kho')
     revalidatePath('/kho')
     return {}
   } catch (err) {

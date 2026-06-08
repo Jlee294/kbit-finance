@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUser, canEdit } from '@/lib/auth'
+import { todayLocal } from '@/lib/format'
 import { parseInvoiceTT78, type ParsedInvoice } from '@/lib/xml/invoice-tt78'
 import { parseBankTechcomXml, type ParsedBankStatement } from '@/lib/xml/bank-techcom'
 import { parseBankExcelBuffer, parseBankCsvText } from '@/lib/xml/bank-techcom-table'
@@ -101,6 +102,15 @@ export async function commitInvoiceImport(input: CommitInvoiceInput): Promise<Ac
     if (!me || !canEdit(me.role)) return { error: 'Không có quyền' }
     const supabase = await createClient()
 
+    // C-2: chặn chọn kho thuộc CÔNG TY KHÁC (kbit_receive_stock suy công ty TỪ kho
+    // → cộng nhầm tồn + sai giá vốn). Kho phải thuộc công ty của hóa đơn.
+    if (input.warehouse_id) {
+      const { data: wh } = await supabase.from('warehouses').select('company_id').eq('id', input.warehouse_id).single()
+      if (wh && wh.company_id !== input.company_id) {
+        return { error: 'Kho nhập hàng không thuộc công ty của hóa đơn. Vui lòng chọn kho của đúng công ty.' }
+      }
+    }
+
     // 1. Resolve supplier_id (tạo mới nếu cần)
     let supplierId = input.existing_supplier_id ?? null
     if (!supplierId && input.create_supplier) {
@@ -130,7 +140,7 @@ export async function commitInvoiceImport(input: CommitInvoiceInput): Promise<Ac
         project_id:  input.project_id ?? null,
         supplier_id: supplierId,
         order_code:  orderCode,
-        order_date:  input.parsed.invoice_date ?? new Date().toISOString().slice(0,10),
+        order_date:  input.parsed.invoice_date ?? todayLocal(),
         order_type:  'domestic',     // Hóa đơn VN mặc định là domestic
         currency:    'VND',
         goods_value: goodsValue,
@@ -166,31 +176,29 @@ export async function commitInvoiceImport(input: CommitInvoiceInput): Promise<Ac
       return { error: 'Không tạo được dòng hàng: ' + itemErr.message }
     }
 
-    // 4. Auto nhập kho nếu có warehouse
+    // 4. Auto nhập kho nếu có warehouse — ghi CẢ LÔ qua kbit_receive_stock_batch (nguyên tử):
+    //    đơn giá hóa đơn (C-3) vào BQ liên hoàn; lỗi GIỮA chừng → toàn bộ rollback (kho sạch),
+    //    chỉ cần xóa đơn vừa tạo. KHÔNG còn double-count (RPC tự ghi sổ 'receipt').
     if (input.warehouse_id) {
-      for (let i = 0; i < input.parsed.items.length; i++) {
-        const it    = input.parsed.items[i]
-        const pid   = input.item_product_ids[i]
-        if (!pid) continue
-        const { error: stockErr } = await supabase.rpc('kbit_adjust_stock', {
+      const txnDate = input.parsed.invoice_date ?? todayLocal()
+      const stockItems = input.parsed.items
+        .map((it, i) => ({ product_id: input.item_product_ids[i], qty: it.qty, unit_cost: it.unit_price }))
+        .filter((it) => it.product_id)
+      if (stockItems.length > 0) {
+        const { error: stockErr } = await supabase.rpc('kbit_receive_stock_batch', {
           p_warehouse_id: input.warehouse_id,
-          p_product_id:   pid,
-          p_delta:        it.qty,
+          p_items:        stockItems,
+          p_txn_date:     txnDate,
+          p_note:         `Nhập từ XML ${input.parsed.invoice_no ?? ''}`,
+          p_created_by:   me.id,
         })
         if (stockErr) {
-          console.error('[stock add]', stockErr.message)
-          continue
+          await supabase.from('supplier_order_items').delete().eq('order_id', order.id)
+          await supabase.from('supplier_orders').delete().eq('id', order.id)
+          return { error: `Không nhập được kho: ${stockErr.message}` }
         }
-        await supabase.from('warehouse_transactions').insert({
-          txn_type:     'receipt',
-          warehouse_id: input.warehouse_id,
-          product_id:   pid,
-          qty:          it.qty,
-          txn_date:     input.parsed.invoice_date ?? new Date().toISOString().slice(0,10),
-          note:         `Nhập từ XML ${input.parsed.invoice_no ?? ''}`,
-        })
+        await supabase.from('supplier_orders').update({ stock_added: true }).eq('id', order.id)
       }
-      await supabase.from('supplier_orders').update({ stock_added: true }).eq('id', order.id)
     }
 
     revalidatePath('/nhap-khau')
@@ -294,6 +302,15 @@ export async function commitSalesInvoiceImport(
     if (!me || !canEdit(me.role)) return { error: 'Không có quyền' }
     const supabase = await createClient()
 
+    // C-2: chặn chọn kho thuộc CÔNG TY KHÁC (kbit_deduct_order_item suy công ty TỪ kho
+    // → trừ nhầm tồn + sai giá vốn). Kho xuất phải thuộc công ty của hóa đơn.
+    if (input.warehouse_id) {
+      const { data: wh } = await supabase.from('warehouses').select('company_id').eq('id', input.warehouse_id).single()
+      if (wh && wh.company_id !== input.company_id) {
+        return { error: 'Kho xuất hàng không thuộc công ty của hóa đơn. Vui lòng chọn kho của đúng công ty.' }
+      }
+    }
+
     // 1. Resolve customer_id
     let customerId = input.existing_customer_id ?? null
     if (!customerId && input.create_customer) {
@@ -343,7 +360,7 @@ export async function commitSalesInvoiceImport(
         project_id:  input.project_id ?? null,
         customer_id: customerId,
         order_code:  orderCode,
-        order_date:  input.parsed.invoice_date ?? new Date().toISOString().slice(0,10),
+        order_date:  input.parsed.invoice_date ?? todayLocal(),
         delivery_date: input.parsed.invoice_date ?? null,
         grand_total: grandTotal,
         amount_paid: 0,
@@ -374,31 +391,24 @@ export async function commitSalesInvoiceImport(
       return { error: 'Không tạo được dòng hàng: ' + iErr.message }
     }
 
-    // 7. Tự trừ kho nếu có warehouse_id
+    // 7. Tự trừ kho nếu có warehouse_id — ghi CẢ LÔ qua kbit_deduct_order_batch (nguyên tử):
+    //    giá vốn xuất = BQ hiện hành (ghi cost_price vào dòng đơn). Lỗi GIỮA chừng → toàn bộ
+    //    rollback (kho chưa ghi gì) → xóa đơn AN TOÀN (không vướng FK order_deduction). Kho cho phép âm (0027).
     if (input.warehouse_id) {
       const stockItems = items
         .filter(it => !!it.product_id)
-        .map(it => ({ product_id: it.product_id!, quantity: it.qty }))
+        .map(it => ({ product_id: it.product_id!, qty: it.qty }))
       if (stockItems.length > 0) {
-        for (const si of stockItems) {
-          const { error: rpcErr } = await supabase.rpc('kbit_adjust_stock', {
-            p_warehouse_id: input.warehouse_id,
-            p_product_id:   si.product_id,
-            p_delta:        -si.quantity,    // âm = xuất kho
-          })
-          if (rpcErr) {
-            console.error('[stock deduct]', rpcErr.message)
-            continue
-          }
-          await supabase.from('warehouse_transactions').insert({
-            txn_type:     'order_deduction',
-            warehouse_id: input.warehouse_id,
-            product_id:   si.product_id,
-            qty:          si.quantity,
-            txn_date:     input.parsed.invoice_date ?? new Date().toISOString().slice(0,10),
-            ref_order_id: order.id,
-            note:         `Xuất từ XML HĐ ${input.parsed.invoice_no ?? ''}`,
-          })
+        const { error: rpcErr } = await supabase.rpc('kbit_deduct_order_batch', {
+          p_warehouse_id: input.warehouse_id,
+          p_order_id:     order.id,
+          p_items:        stockItems,
+          p_created_by:   me.id,
+        })
+        if (rpcErr) {
+          await supabase.from('customer_order_items').delete().eq('order_id', order.id)
+          await supabase.from('customer_orders').delete().eq('id', order.id)
+          return { error: `Không trừ được kho: ${rpcErr.message}` }
         }
         await supabase.from('customer_orders').update({ stock_deducted: true }).eq('id', order.id)
       }

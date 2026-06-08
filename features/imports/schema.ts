@@ -13,7 +13,7 @@ export const supplierImportSchema = z.object({
   company_id:  z.string().uuid('Chọn công ty'),
   project_id:  z.string().uuid().optional().nullable(),
   supplier_id: z.string().uuid('Chọn nhà cung cấp'),
-  order_code:  z.string().min(1, 'Mã đơn bắt buộc'),
+  order_code:  z.string().trim().optional().nullable(),  // để trống → app tự sinh (xem createImportOrder)
   order_date:  z.string().min(1, 'Chọn ngày'),
   // Loại đơn: import (nhập khẩu) hoặc domestic (mua trong nước)
   order_type:  z.enum(['import', 'domestic']).default('import'),

@@ -8,18 +8,21 @@ import {
 import { listCompanies }  from '@/features/companies/queries'
 import { listProjects }   from '@/features/projects/queries'
 import { listSuppliers }  from '@/features/suppliers/queries'
+import { listUnpaidVndSupplierOrders } from '@/features/imports/queries'
 import { createClient }   from '@/lib/supabase/server'
+import { getGlobalFilter } from '@/lib/global-filter'
 import { ExpenseVnList }  from '@/features/expenses-vn/components/ExpenseVnList'
 
 export const dynamic = 'force-dynamic'
 
 export default async function ExpenseVnPage() {
   const supabase = await createClient()
+  const { companyId } = await getGlobalFilter()
 
-  const [me, expenses, receivables, companyTotal, outstandingTotal, companies, projects, bankRes, suppliersRaw] =
+  const [me, expenses, receivables, companyTotal, outstandingTotal, companies, projects, bankRes, suppliersRaw, importOrders] =
     await Promise.all([
       getCurrentUser(),
-      listExpensesVN(),
+      listExpensesVN(companyId || undefined),
       listOutstandingReceivables(),
       sumCompanyExpenseVN(),
       sumOutstandingChiHo(),
@@ -27,6 +30,7 @@ export default async function ExpenseVnPage() {
       listProjects(),
       supabase.from('bank_accounts').select('id, name, currency, company_id').eq('is_active', true).order('name'),
       listSuppliers(),
+      listUnpaidVndSupplierOrders(),
     ])
 
   const bankAccounts = (bankRes.data ?? []).map((b) => ({
@@ -42,6 +46,9 @@ export default async function ExpenseVnPage() {
     name: s.name,
   }))
 
+  // Đơn NCC trong nước (VNĐ) còn nợ — đã gọn sẵn { id, order_code, supplier_id, outstanding }
+  const supplierOrders = importOrders
+
   return (
     <ExpenseVnList
       expenses={expenses}
@@ -53,6 +60,7 @@ export default async function ExpenseVnPage() {
       bankAccounts={bankAccounts}
       projects={projects.map((p) => ({ id: p.id, code: p.code, name: p.name, company_id: p.company_id }))}
       suppliers={suppliers}
+      supplierOrders={supplierOrders}
     />
   )
 }

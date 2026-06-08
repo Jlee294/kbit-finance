@@ -65,9 +65,10 @@ export function StockTable({ warehouses, stock }: Props) {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filtered.map((r, i) => {
-                const low = r.qty_on_hand <= 5
+                const neg = r.qty_on_hand < 0
+                const low = !neg && r.qty_on_hand <= 5
                 return (
-                  <tr key={i} className={`hover:bg-brand-50/40 ${low ? 'bg-warning-50' : ''}`}>
+                  <tr key={i} className={`hover:bg-brand-50/40 ${neg ? 'bg-red-50' : low ? 'bg-warning-50' : ''}`}>
                     <td className="px-4 py-2.5">
                       <p className="font-medium text-gray-800">{r.product_name}</p>
                       <p className="text-xs text-gray-400">{r.product_code}</p>
@@ -77,14 +78,18 @@ export function StockTable({ warehouses, stock }: Props) {
                     )}
                     <td className="px-4 py-2.5 text-gray-500 text-xs">{r.unit ?? '—'}</td>
                     <td className="px-4 py-2.5 text-right">
-                      <span className={`font-semibold ${low ? 'text-amber-600' : 'text-gray-800'}`}>
+                      <span className={`font-semibold ${neg ? 'text-red-600' : low ? 'text-amber-600' : 'text-gray-800'}`}>
                         {r.qty_on_hand.toLocaleString('vi-VN')}
                       </span>
-                      {low && (
+                      {neg ? (
+                        <span className="ml-1.5 text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded">
+                          Âm kho
+                        </span>
+                      ) : low ? (
                         <span className="ml-1.5 text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
                           Sắp hết
                         </span>
-                      )}
+                      ) : null}
                     </td>
                   </tr>
                 )

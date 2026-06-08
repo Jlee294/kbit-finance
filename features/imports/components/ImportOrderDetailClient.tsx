@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { formatVND, formatKRW } from '@/lib/format'
 import { ImportOrderForm } from './ImportOrderForm'
 import { recordSupplierPayment } from '../actions'
+import { payVnSupplier } from '@/features/expenses-vn/actions'
 import type { ImportOrderDetail } from '../queries'
 
 type SimpleOption  = { id: string; name: string }
@@ -23,13 +24,17 @@ interface Props {
   suppliers: SupplierOpt[]
   products:  ProductOpt[]
   projects:  ProjectOpt[]
+  autoEdit?: boolean
+  bankAccounts?: { id: string; name: string; currency: string }[]
 }
 
-export function ImportOrderDetailClient({ order, mode, companies, suppliers, products, projects }: Props) {
+export function ImportOrderDetailClient({ order, mode, companies, suppliers, products, projects, autoEdit, bankAccounts = [] }: Props) {
   const router = useRouter()
-  const [editOpen, setEditOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(!!autoEdit)
   const [payOpen,  setPayOpen]  = useState(false)
   const [payAmt,   setPayAmt]   = useState('')
+  const [payBankId, setPayBankId] = useState('')
+  const [payDate,  setPayDate]  = useState(new Date().toISOString().slice(0, 10))
   const [payError, setPayError] = useState('')
   const [paying,   setPaying]   = useState(false)
 
@@ -40,7 +45,19 @@ export function ImportOrderDetailClient({ order, mode, companies, suppliers, pro
     e.preventDefault()
     setPaying(true); setPayError('')
     try {
-      await recordSupplierPayment(order.id, { amount: parseFloat(payAmt) })
+      if (order.currency === 'VND') {
+        // VNĐ: tạo phiếu chi + giảm nợ (atomic) — cần tài khoản & ngày
+        await payVnSupplier({
+          supplier_order_id: order.id,
+          bank_account_id:   payBankId,
+          amount_vnd:        parseFloat(payAmt),
+          txn_date:          payDate,
+          note:              `Thanh toán đơn ${order.order_code}`,
+        })
+      } else {
+        // KRW: giữ đường cũ (cộng amount_paid nguyên tệ)
+        await recordSupplierPayment(order.id, { amount: parseFloat(payAmt) })
+      }
       router.refresh()
       setPayOpen(false)
     } catch (err) {
@@ -69,6 +86,22 @@ export function ImportOrderDetailClient({ order, mode, companies, suppliers, pro
               </div>
             </div>
             <form onSubmit={handlePay} className="space-y-4">
+              {order.currency === 'VND' && (
+                <>
+                  <div className="space-y-1">
+                    <Label>Tài khoản chi <span className="text-red-500">*</span></Label>
+                    <select value={payBankId} onChange={(e) => setPayBankId(e.target.value)} required
+                      className="w-full h-9 rounded-lg border border-input bg-transparent px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50">
+                      <option value="">— Chọn tài khoản —</option>
+                      {bankAccounts.map((b) => <option key={b.id} value={b.id}>{b.name} ({b.currency})</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Ngày chi <span className="text-red-500">*</span></Label>
+                    <Input type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)} required />
+                  </div>
+                </>
+              )}
               <div className="space-y-1">
                 <Label>Số tiền trả ({order.currency}) <span className="text-red-500">*</span></Label>
                 <Input type="number" min="1" step="1"

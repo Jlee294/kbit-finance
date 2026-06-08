@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { computePurchaseInvoiceTotals } from './purchase-total'
 
 interface OrderItemRaw {
   description: string | null
@@ -35,7 +36,10 @@ interface PurchaseOrderRaw {
   invoice_date: string | null
   supplier_tax_code: string | null
   vat_amount: number | null
-  grand_total: number | null
+  goods_value: number | null
+  vat_import: number | null
+  currency: string | null
+  exchange_rate: number | null
   suppliers: { code: string; name: string } | null
   companies: { name: string } | null
   items: OrderItemRaw[]
@@ -82,12 +86,15 @@ export async function listSalesInvoices(opts: {
       companies!company_id ( name ),
       items:customer_order_items ( description, products(name) )
     `)
-    .order('order_date', { ascending: false })
+    .order('invoice_date', { ascending: false })
     .limit(opts.limit ?? 300)
 
+  // Bảng kê thuế GTGT = CHỈ hóa đơn đã xuất, kê theo NGÀY HÓA ĐƠN.
+  // Đơn chưa có ngày HĐ → ẩn khỏi bảng kê (xem ở trang Đơn hàng/Nhập khẩu).
+  q = q.not('invoice_date', 'is', null)
   if (opts.companyId) q = q.eq('company_id', opts.companyId)
-  if (opts.from)      q = q.gte('order_date', opts.from)
-  if (opts.to)        q = q.lte('order_date', opts.to)
+  if (opts.from)      q = q.gte('invoice_date', opts.from)
+  if (opts.to)        q = q.lte('invoice_date', opts.to)
 
   const { data, error } = await q
   if (error) { console.error('[listSalesInvoices]', error.message); return [] }
@@ -160,25 +167,26 @@ export async function listPurchaseInvoices(opts: {
     .select(`
       id, order_code, order_date, order_type,
       invoice_template, invoice_symbol, invoice_no, invoice_date, supplier_tax_code,
-      vat_amount, grand_total,
+      vat_amount, goods_value, vat_import, currency, exchange_rate,
       suppliers!supplier_id ( code, name ),
       companies!company_id ( name ),
       items:supplier_order_items ( description, products(name) )
     `)
-    .order('order_date', { ascending: false })
+    .order('invoice_date', { ascending: false })
     .limit(opts.limit ?? 300)
 
+  // Bảng kê thuế GTGT = CHỈ hóa đơn đã xuất, kê theo NGÀY HÓA ĐƠN.
+  // Đơn chưa có ngày HĐ → ẩn khỏi bảng kê (xem ở trang Đơn hàng/Nhập khẩu).
+  q = q.not('invoice_date', 'is', null)
   if (opts.companyId) q = q.eq('company_id', opts.companyId)
-  if (opts.from)      q = q.gte('order_date', opts.from)
-  if (opts.to)        q = q.lte('order_date', opts.to)
+  if (opts.from)      q = q.gte('invoice_date', opts.from)
+  if (opts.to)        q = q.lte('invoice_date', opts.to)
 
   const { data, error } = await q
   if (error) { console.error('[listPurchaseInvoices]', error.message); return [] }
 
   return ((data ?? []) as unknown as PurchaseOrderRaw[]).map((r) => {
-    const total  = Number(r.grand_total ?? 0)
-    const vatAmt = Number(r.vat_amount ?? 0)
-    const subtotal = total - vatAmt
+    const { subtotal, vat_amount: vatAmt, grand_total: total } = computePurchaseInvoiceTotals(r)
     const vatPct = subtotal > 0 ? Math.round((vatAmt / subtotal) * 1000) / 10 : 0
     const noiDung = (r.items ?? [])
       .map((it) => it.products?.name || it.description || '')

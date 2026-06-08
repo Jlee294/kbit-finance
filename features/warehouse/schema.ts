@@ -27,6 +27,7 @@ export const receiptSchema = z.object({
   qty:          z.coerce.number().positive('Số lượng phải > 0'),
   txn_date:     z.string().regex(dateRegex, 'Ngày không hợp lệ'),
   note:         z.string().optional().nullable(),
+  unit_cost:    z.coerce.number().nonnegative('Đơn giá vốn ≥ 0').optional().nullable(),  // giá vốn nhập/đv
 })
 
 export const issueSchema = receiptSchema.extend({
@@ -48,3 +49,16 @@ export const transferSchema = z.object({
 export type ReceiptInput   = z.infer<typeof receiptSchema>
 export type IssueInput     = z.infer<typeof issueSchema>
 export type TransferInput  = z.infer<typeof transferSchema>
+
+// ── Quản lý kho (danh mục) ────────────────────────────────────────────────────
+
+export const warehouseAdminSchema = z.object({
+  company_id: z.string().uuid('Chọn công ty'),
+  code:       z.string().min(1, 'Bắt buộc'),
+  name:       z.string().min(1, 'Bắt buộc'),
+  note:       z.string().optional().nullable(),
+  is_active:  z.boolean().optional(),   // I-3: bật/tắt kho qua UI (kho dừng không hiện ở dropdown nhập/xuất)
+  is_default: z.boolean().optional(),   // B: kho chính của công ty (tự dùng khi tạo đơn không chọn kho)
+})
+
+export type WarehouseAdminInput = z.infer<typeof warehouseAdminSchema>

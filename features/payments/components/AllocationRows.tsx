@@ -99,8 +99,8 @@ export function AllocationRows({ rows, orders, totalAmount, onChange }: Props) {
                     <td className="px-2 py-1">
                       <input
                         type="number"
-                        min="0.01"
-                        step="1000"
+                        min="1"
+                        step="1"
                         value={row.allocated_amount}
                         onChange={(e) => updateRow(row.key, { allocated_amount: e.target.value })}
                         className="w-full h-8 rounded border border-input bg-transparent px-2 text-sm text-right"

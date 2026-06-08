@@ -27,6 +27,7 @@ export function TransactionHistory({ rows }: { rows: TxnRow[] }) {
         <thead>
           <tr className="border-b border-brand-100 bg-brand-50/60 text-xs text-brand-800 font-semibold">
             <th className="px-4 py-3 text-left">Ngày</th>
+            <th className="px-4 py-3 text-left">Công ty</th>
             <th className="px-4 py-3 text-left">Loại</th>
             <th className="px-4 py-3 text-left">Kho</th>
             <th className="px-4 py-3 text-left">Sản phẩm</th>
@@ -40,6 +41,7 @@ export function TransactionHistory({ rows }: { rows: TxnRow[] }) {
               <td className="px-4 py-2.5 text-gray-500 text-xs whitespace-nowrap">
                 {new Date(r.txn_date).toLocaleDateString('vi-VN')}
               </td>
+              <td className="px-4 py-2.5 text-gray-600 text-xs">{r.company_name}</td>
               <td className="px-4 py-2.5">
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${TYPE_COLOR[r.txn_type] ?? 'bg-gray-100 text-gray-600'}`}>
                   {TXN_TYPE_LABELS[r.txn_type] ?? r.txn_type}

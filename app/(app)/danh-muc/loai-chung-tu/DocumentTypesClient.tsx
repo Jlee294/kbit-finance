@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DocumentTypeForm } from '@/features/document-types/components/DocumentTypeForm'
 import type { DocumentType } from '@/features/document-types/queries'
+import { DIALOG_SM } from '@/lib/ui-tokens'
 
 interface Props {
   items: DocumentType[]
@@ -61,7 +62,7 @@ export function DocumentTypesClient({ items, canWrite }: Props) {
 
       {/* Add dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent showCloseButton={false} className="max-w-md">
+        <DialogContent showCloseButton={false} className={DIALOG_SM}>
           <DialogHeader><DialogTitle>Thêm loại chứng từ</DialogTitle></DialogHeader>
           <DocumentTypeForm onDone={() => setAddOpen(false)} />
         </DialogContent>
@@ -69,7 +70,7 @@ export function DocumentTypesClient({ items, canWrite }: Props) {
 
       {/* Edit dialog */}
       <Dialog open={!!editItem} onOpenChange={(o) => !o && setEditItem(null)}>
-        <DialogContent showCloseButton={false} className="max-w-md">
+        <DialogContent showCloseButton={false} className={DIALOG_SM}>
           <DialogHeader><DialogTitle>Sửa loại chứng từ</DialogTitle></DialogHeader>
           {editItem && (
             <DocumentTypeForm editItem={editItem} onDone={() => setEditItem(null)} />

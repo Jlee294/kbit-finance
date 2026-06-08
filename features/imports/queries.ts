@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { orderCodePrefix } from '@/features/orders/order-code'
 
 export type ImportOrderRow = {
   id: string
@@ -94,4 +95,46 @@ export async function getImportOrder(id: string): Promise<ImportOrderDetail> {
     .single()
   if (error) throw new Error(error.message)
   return data as unknown as ImportOrderDetail
+}
+
+/** Đơn NCC trong nước (VNĐ) còn nợ — gọn cho form phiếu chi (không tải toàn bộ đơn). */
+export async function listUnpaidVndSupplierOrders(): Promise<
+  { id: string; order_code: string; supplier_id: string; outstanding: number }[]
+> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('supplier_orders')
+    .select('id, order_code, supplier_id, outstanding')
+    .eq('currency', 'VND')
+    .gt('outstanding', 0)
+    .order('order_date', { ascending: false })
+  if (error) { console.error('[listUnpaidVndSupplierOrders]', error.message); return [] }
+  return (data ?? []) as { id: string; order_code: string; supplier_id: string; outstanding: number }[]
+}
+
+/**
+ * Số thứ tự tiếp theo cho mã đơn NCC (dùng khi để trống → tự sinh).
+ * Sao quy ước getNextOrderSeq bên bán: max(seq cùng prefix) + 1, dựa max để tránh trùng khi đơn bị xoá.
+ * Prefix ví dụ: 'SS-0526-'
+ */
+export async function getNextSupplierOrderSeq(
+  supplierCode: string,
+  orderDate: string,
+): Promise<number> {
+  const supabase = await createClient()
+  const prefix = orderCodePrefix(supplierCode, orderDate)
+
+  const { data, error } = await supabase
+    .from('supplier_orders')
+    .select('order_code')
+    .like('order_code', `${prefix}%`)
+    .order('order_code', { ascending: false })
+    .limit(1)
+
+  if (error) throw new Error(error.message)
+  if (!data || data.length === 0) return 1
+
+  const lastCode = data[0].order_code as string
+  const seq = parseInt(lastCode.slice(prefix.length), 10)
+  return isNaN(seq) ? 1 : seq + 1
 }

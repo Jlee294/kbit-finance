@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { createBrand, updateBrand } from '../actions'
+import { FORM_GRID, FORM_COL_FULL } from '@/lib/ui-tokens'
 
 interface Props {
   initial?: { id?: string; code?: string; name?: string; sort_order?: number }
@@ -33,7 +34,7 @@ export function BrandForm({ initial, onDone }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className={FORM_GRID}>
         <div className="space-y-1">
           <Label>Mã brand <span className="text-red-500">*</span></Label>
           <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="VD: SOME" required />
@@ -42,10 +43,10 @@ export function BrandForm({ initial, onDone }: Props) {
           <Label>Thứ tự hiển thị</Label>
           <Input type="number" min="0" value={order} onChange={(e) => setOrder(e.target.value)} />
         </div>
-      </div>
-      <div className="space-y-1">
-        <Label>Tên brand <span className="text-red-500">*</span></Label>
-        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="VD: Some Brand" required />
+        <div className={`space-y-1 ${FORM_COL_FULL}`}>
+          <Label>Tên brand <span className="text-red-500">*</span></Label>
+          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="VD: Some Brand" required />
+        </div>
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
       <div className="flex justify-end gap-2">

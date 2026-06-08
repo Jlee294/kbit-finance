@@ -1,8 +1,12 @@
 import { redirect } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
+import { getGlobalFilter } from '@/lib/global-filter'
+import { listCompanies } from '@/features/companies/queries'
+import { todayLocal } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Sidebar } from './Sidebar'
+import { GlobalFilterBar } from '@/components/shared/GlobalFilterBar'
 import { ChatWidgetLazy } from '@/components/chat/ChatWidgetLazy'
 
 async function SignOutButton() {
@@ -25,13 +29,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const me = await getCurrentUser()
   if (!me) redirect('/login')
 
+  const [gf, companies] = await Promise.all([getGlobalFilter(), listCompanies()])
+  const curY = Number(todayLocal().slice(0, 4))
+  const years = [curY - 2, curY - 1, curY, curY + 1].map(String)
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* ── Sidebar ─────────────────────────────────────── */}
       <aside className="w-56 shrink-0 flex flex-col bg-white border-r border-gray-200 min-h-screen sticky top-0 h-screen shadow-sm">
         {/* Logo — brand color block */}
-        <div className="px-5 py-4 border-b border-gray-100 bg-brand-800 flex items-center gap-2">
-          <div className="h-7 w-7 rounded-lg bg-white/10 flex items-center justify-center font-bold text-white text-xs">
+        <div className="px-5 py-4 border-b border-gray-100 bg-gradient-to-br from-brand-600 to-brand-500 flex items-center gap-2">
+          <div className="h-7 w-7 rounded-lg bg-white/15 flex items-center justify-center font-bold text-white text-xs">
             K
           </div>
           <div className="leading-tight">
@@ -54,8 +62,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* ── Main content ────────────────────────────────── */}
-      <main className="flex-1 p-6 overflow-auto">
-        {children}
+      <main className="flex-1 overflow-auto flex flex-col">
+        <GlobalFilterBar
+          companies={companies.map((c) => ({ id: c.id, name: c.name }))}
+          companyId={gf.companyId}
+          year={gf.year}
+          years={years}
+        />
+        <div className="flex-1 p-6">{children}</div>
       </main>
 
       {/* ── AI Chatbot ──────────────────────────────────── */}

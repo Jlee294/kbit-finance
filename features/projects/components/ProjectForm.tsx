@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { createClient } from '@/lib/supabase/client'
 import { createProject, updateProject } from '../actions'
+import { FORM_GRID, FORM_COL_FULL } from '@/lib/ui-tokens'
 
 interface Company { id: string; code: string; name: string }
 
@@ -26,6 +26,8 @@ export function ProjectForm({ initial, onDone }: Props) {
   const [endDate, setEndDate] = useState(initial?.end_date ?? '')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+
+  const sel = 'w-full h-9 rounded-lg border border-input bg-transparent px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50'
 
   useEffect(() => {
     const sb = createClient()
@@ -56,18 +58,16 @@ export function ProjectForm({ initial, onDone }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-1">
-        <Label>Công ty</Label>
-        <Select value={companyId} onValueChange={(v) => setCompanyId(v ?? '')} required>
-          <SelectTrigger><SelectValue placeholder="Chọn công ty" /></SelectTrigger>
-          <SelectContent>
+      <div className={FORM_GRID}>
+        <div className={`space-y-1 ${FORM_COL_FULL}`}>
+          <Label>Công ty</Label>
+          <select value={companyId} onChange={(e) => setCompanyId(e.target.value)} required className={sel}>
+            <option value="">Chọn công ty</option>
             {companies.map((c) => (
-              <SelectItem key={c.id} value={c.id}>{c.code} — {c.name}</SelectItem>
+              <option key={c.id} value={c.id}>{c.code} — {c.name}</option>
             ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
+          </select>
+        </div>
         <div className="space-y-1">
           <Label>Mã dự án</Label>
           <Input value={code} onChange={(e) => setCode(e.target.value)} required />
@@ -76,8 +76,6 @@ export function ProjectForm({ initial, onDone }: Props) {
           <Label>Tên dự án</Label>
           <Input value={name} onChange={(e) => setName(e.target.value)} required />
         </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1">
           <Label>Ngày bắt đầu</Label>
           <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />

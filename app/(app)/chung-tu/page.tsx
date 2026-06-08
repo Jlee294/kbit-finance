@@ -19,8 +19,8 @@ export default async function ChungTuPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6 p-6">
       <PageHeader
-        title="Chứng từ"
-        subtitle={`${docs.length} chứng từ đính kèm trong hệ thống`}
+        title="Tài liệu đính kèm"
+        subtitle={`Kho lưu hóa đơn, biên bản, hợp đồng… gắn với từng đơn hàng / phiếu thu chi để tra cứu và đối chiếu khi cần (${docs.length} tài liệu).`}
       />
       <DocumentListClient docs={docs} docTypes={docTypes} canWrite={canWrite} canVerify={canVerify} />
     </div>

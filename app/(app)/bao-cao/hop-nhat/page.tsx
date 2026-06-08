@@ -61,7 +61,6 @@ export default async function HopNhatPage({
       <Suspense fallback={null}>
         <ReportFilters
           mode="consolidated"
-          companies={[]}
           projects={[]}
           from={from}
           to={to}

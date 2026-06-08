@@ -7,15 +7,17 @@ import {
 } from '@/features/expenses-kr/queries'
 import { listCompanies } from '@/features/companies/queries'
 import { listProjects }  from '@/features/projects/queries'
+import { getGlobalFilter } from '@/lib/global-filter'
 import { KrExpenseList } from '@/features/expenses-kr/components/KrExpenseList'
 
 export const dynamic = 'force-dynamic'
 
 export default async function ChiKrPage() {
+  const { companyId } = await getGlobalFilter()
   const [me, expenses, krSuppliers, krwBanks, unpaidOrders, companies, projects] =
     await Promise.all([
       getCurrentUser(),
-      listKrExpenses(),
+      listKrExpenses(companyId || undefined),
       listKrSuppliers(),
       listKrwBankAccounts(),
       getKrSupplierOrdersUnpaid(),

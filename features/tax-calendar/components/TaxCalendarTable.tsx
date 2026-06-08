@@ -1,17 +1,17 @@
 import { markFiled, deleteCalendarItem } from '../actions'
-import { TAX_TYPE_LABELS }               from '@/features/tax-plans/schema'
 import type { CalendarItem }             from '../queries'
 import { Button }                        from '@/components/ui/button'
+import { todayLocal, formatLocalDate }   from '@/lib/format'
 
 function statusBadge(item: CalendarItem) {
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayLocal()
   if (item.status === 'filed') {
     return <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700">Đã nộp</span>
   }
   if (item.due_date < today) {
     return <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">Quá hạn</span>
   }
-  const soon = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10)
+  const soon = formatLocalDate(new Date(Date.now() + 7 * 86_400_000))
   if (item.due_date <= soon) {
     return <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">Đến hạn ≤7 ngày</span>
   }
@@ -21,9 +21,10 @@ function statusBadge(item: CalendarItem) {
 interface Props {
   items:   CalendarItem[]
   canEdit: boolean
+  taxTypeLabels?: Record<string, string>
 }
 
-export function TaxCalendarTable({ items, canEdit }: Props) {
+export function TaxCalendarTable({ items, canEdit, taxTypeLabels = {} }: Props) {
   if (items.length === 0) {
     return <p className="px-5 py-6 text-sm text-gray-400 text-center">Chưa có nghĩa vụ thuế nào.</p>
   }
@@ -45,7 +46,7 @@ export function TaxCalendarTable({ items, canEdit }: Props) {
           {items.map(item => (
             <tr key={item.id} className="hover:bg-gray-50">
               <td className="px-4 py-2.5 text-gray-700 text-xs font-medium">
-                {TAX_TYPE_LABELS[item.tax_type as keyof typeof TAX_TYPE_LABELS] ?? item.tax_type}
+                {taxTypeLabels[item.tax_type] ?? item.tax_type}
               </td>
               <td className="px-4 py-2.5 text-gray-500 text-xs font-mono">{item.period}</td>
               <td className="px-4 py-2.5 text-gray-700 text-xs">

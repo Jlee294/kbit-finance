@@ -13,7 +13,7 @@ import {
 
 type SimpleOption    = { id: string; name: string }
 type ProjectOption   = { id: string; code: string; name: string; company_id: string }
-type WarehouseOption = { id: string; code: string; name: string }
+type WarehouseOption = { id: string; code: string; name: string; company_id?: string }
 type ProductOption   = { id: string; code: string; name: string }
 type UserOption      = { id: string; name: string }
 
@@ -196,10 +196,10 @@ export function SalesInvoiceXmlImporter({ companies, projects, warehouses, produ
 
                 {!ctrl.committed && (
                   <>
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                       <div className="space-y-1">
                         <Label className="text-xs">Công ty (ta) *</Label>
-                        <select value={ctrl.company_id} onChange={(e) => updateCtrl(idx, { company_id: e.target.value })}
+                        <select value={ctrl.company_id} onChange={(e) => updateCtrl(idx, { company_id: e.target.value, warehouse_id: '' })}
                           className="w-full h-8 rounded border border-input bg-white px-2 text-xs">
                           {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
@@ -218,7 +218,8 @@ export function SalesInvoiceXmlImporter({ companies, projects, warehouses, produ
                         <select value={ctrl.warehouse_id} onChange={(e) => updateCtrl(idx, { warehouse_id: e.target.value })}
                           className="w-full h-8 rounded border border-input bg-white px-2 text-xs">
                           <option value="">— Không trừ kho —</option>
-                          {warehouses.map(w => <option key={w.id} value={w.id}>[{w.code}] {w.name}</option>)}
+                          {warehouses.filter(w => !ctrl.company_id || w.company_id === ctrl.company_id).map(w =>
+                            <option key={w.id} value={w.id}>[{w.code}] {w.name}</option>)}
                         </select>
                       </div>
                       <div className="space-y-1">

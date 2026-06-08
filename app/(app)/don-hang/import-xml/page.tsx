@@ -41,7 +41,7 @@ export default async function ImportSalesInvoiceXmlPage() {
         companies={companies.map(c => ({ id: c.id, name: c.name }))}
         projects={projects.map(p => ({ id: p.id, code: p.code, name: p.name, company_id: p.company_id }))}
         products={products.map(p => ({ id: p.id, code: p.code, name: p.name }))}
-        warehouses={warehouses.map(w => ({ id: w.id, code: w.code, name: w.name }))}
+        warehouses={warehouses.map(w => ({ id: w.id, code: w.code, name: w.name, company_id: w.company_id }))}
         users={users.map(u => ({ id: u.id, name: u.full_name }))}
       />
     </div>

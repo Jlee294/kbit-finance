@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { computeLedger, cashEntryToLedgerSource } from './ledger'
 
 // ── Công nợ phải THU (KH) — từ customer_orders.outstanding ──────────────────
 
@@ -197,4 +198,204 @@ export async function listUnassignedDeposits(): Promise<DepositRow[]> {
     currency:      r.currency ?? 'VND',
     note:          r.note,
   }))
+}
+
+// ── Bảng tổng hợp công nợ theo kỳ (Đầu kỳ / Phát sinh / Cuối kỳ) ─────────────
+
+export interface LedgerOrderDetail {
+  id:          string
+  order_code:  string
+  order_date:  string
+  total:       number   // tổng phát sinh đơn (VND)
+  paid:        number   // đã thanh toán (VND)
+  outstanding: number   // còn lại (VND)
+  is_cash?:    boolean  // true = dòng từ Chứng từ khác (không link sang đơn)
+}
+
+export interface LedgerRow {
+  party_id:   string
+  party_code: string
+  party_name: string
+  tax_code:   string | null
+  symbol:     string    // 131-01 (KH) / 331-01 (NCC) — tự đánh số
+  opening:    number    // số dư đầu kỳ (dương = chiều gốc)
+  incurred:   number    // phát sinh tăng trong kỳ
+  settled:    number    // đã thu/trả trong kỳ
+  closing:    number    // số dư cuối kỳ
+  deposit?:   number    // (chỉ phải thu) tiền cọc KH chưa gắn đơn — nhắc, KHÔNG tự trừ
+  orders:     LedgerOrderDetail[]   // chi tiết để xổ ra khi click
+}
+
+interface PartyAccum {
+  party_id:   string
+  party_code: string
+  party_name: string
+  tax_code:   string | null
+  source:     { order_date: string; total: number; paid: number }[]
+  detail:     LedgerOrderDetail[]
+}
+
+/** Tính ledger từng đối tượng, lọc đối tượng có hoạt động, sắp xếp + đánh ký hiệu. */
+function assembleLedger(groups: Map<string, PartyAccum>, year: number, prefix: string): LedgerRow[] {
+  const yearStart = `${year}-01-01`
+  const yearEnd   = `${year}-12-31`
+  const rows: LedgerRow[] = []
+  for (const g of groups.values()) {
+    const t = computeLedger(g.source, yearStart, yearEnd)
+    if (t.opening === 0 && t.incurred === 0 && t.settled === 0) continue   // không liên quan kỳ
+    rows.push({
+      party_id:   g.party_id,
+      party_code: g.party_code,
+      party_name: g.party_name,
+      tax_code:   g.tax_code,
+      symbol:     '',
+      opening:    t.opening,
+      incurred:   t.incurred,
+      settled:    t.settled,
+      closing:    t.closing,
+      orders:     g.detail.sort((a, b) => a.order_date.localeCompare(b.order_date)),
+    })
+  }
+  rows.sort((a, b) => a.party_code.localeCompare(b.party_code))
+  rows.forEach((r, i) => { r.symbol = `${prefix}-${String(i + 1).padStart(2, '0')}` })
+  return rows
+}
+
+export async function getReceivableLedger(year: number, companyId?: string): Promise<LedgerRow[]> {
+  const supabase = await createClient()
+  const yearStart = `${year}-01-01`
+  const yearEnd   = `${year}-12-31`
+  let q = supabase
+    .from('customer_orders')
+    .select(`
+      id, customer_id, order_code, order_date, grand_total, amount_paid, outstanding, customer_tax_code,
+      customers!customer_id ( code, name )
+    `)
+    .neq('fulfillment_status', 'draft')   // I2: đơn nháp chưa phát sinh công nợ (khớp báo cáo gốc)
+    .lte('order_date', yearEnd)
+    .order('order_date', { ascending: true })
+  if (companyId) q = q.eq('company_id', companyId)
+
+  const { data, error } = await q
+  if (error) { console.error('[getReceivableLedger]', error.message); return [] }
+
+  const groups = new Map<string, PartyAccum>()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const r of (data ?? []) as any[]) {
+    const id = r.customer_id
+    let g = groups.get(id)
+    if (!g) {
+      g = { party_id: id, party_code: r.customers?.code ?? '', party_name: r.customers?.name ?? '', tax_code: null, source: [], detail: [] }
+      groups.set(id, g)
+    }
+    const total = Number(r.grand_total), paid = Number(r.amount_paid), outstanding = Number(r.outstanding)
+    g.source.push({ order_date: r.order_date, total, paid })
+    if (!g.tax_code && r.customer_tax_code) g.tax_code = r.customer_tax_code
+    if (r.order_date >= yearStart || outstanding > 0) {
+      g.detail.push({ id: r.id, order_code: r.order_code, order_date: r.order_date, total, paid, outstanding })
+    }
+  }
+  // Gộp "Chứng từ khác" gắn khách hàng (Thu → giảm phải thu, Chi → tăng)
+  let cq = supabase
+    .from('cash_book')
+    .select(`id, ky_hieu, txn_date, so_tien, direction, customer_id, customers!customer_id ( code, name )`)
+    .not('customer_id', 'is', null)
+    .eq('status', 'confirmed')        // khớp báo cáo (0040): chỉ chứng từ khác đã confirmed
+    .lte('txn_date', yearEnd)
+  if (companyId) cq = cq.eq('company_id', companyId)
+  const { data: cashData } = await cq
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const c of (cashData ?? []) as any[]) {
+    const id = c.customer_id
+    let g = groups.get(id)
+    if (!g) {
+      g = { party_id: id, party_code: c.customers?.code ?? '', party_name: c.customers?.name ?? '', tax_code: null, source: [], detail: [] }
+      groups.set(id, g)
+    }
+    const src = cashEntryToLedgerSource({ txn_date: c.txn_date, so_tien: Number(c.so_tien), direction: c.direction }, 'AR')
+    g.source.push(src)
+    if (c.txn_date >= yearStart) {
+      g.detail.push({ id: c.id, order_code: `CTK ${c.ky_hieu ?? ''}`.trim(), order_date: c.txn_date, total: src.total, paid: src.paid, outstanding: 0, is_cash: true })
+    }
+  }
+  const rows = assembleLedger(groups, year, '131')
+  // Tiền cọc KH chưa gắn đơn (income.is_unassigned) — hiển thị cạnh số dư để nhắc, KHÔNG tự trừ
+  let dq = supabase.from('income_transactions').select('customer_id, amount_vnd, amount').eq('is_unassigned', true)
+  if (companyId) dq = dq.eq('company_id', companyId)
+  const { data: depData } = await dq
+  const depMap = new Map<string, number>()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const d of (depData ?? []) as any[]) {
+    if (!d.customer_id) continue
+    depMap.set(d.customer_id, (depMap.get(d.customer_id) ?? 0) + Number(d.amount_vnd ?? d.amount ?? 0))
+  }
+  for (const r of rows) {
+    const dep = depMap.get(r.party_id)
+    if (dep) r.deposit = dep
+  }
+  return rows
+}
+
+export async function getPayableLedger(year: number, companyId?: string): Promise<LedgerRow[]> {
+  const supabase = await createClient()
+  const yearStart = `${year}-01-01`
+  const yearEnd   = `${year}-12-31`
+  let q = supabase
+    .from('supplier_orders')
+    .select(`
+      id, supplier_id, order_code, order_date,
+      goods_value, import_duty, vat_import, other_fees, amount_paid, outstanding,
+      currency, exchange_rate, supplier_tax_code,
+      suppliers!supplier_id ( code, name )
+    `)
+    .lte('order_date', yearEnd)
+    .order('order_date', { ascending: true })
+  if (companyId) q = q.eq('company_id', companyId)
+
+  const { data, error } = await q
+  if (error) { console.error('[getPayableLedger]', error.message); return [] }
+
+  const groups = new Map<string, PartyAccum>()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const r of (data ?? []) as any[]) {
+    const id = r.supplier_id
+    let g = groups.get(id)
+    if (!g) {
+      g = { party_id: id, party_code: r.suppliers?.code ?? '', party_name: r.suppliers?.name ?? '', tax_code: null, source: [], detail: [] }
+      groups.set(id, g)
+    }
+    const rate = r.currency === 'KRW' ? Number(r.exchange_rate ?? 0) : 1
+    const total = (Number(r.goods_value) + Number(r.import_duty) + Number(r.vat_import) + Number(r.other_fees)) * rate
+    const paid  = Number(r.amount_paid) * rate
+    const outstanding = Number(r.outstanding) * rate
+    g.source.push({ order_date: r.order_date, total, paid })
+    if (!g.tax_code && r.supplier_tax_code) g.tax_code = r.supplier_tax_code
+    if (r.order_date >= yearStart || outstanding > 0) {
+      g.detail.push({ id: r.id, order_code: r.order_code, order_date: r.order_date, total, paid, outstanding })
+    }
+  }
+  // Gộp "Chứng từ khác" gắn NCC (Chi → giảm phải trả, Thu → tăng)
+  let cq = supabase
+    .from('cash_book')
+    .select(`id, ky_hieu, txn_date, so_tien, direction, supplier_id, suppliers!supplier_id ( code, name )`)
+    .not('supplier_id', 'is', null)
+    .eq('status', 'confirmed')        // khớp báo cáo (0040): chỉ chứng từ khác đã confirmed
+    .lte('txn_date', yearEnd)
+  if (companyId) cq = cq.eq('company_id', companyId)
+  const { data: cashData } = await cq
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const c of (cashData ?? []) as any[]) {
+    const id = c.supplier_id
+    let g = groups.get(id)
+    if (!g) {
+      g = { party_id: id, party_code: c.suppliers?.code ?? '', party_name: c.suppliers?.name ?? '', tax_code: null, source: [], detail: [] }
+      groups.set(id, g)
+    }
+    const src = cashEntryToLedgerSource({ txn_date: c.txn_date, so_tien: Number(c.so_tien), direction: c.direction }, 'AP')
+    g.source.push(src)
+    if (c.txn_date >= yearStart) {
+      g.detail.push({ id: c.id, order_code: `CTK ${c.ky_hieu ?? ''}`.trim(), order_date: c.txn_date, total: src.total, paid: src.paid, outstanding: 0, is_cash: true })
+    }
+  }
+  return assembleLedger(groups, year, '331')
 }

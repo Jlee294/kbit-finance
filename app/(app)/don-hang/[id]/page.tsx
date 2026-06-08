@@ -17,10 +17,12 @@ export const dynamic = 'force-dynamic'
 
 interface Props {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ edit?: string }>
 }
 
-export default async function OrderDetailPage({ params }: Props) {
+export default async function OrderDetailPage({ params, searchParams }: Props) {
   const { id } = await params
+  const { edit } = await searchParams
 
   const [me, order] = await Promise.all([getCurrentUser(), getOrder(id)])
   if (!order) notFound()
@@ -186,11 +188,12 @@ export default async function OrderDetailPage({ params }: Props) {
         order={order}
         canWrite={write}
         canApprove={approve}
+        autoEdit={edit === '1'}
         companies={companies.map((c) => ({ id: c.id, name: c.name }))}
         customers={customers}
         projects={projects.map((p) => ({ id: p.id, code: p.code, name: p.name, company_id: p.company_id }))}
         products={products.map((p) => ({ id: p.id, code: p.code, name: p.name }))}
-        warehouses={warehouses.map((w) => ({ id: w.id, code: w.code, name: w.name }))}
+        warehouses={warehouses.map((w) => ({ id: w.id, code: w.code, name: w.name, company_id: w.company_id, is_default: w.is_default }))}
         users={users.map((u) => ({ id: u.id, name: u.full_name }))}
       />
     </div>

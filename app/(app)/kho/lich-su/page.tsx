@@ -2,6 +2,7 @@ import { listWarehouses, listTransactions } from '@/features/warehouse/queries'
 import { TransactionHistory } from '@/features/warehouse/components/TransactionHistory'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { FilterBar, FilterField, FilterSubmit, FILTER_CONTROL } from '@/components/shared/FilterBar'
+import { getGlobalFilter } from '@/lib/global-filter'
 import { PAGE_WRAPPER } from '@/lib/ui-tokens'
 
 export const dynamic = 'force-dynamic'
@@ -12,11 +13,14 @@ export default async function LichSuKhoPage({
   searchParams: Promise<{ warehouse?: string; type?: string }>
 }) {
   const sp = await searchParams
+  const { companyId: gCompany } = await getGlobalFilter()
+  const companyId = gCompany || undefined
   const [warehouses, transactions] = await Promise.all([
-    listWarehouses(),
+    listWarehouses(companyId),
     listTransactions({
       warehouseId: sp.warehouse || undefined,
       txnType:     sp.type || undefined,
+      companyId:   companyId,
       limit:       200,
     }),
   ])

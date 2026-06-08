@@ -1,10 +1,6 @@
-import { listCustomers } from '@/features/customers/queries'
-import { getCurrentUser, canApprove } from '@/lib/auth'
-import { CustomerCatalog } from '@/features/customers/components/CustomerCatalog'
+import { redirect } from 'next/navigation'
 
-export const dynamic = 'force-dynamic'
-
-export default async function CustomerPage() {
-  const [me, rows] = await Promise.all([getCurrentUser(), listCustomers()])
-  return <CustomerCatalog rows={rows} canWrite={me ? canApprove(me.role) : false} />
+// Gộp vào trang "Đối tác" (2 tab). Giữ route cũ để link/bookmark cũ vẫn chạy.
+export default function KhachHangRedirect() {
+  redirect('/danh-muc/doi-tac')
 }

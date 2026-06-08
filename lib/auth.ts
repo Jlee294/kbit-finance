@@ -37,7 +37,7 @@ export function canEdit(role: UserRole) {
 }
 
 export function canApprove(role: UserRole) {
-  return ['admin', 'chief_accountant'].includes(role)
+  return ['admin', 'chief_accountant', 'ceo'].includes(role)
 }
 
 export function isAdmin(role: UserRole) {

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { formatVND } from '@/lib/format'
+import { formatVND, todayLocal } from '@/lib/format'
 import { createIncomeWithAllocations, fetchOrdersForAlloc } from '../actions'
 import { AllocationRows, newAllocRow, type AllocRow, type OrderForAlloc } from './AllocationRows'
 
@@ -30,8 +30,10 @@ export function IncomeForm({ companies, customers, bankAccounts, projects, onDon
   const [bankId,       setBankId]       = useState('')
   const [projectId,    setProjectId]    = useState('')
   const [amount,       setAmount]       = useState('')
-  const [txnDate,      setTxnDate]      = useState(new Date().toISOString().slice(0, 10))
+  const [txnDate,      setTxnDate]      = useState(todayLocal())
   const [note,         setNote]         = useState('')
+  const [dinhKhoanNo,  setDinhKhoanNo]  = useState('')
+  const [dinhKhoanCo,  setDinhKhoanCo]  = useState('')
   const [allocRows,    setAllocRows]    = useState<AllocRow[]>([])
   const [orders,       setOrders]       = useState<OrderForAlloc[]>([])
   const [loadingOrders, setLoadingOrders] = useState(false)
@@ -95,6 +97,8 @@ export function IncomeForm({ companies, customers, bankAccounts, projects, onDon
         txn_date:        txnDate,
         note:            note || null,
         project_id:      projectId || null,
+        dinh_khoan_no:   dinhKhoanNo || null,
+        dinh_khoan_co:   dinhKhoanCo || null,
         allocations:     allocRows
           .filter((r) => r.order_id && parseFloat(r.allocated_amount) > 0)
           .map((r) => ({
@@ -161,7 +165,7 @@ export function IncomeForm({ companies, customers, bankAccounts, projects, onDon
         <div className="space-y-1">
           <Label>Số tiền thu <span className="text-red-500">*</span></Label>
           <Input
-            type="number" min="1" step="1000"
+            type="number" min="1" step="1"
             value={amount} onChange={(e) => setAmount(e.target.value)}
             placeholder="VD: 50000000"
             required
@@ -174,6 +178,16 @@ export function IncomeForm({ companies, customers, bankAccounts, projects, onDon
         <div className="space-y-1">
           <Label>Ngày thu <span className="text-red-500">*</span></Label>
           <Input type="date" value={txnDate} onChange={(e) => setTxnDate(e.target.value)} required />
+        </div>
+
+        <div className="space-y-1">
+          <Label>Định khoản Nợ</Label>
+          <Input value={dinhKhoanNo} onChange={(e) => setDinhKhoanNo(e.target.value)} placeholder="VD: 112" />
+        </div>
+
+        <div className="space-y-1">
+          <Label>Định khoản Có</Label>
+          <Input value={dinhKhoanCo} onChange={(e) => setDinhKhoanCo(e.target.value)} placeholder="VD: 131" />
         </div>
 
         <div className="space-y-1 col-span-2">

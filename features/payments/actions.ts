@@ -21,6 +21,8 @@ export async function createIncomeWithAllocations(input: unknown) {
       allocated_amount:  a.allocated_amount,
     })),
     p_project_id: data.project_id ?? null,
+    p_dinh_khoan_no: data.dinh_khoan_no ?? null,
+    p_dinh_khoan_co: data.dinh_khoan_co ?? null,
   })
 
   if (error) throw new Error(error.message)

@@ -1,11 +1,13 @@
 import Link from 'next/link'
 import { listSalesInvoices } from '@/features/invoices/queries'
-import { listCompanies } from '@/features/companies/queries'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { StatsCard } from '@/components/shared/StatsCard'
-import { FilterBar, FilterField, FilterSubmit, FILTER_CONTROL } from '@/components/shared/FilterBar'
+import { FilterBar, FilterSubmit, FilterReset } from '@/components/shared/FilterBar'
+import { MonthRangeFields } from '@/components/shared/MonthRangeFields'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { PAGE_WRAPPER } from '@/lib/ui-tokens'
+import { getGlobalFilter } from '@/lib/global-filter'
+import { resolveRange } from '@/lib/date-range'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,18 +17,17 @@ function fmtDate(s: string | null) { return s ? new Date(s).toLocaleDateString('
 export default async function BangKeBanRaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ company?: string; from?: string; to?: string }>
+  searchParams: Promise<{ month?: string; from?: string; to?: string }>
 }) {
   const sp = await searchParams
-  const [rows, companies] = await Promise.all([
-    listSalesInvoices({
-      companyId: sp.company || undefined,
-      from:      sp.from    || undefined,
-      to:        sp.to      || undefined,
-      limit:     500,
-    }),
-    listCompanies(),
-  ])
+  const { companyId, year } = await getGlobalFilter()
+  const range = resolveRange(year, sp.month, sp.from, sp.to)
+  const rows = await listSalesInvoices({
+    companyId: companyId || undefined,
+    from:      range.from,
+    to:        range.to,
+    limit:     500,
+  })
 
   const totalSubtotal = rows.reduce((s, r) => s + r.subtotal,    0)
   const totalVat      = rows.reduce((s, r) => s + r.vat_amount,  0)
@@ -36,7 +37,7 @@ export default async function BangKeBanRaPage({
     <div className={PAGE_WRAPPER}>
       <PageHeader
         title="Bảng kê bán ra"
-        subtitle={`Mỗi hóa đơn 1 dòng — dữ liệu lấy từ Nhật ký bán ra (${rows.length} hóa đơn)`}
+        subtitle={`Kê theo ngày hóa đơn · lọc theo công ty & năm đang chọn — ${rows.length} hóa đơn (${range.from} → ${range.to})`}
       />
 
       <div className="grid grid-cols-3 gap-3">
@@ -46,26 +47,16 @@ export default async function BangKeBanRaPage({
       </div>
 
       <FilterBar>
-        <FilterField label="Công ty">
-          <select name="company" defaultValue={sp.company ?? ''} className={`${FILTER_CONTROL} min-w-[160px]`}>
-            <option value="">Tất cả</option>
-            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-        </FilterField>
-        <FilterField label="Từ ngày">
-          <input type="date" name="from" defaultValue={sp.from ?? ''} className={FILTER_CONTROL} />
-        </FilterField>
-        <FilterField label="Đến ngày">
-          <input type="date" name="to" defaultValue={sp.to ?? ''} className={FILTER_CONTROL} />
-        </FilterField>
-        <FilterSubmit />
+        <MonthRangeFields month={sp.month} from={sp.from} to={sp.to} />
+        <FilterSubmit>Xem</FilterSubmit>
+        <FilterReset href="/bang-ke-ban-ra" />
       </FilterBar>
 
       {rows.length === 0 ? (
         <EmptyState
           icon="📋"
-          title="Chưa có hóa đơn bán ra nào"
-          description="Vào Nhật ký bán ra để tạo hóa đơn đầu tiên, hoặc import từ XML"
+          title="Không có hóa đơn bán ra trong kỳ"
+          description="Đổi công ty/năm ở thanh trên, hoặc đổi tháng/khoảng ngày."
         />
       ) : (
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-x-auto">
@@ -76,6 +67,7 @@ export default async function BangKeBanRaPage({
                 <th className="px-2 py-2 text-left">Ký hiệu</th>
                 <th className="px-2 py-2 text-left">Số HĐ</th>
                 <th className="px-2 py-2 text-left">Ngày HĐ</th>
+                <th className="px-2 py-2 text-left">Ngày đơn</th>
                 <th className="px-2 py-2 text-left">Khách hàng</th>
                 <th className="px-2 py-2 text-left">MST</th>
                 <th className="px-2 py-2 text-left">Nội dung</th>
@@ -87,12 +79,21 @@ export default async function BangKeBanRaPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
+              <tr className="bg-brand-50/50 font-semibold text-gray-900 border-b-2 border-brand-200">
+                <td colSpan={8} className="px-2 py-2 text-right text-xs">TỔNG CỘNG ({rows.length} HĐ):</td>
+                <td className="px-2 py-2 text-right text-xs">{fmtVND(totalSubtotal)}</td>
+                <td></td>
+                <td className="px-2 py-2 text-right text-xs text-brand-800">{fmtVND(totalVat)}</td>
+                <td className="px-2 py-2 text-right text-xs">{fmtVND(totalGrand)}</td>
+                <td></td>
+              </tr>
               {rows.map((r) => (
                 <tr key={r.id} className="hover:bg-brand-50/40">
                   <td className="px-2 py-1.5 text-gray-500">{r.invoice_template ?? '—'}</td>
                   <td className="px-2 py-1.5 text-gray-500">{r.invoice_symbol ?? '—'}</td>
                   <td className="px-2 py-1.5 font-mono">{r.invoice_no ?? '—'}</td>
-                  <td className="px-2 py-1.5 whitespace-nowrap text-gray-500">{fmtDate(r.invoice_date ?? r.order_date)}</td>
+                  <td className="px-2 py-1.5 whitespace-nowrap text-gray-500">{fmtDate(r.invoice_date)}</td>
+                  <td className="px-2 py-1.5 whitespace-nowrap text-gray-400">{fmtDate(r.order_date)}</td>
                   <td className="px-2 py-1.5 text-gray-800">
                     {r.customer_name}
                     <span className="text-[10px] text-gray-400 ml-1">[{r.customer_code}]</span>
@@ -113,7 +114,7 @@ export default async function BangKeBanRaPage({
             </tbody>
             <tfoot>
               <tr className="bg-brand-50/40 font-semibold text-gray-900 border-t border-brand-100">
-                <td colSpan={7} className="px-2 py-2 text-right text-xs">Tổng cộng:</td>
+                <td colSpan={8} className="px-2 py-2 text-right text-xs">Tổng cộng:</td>
                 <td className="px-2 py-2 text-right text-xs">{fmtVND(totalSubtotal)}</td>
                 <td></td>
                 <td className="px-2 py-2 text-right text-xs text-brand-800">{fmtVND(totalVat)}</td>

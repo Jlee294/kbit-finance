@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { UploadDocumentForm } from './UploadDocumentForm'
+import { DIALOG_SM } from '@/lib/ui-tokens'
 import { VerifyDocButton } from './VerifyDocButton'
 import { deleteDocument } from '../actions'
 import type { DocEntityType } from '../schema'
@@ -157,7 +158,7 @@ export function ReconcilePanel({
             + Đính kèm chứng từ
           </Button>
           <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
-            <DialogContent showCloseButton={false} className="max-w-md">
+            <DialogContent showCloseButton={false} className={DIALOG_SM}>
               <DialogHeader>
                 <DialogTitle>Đính kèm chứng từ</DialogTitle>
               </DialogHeader>

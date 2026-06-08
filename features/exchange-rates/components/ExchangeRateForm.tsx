@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { createExchangeRate, updateExchangeRate } from '../actions'
+import { FORM_GRID, FORM_COL_FULL } from '@/lib/ui-tokens'
 
 interface Props {
   initial?: { id?: string; currency_from?: string; currency_to?: string; rate?: number; rate_date?: string; source?: string | null }
@@ -22,6 +22,8 @@ export function ExchangeRateForm({ initial, onDone }: Props) {
   const [source, setSource] = useState(initial?.source ?? '')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+
+  const sel = 'w-full h-9 rounded-lg border border-input bg-transparent px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50'
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -45,29 +47,21 @@ export function ExchangeRateForm({ initial, onDone }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className={FORM_GRID}>
         <div className="space-y-1">
           <Label>Từ tiền tệ</Label>
-          <Select value={from} onValueChange={(v) => setFrom(v as 'VND' | 'KRW')}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="KRW">KRW</SelectItem>
-              <SelectItem value="VND">VND</SelectItem>
-            </SelectContent>
-          </Select>
+          <select value={from} onChange={(e) => setFrom(e.target.value as 'VND' | 'KRW')} className={sel}>
+            <option value="KRW">KRW</option>
+            <option value="VND">VND</option>
+          </select>
         </div>
         <div className="space-y-1">
           <Label>Sang tiền tệ</Label>
-          <Select value={to} onValueChange={(v) => setTo(v as 'VND' | 'KRW')}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="VND">VND</SelectItem>
-              <SelectItem value="KRW">KRW</SelectItem>
-            </SelectContent>
-          </Select>
+          <select value={to} onChange={(e) => setTo(e.target.value as 'VND' | 'KRW')} className={sel}>
+            <option value="VND">VND</option>
+            <option value="KRW">KRW</option>
+          </select>
         </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1">
           <Label>Tỷ giá</Label>
           <Input type="number" step="0.000001" value={rate} onChange={(e) => setRate(e.target.value)} placeholder="18.5" required />
@@ -76,10 +70,10 @@ export function ExchangeRateForm({ initial, onDone }: Props) {
           <Label>Ngày áp dụng</Label>
           <Input type="date" value={rateDate} onChange={(e) => setRateDate(e.target.value)} required />
         </div>
-      </div>
-      <div className="space-y-1">
-        <Label>Nguồn</Label>
-        <Input value={source} onChange={(e) => setSource(e.target.value)} placeholder="Vietcombank / NHNN" />
+        <div className={`space-y-1 ${FORM_COL_FULL}`}>
+          <Label>Nguồn</Label>
+          <Input value={source} onChange={(e) => setSource(e.target.value)} placeholder="Vietcombank / NHNN" />
+        </div>
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
       <div className="flex justify-end gap-2">

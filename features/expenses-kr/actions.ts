@@ -27,6 +27,8 @@ export async function createKrExpense(input: unknown): Promise<{ ok: boolean; fc
     p_project_id:             d.project_id ?? null,
     p_is_intercompany:        d.is_intercompany,
     p_counterpart_company_id: d.counterpart_company_id ?? null,
+    p_dinh_khoan_no:          d.dinh_khoan_no ?? null,
+    p_dinh_khoan_co:          d.dinh_khoan_co ?? null,
   })
 
   if (error) throw new Error(error.message)
@@ -55,6 +57,8 @@ export async function payKrSupplierOrder(input: unknown): Promise<{ ok: boolean;
     p_txn_date:          d.txn_date,
     p_rate_booked:       d.rate_booked ?? null,  // fallback chỉ khi đơn chưa có exchange_rate
     p_note:              d.note ?? null,
+    p_dinh_khoan_no:     d.dinh_khoan_no ?? null,
+    p_dinh_khoan_co:     d.dinh_khoan_co ?? null,
   })
 
   if (error) throw new Error(error.message)

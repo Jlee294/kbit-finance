@@ -3,10 +3,11 @@ import { listCalendar }         from '@/features/tax-calendar/queries'
 import { TaxCalendarTable }     from '@/features/tax-calendar/components/TaxCalendarTable'
 import { upsertCalendarItem }   from '@/features/tax-calendar/actions'
 import { getCurrentUser, canApprove } from '@/lib/auth'
-import { TAX_TYPES, TAX_TYPE_LABELS } from '@/features/tax-plans/schema'
+import { listTaxTypes, taxTypeLabelMap } from '@/features/tax-types/queries'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { FilterBar, FilterField, FilterSubmit, FILTER_CONTROL } from '@/components/shared/FilterBar'
 import { PAGE_WRAPPER } from '@/lib/ui-tokens'
+import { todayLocal, formatLocalDate } from '@/lib/format'
 
 interface SearchParams { company?: string }
 
@@ -20,13 +21,15 @@ export default async function LichThuePage({
   const sp        = await searchParams
   const companyId = sp.company
 
-  const [companies, me] = await Promise.all([listCompanies(), getCurrentUser()])
+  const [companies, me, taxTypes] = await Promise.all([listCompanies(), getCurrentUser(), listTaxTypes(false)])
   const canEdit = !!me && canApprove(me.role)
+  const activeTaxTypes = taxTypes.filter(t => t.is_active)
+  const taxLabels = taxTypeLabelMap(taxTypes)
 
   const items = companyId ? await listCalendar(companyId) : []
 
-  const today = new Date().toISOString().slice(0, 10)
-  const soon  = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10)
+  const today = todayLocal()
+  const soon  = formatLocalDate(new Date(Date.now() + 7 * 86_400_000))
   const overdueCount  = items.filter(i => i.status === 'pending' && i.due_date < today).length
   const dueSoonCount  = items.filter(i => i.status === 'pending' && i.due_date >= today && i.due_date <= soon).length
 
@@ -80,8 +83,8 @@ export default async function LichThuePage({
           <div className="space-y-1">
             <label className="text-xs text-gray-500">Loại thuế</label>
             <select name="tax_type" className="w-full h-8 rounded-md border text-sm px-2 bg-white">
-              {TAX_TYPES.map(t => (
-                <option key={t} value={t}>{TAX_TYPE_LABELS[t]}</option>
+              {activeTaxTypes.map(t => (
+                <option key={t.id} value={t.code}>{t.name}</option>
               ))}
             </select>
           </div>
@@ -123,7 +126,7 @@ export default async function LichThuePage({
           Chọn công ty để xem lịch thuế.
         </div>
       ) : (
-        <TaxCalendarTable items={items} canEdit={canEdit} />
+        <TaxCalendarTable items={items} canEdit={canEdit} taxTypeLabels={taxLabels} />
       )}
     </div>
   )

@@ -1,6 +1,6 @@
 import { Suspense }              from 'react'
 import Link                       from 'next/link'
-import { listCompanies }          from '@/features/companies/queries'
+import { getGlobalFilter }        from '@/lib/global-filter'
 import { getLatestAssessment }    from '@/features/risk/queries'
 import { HealthDashboard }        from '@/features/risk/components/HealthDashboard'
 import { RuiRoFilters }           from '@/features/risk/components/RuiRoFilters'
@@ -8,7 +8,7 @@ import { getCurrentUser, canApprove } from '@/lib/auth'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { PAGE_WRAPPER } from '@/lib/ui-tokens'
 
-interface SearchParams { company?: string; period?: string }
+interface SearchParams { period?: string }
 
 export const dynamic = 'force-dynamic'
 
@@ -18,12 +18,11 @@ export default async function RuiRoPage({
   searchParams: Promise<SearchParams>
 }) {
   const sp        = await searchParams
-  const companyId = sp.company
+  const { companyId } = await getGlobalFilter()
   const period    = sp.period
 
-  // getCurrentUser + listCompanies chạy song song, cả 2 đều được cache
-  const [companies, me] = await Promise.all([listCompanies(), getCurrentUser()])
-  const canRun          = !!me && canApprove(me.role)
+  const me     = await getCurrentUser()
+  const canRun = !!me && canApprove(me.role)
 
   return (
     <div className={PAGE_WRAPPER}>
@@ -40,8 +39,7 @@ export default async function RuiRoPage({
       {/* Filter hiện ngay */}
       <Suspense fallback={null}>
         <RuiRoFilters
-          companies={companies.map(c => ({ id: c.id, name: c.name }))}
-          companyId={companyId}
+          companyId={companyId ?? undefined}
           period={period}
           canRun={canRun}
         />

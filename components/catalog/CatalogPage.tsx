@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { EmptyState } from '@/components/shared/EmptyState'
-import { PAGE_WRAPPER } from '@/lib/ui-tokens'
+import { PAGE_WRAPPER, DIALOG_SIZE, type DialogSize } from '@/lib/ui-tokens'
 
 export interface Column<T> {
   key: keyof T | string
@@ -23,6 +23,8 @@ interface Props<T extends { id: string }> {
     initial?: Partial<T>
     onDone: () => void
   }>
+  /** Cỡ dialog form: 'sm' (2–3 trường) | 'md' (mặc định, 2 cột) | 'lg' (form lớn) */
+  dialogSize?: DialogSize
 }
 
 export function CatalogPage<T extends { id: string }>({
@@ -32,6 +34,7 @@ export function CatalogPage<T extends { id: string }>({
   columns,
   canWrite,
   FormComponent,
+  dialogSize = 'md',
 }: Props<T>) {
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<T | undefined>(undefined)
@@ -99,7 +102,7 @@ export function CatalogPage<T extends { id: string }>({
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className={DIALOG_SIZE[dialogSize]}>
           <DialogHeader>
             <DialogTitle>{editing ? `Cập nhật ${title.toLowerCase()}` : `Thêm ${title.toLowerCase()} mới`}</DialogTitle>
           </DialogHeader>

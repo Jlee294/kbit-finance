@@ -8,11 +8,13 @@ import { listProducts }   from '@/features/products/queries'
 import { listProjects }   from '@/features/projects/queries'
 import { formatVND, formatKRW } from '@/lib/format'
 import { ImportOrderDetailClient } from '@/features/imports/components/ImportOrderDetailClient'
+import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
-export default async function ImportOrderDetailPage({ params }: { params: { id: string } }) {
+export default async function ImportOrderDetailPage({ params, searchParams }: { params: { id: string }; searchParams: { edit?: string } }) {
   const { id } = await params as unknown as { id: string }
+  const { edit } = await searchParams as unknown as { edit?: string }
 
   const [me, order, companies, suppliersRaw, productsRaw, projects] = await Promise.all([
     getCurrentUser(),
@@ -24,6 +26,15 @@ export default async function ImportOrderDetailPage({ params }: { params: { id: 
   ])
 
   if (!order) notFound()
+
+  const supabase = await createClient()
+  const { data: bankRows } = await supabase
+    .from('bank_accounts')
+    .select('id, name, currency')
+    .eq('company_id', order.company_id)
+    .eq('is_active', true)
+    .order('name')
+  const bankAccounts = (bankRows ?? []).map((b) => ({ id: b.id, name: b.name, currency: b.currency as string }))
 
   const canWrite  = !!me && canEdit(me.role)
   const suppliers = suppliersRaw.map((s) => ({ id: s.id, code: s.code as string, name: s.name }))
@@ -58,6 +69,8 @@ export default async function ImportOrderDetailPage({ params }: { params: { id: 
             {canWrite && (
               <ImportOrderDetailClient
                 order={order}
+                autoEdit={edit === '1'}
+                bankAccounts={bankAccounts}
                 companies={companies.map((c) => ({ id: c.id, name: c.name }))}
                 suppliers={suppliers}
                 products={products}
@@ -114,6 +127,7 @@ export default async function ImportOrderDetailPage({ params }: { params: { id: 
               <ImportOrderDetailClient
                 order={order}
                 mode="pay"
+                bankAccounts={bankAccounts}
                 companies={[]}
                 suppliers={[]}
                 products={[]}

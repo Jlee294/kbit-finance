@@ -4,13 +4,17 @@ import { listCompanies } from '@/features/companies/queries'
 import { listCustomers } from '@/features/customers/queries'
 import { listSuppliers } from '@/features/suppliers/queries'
 import { listProjects }  from '@/features/projects/queries'
+import { listUnpaidVndSupplierOrders } from '@/features/imports/queries'
 import { listKrSuppliers, listKrwBankAccounts } from '@/features/expenses-kr/queries'
 import { createClient } from '@/lib/supabase/server'
 import { BankLedgerTable } from '@/features/bank/components/BankLedgerTable'
 import { BankCreateButtons } from '@/features/bank/components/BankCreateButtons'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { StatsCard } from '@/components/shared/StatsCard'
-import { FilterBar, FilterField, FilterSubmit, FILTER_CONTROL } from '@/components/shared/FilterBar'
+import { FilterBar, FilterField, FilterSubmit, FilterReset, FILTER_CONTROL } from '@/components/shared/FilterBar'
+import { MonthRangeFields } from '@/components/shared/MonthRangeFields'
+import { getGlobalFilter } from '@/lib/global-filter'
+import { resolveRange } from '@/lib/date-range'
 import { PAGE_WRAPPER } from '@/lib/ui-tokens'
 
 export const dynamic = 'force-dynamic'
@@ -20,19 +24,21 @@ function fmtVND(v: number) { return v.toLocaleString('vi-VN') + ' đ' }
 export default async function NganHangPage({
   searchParams,
 }: {
-  searchParams: Promise<{ company?: string; bank?: string; type?: string; from?: string; to?: string }>
+  searchParams: Promise<{ bank?: string; type?: string; month?: string; from?: string; to?: string }>
 }) {
   const sp = await searchParams
   const supabase = await createClient()
+  const { companyId, year } = await getGlobalFilter()
+  const range = resolveRange(year, sp.month, sp.from, sp.to)
 
-  const [me, rows, companies, banks, customers, suppliers, krSuppliers, krwBanks, projects, bankRes] = await Promise.all([
+  const [me, rows, companies, banks, customers, suppliers, krSuppliers, krwBanks, projects, bankRes, importOrders] = await Promise.all([
     getCurrentUser(),
     listBankLedger({
-      companyId:     sp.company || undefined,
+      companyId:     companyId || undefined,
       bankAccountId: sp.bank    || undefined,
       direction:     sp.type    || undefined,
-      from:          sp.from    || undefined,
-      to:            sp.to      || undefined,
+      from:          range.from,
+      to:            range.to,
       limit:         500,
     }),
     listCompanies(),
@@ -43,6 +49,7 @@ export default async function NganHangPage({
     listKrwBankAccounts(),
     listProjects(),
     supabase.from('bank_accounts').select('id, name, currency, company_id').eq('is_active', true).order('name'),
+    listUnpaidVndSupplierOrders(),
   ])
 
   const canWrite = !!me && canEdit(me.role)
@@ -52,6 +59,7 @@ export default async function NganHangPage({
   }))
   const suppliersForForms = suppliers.map((s: any) => ({ id: s.id, code: s.code as string, name: s.name }))
   const krSuppliersForForms = krSuppliers.map((s: any) => ({ id: s.id, code: s.code as string, name: s.name }))
+  const supplierOrdersForForms = importOrders   // đã gọn: { id, order_code, supplier_id, outstanding }
 
   const totalThu = rows.filter(r => r.direction === 'thu').reduce((s, r) => s + r.amount_vnd, 0)
   const totalChi = rows.filter(r => r.direction === 'chi').reduce((s, r) => s + r.amount_vnd, 0)
@@ -70,6 +78,7 @@ export default async function NganHangPage({
             bankAccounts={bankAccountsForForms}
             krwBanks={krwBanks}
             projects={projects.map((p: any) => ({ id: p.id, code: p.code, name: p.name, company_id: p.company_id }))}
+            supplierOrders={supplierOrdersForForms}
           />
         ) : undefined}
       />
@@ -85,17 +94,11 @@ export default async function NganHangPage({
       </div>
 
       <FilterBar>
-        <FilterField label="Công ty">
-          <select name="company" defaultValue={sp.company ?? ''} className={`${FILTER_CONTROL} min-w-[140px]`}>
-            <option value="">Tất cả</option>
-            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-        </FilterField>
         <FilterField label="Tài khoản NH">
           <select name="bank" defaultValue={sp.bank ?? ''} className={`${FILTER_CONTROL} min-w-[200px]`}>
             <option value="">Tất cả</option>
             {banks.map(b => (
-              <option key={b.id} value={b.id}>{b.account_name} — {b.bank_name} ({b.currency})</option>
+              <option key={b.id} value={b.id}>{b.name} ({b.currency})</option>
             ))}
           </select>
         </FilterField>
@@ -106,13 +109,9 @@ export default async function NganHangPage({
             <option value="chi">Chi</option>
           </select>
         </FilterField>
-        <FilterField label="Từ ngày">
-          <input type="date" name="from" defaultValue={sp.from ?? ''} className={FILTER_CONTROL} />
-        </FilterField>
-        <FilterField label="Đến ngày">
-          <input type="date" name="to" defaultValue={sp.to ?? ''} className={FILTER_CONTROL} />
-        </FilterField>
-        <FilterSubmit />
+        <MonthRangeFields month={sp.month} from={sp.from} to={sp.to} />
+        <FilterSubmit>Xem</FilterSubmit>
+        <FilterReset href="/ngan-hang" />
       </FilterBar>
 
       <BankLedgerTable rows={rows} />

@@ -36,9 +36,9 @@ export type KrUnpaidOrder = {
 }
 
 /** Danh sách chi KR (mới nhất trước) */
-export async function listKrExpenses(): Promise<KrExpenseRow[]> {
+export async function listKrExpenses(companyId?: string): Promise<KrExpenseRow[]> {
   const supabase = await createClient()
-  const { data, error } = await supabase
+  let q = supabase
     .from('expense_transactions')
     .select(`
       id, txn_date, amount_krw, exchange_rate, amount_vnd,
@@ -51,6 +51,8 @@ export async function listKrExpenses(): Promise<KrExpenseRow[]> {
       suppliers!supplier_id(name)
     `)
     .eq('region', 'KR')
+  if (companyId) q = q.eq('company_id', companyId)
+  const { data, error } = await q
     .order('txn_date', { ascending: false })
     .order('created_at', { ascending: false })
   if (error) throw new Error(error.message)

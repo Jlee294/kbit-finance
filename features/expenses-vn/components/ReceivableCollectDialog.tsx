@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { formatVND } from '@/lib/format'
 import { collectReceivable } from '../actions'
+import { DIALOG_SM } from '@/lib/ui-tokens'
 
 interface Props {
   receivable: {
@@ -49,7 +50,7 @@ export function ReceivableCollectDialog({ receivable, open, onOpenChange }: Prop
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false} className="max-w-md">
+      <DialogContent showCloseButton={false} className={DIALOG_SM}>
         <DialogHeader>
           <DialogTitle>Thu lại tiền chi hộ</DialogTitle>
         </DialogHeader>
@@ -91,7 +92,7 @@ export function ReceivableCollectDialog({ receivable, open, onOpenChange }: Prop
           <div className="space-y-1">
             <Label>Số tiền thu lại <span className="text-red-500">*</span></Label>
             <Input
-              type="number" min="1" max={remaining} step="1000"
+              type="number" min="1" max={remaining} step="1"
               value={collectAmount} onChange={(e) => setCollectAmount(e.target.value)}
               required
             />

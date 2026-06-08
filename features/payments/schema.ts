@@ -13,6 +13,8 @@ export const incomeSchema = z.object({
   txn_date:        z.string().min(1, 'Bắt buộc'),
   note:            z.string().optional().nullable(),
   project_id:      z.string().uuid().optional().nullable(),  // [D16]
+  dinh_khoan_no:   z.string().optional().nullable(),
+  dinh_khoan_co:   z.string().optional().nullable(),
   allocations:     z.array(allocationSchema).default([]),
 }).refine(
   (v) => v.allocations.reduce((s, a) => s + a.allocated_amount, 0) <= v.amount,

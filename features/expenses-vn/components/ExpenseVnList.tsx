@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { formatVND } from '@/lib/format'
 import { ExpenseVnForm } from './ExpenseVnForm'
+import { DIALOG_MD } from '@/lib/ui-tokens'
 import { ReceivableCollectDialog } from './ReceivableCollectDialog'
 import type { ExpenseVnRow, ReceivableRow } from '../queries'
 
@@ -25,6 +26,7 @@ type SimpleOption  = { id: string; name: string }
 type BankOption    = { id: string; name: string; currency: string; company_id: string }
 type ProjectOption = { id: string; code: string; name: string; company_id: string }
 type SupplierOption = { id: string; code: string; name: string }
+type SupplierOrderOption = { id: string; order_code: string; supplier_id: string; outstanding: number }
 
 interface OutstandingReceivable {
   id: string
@@ -51,6 +53,7 @@ interface Props {
   bankAccounts: BankOption[]
   projects:     ProjectOption[]
   suppliers:    SupplierOption[]
+  supplierOrders: SupplierOrderOption[]
 }
 
 export function ExpenseVnList({
@@ -63,6 +66,7 @@ export function ExpenseVnList({
   bankAccounts,
   projects,
   suppliers,
+  supplierOrders,
 }: Props) {
   const [addOpen, setAddOpen]         = useState(false)
   const [collectTarget, setCollectTarget] = useState<OutstandingReceivable | null>(null)
@@ -94,7 +98,7 @@ export function ExpenseVnList({
 
       {/* ── Add Dialog ──────────────────────────────────────────────── */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent showCloseButton={false} className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent showCloseButton={false} className={DIALOG_MD}>
           <DialogHeader>
             <DialogTitle>Tạo phiếu chi VN</DialogTitle>
           </DialogHeader>
@@ -103,6 +107,7 @@ export function ExpenseVnList({
             bankAccounts={bankAccounts}
             projects={projects}
             suppliers={suppliers}
+            supplierOrders={supplierOrders}
             onDone={() => setAddOpen(false)}
           />
         </DialogContent>
