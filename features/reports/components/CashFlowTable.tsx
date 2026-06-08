@@ -33,7 +33,7 @@ export function CashFlowTable({ rows, currency }: Props) {
           {rows.map((r, i) => {
             let valueClass = 'text-gray-900'
             if (r.positive !== undefined) {
-              valueClass = r.value >= 0 ? 'text-green-600' : 'text-red-600'
+              valueClass = r.value >= 0 ? 'text-brand-700' : 'text-red-600'
             }
             return (
               <tr key={i} className={r.bold ? 'bg-gray-50' : ''}>

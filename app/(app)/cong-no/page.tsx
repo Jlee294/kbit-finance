@@ -97,7 +97,7 @@ export default async function CongNoPage({
                   <td className="px-3 py-2 text-xs text-gray-500">{fmtDate(r.txn_date)}</td>
                   <td className="px-3 py-2 text-xs text-gray-600 max-w-[300px] truncate" title={r.note ?? ''}>{r.note ?? '—'}</td>
                   <td className="px-3 py-2 text-right text-xs text-gray-700">{fmtVND(r.amount)}</td>
-                  <td className="px-3 py-2 text-right text-xs text-green-700">{fmtVND(r.collected_amount)}</td>
+                  <td className="px-3 py-2 text-right text-xs text-brand-700">{fmtVND(r.collected_amount)}</td>
                   <td className="px-3 py-2 text-right text-xs font-semibold text-purple-700">{fmtVND(r.outstanding)}</td>
                 </tr>
               ))}

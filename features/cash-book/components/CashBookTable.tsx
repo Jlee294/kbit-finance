@@ -90,12 +90,12 @@ export function CashBookTable({ rows, companies, users, customers, suppliers, ca
                     {!r.party_name && r.ma_doi_tac && <span className="text-[10px] text-gray-400 ml-1">[{r.ma_doi_tac}]</span>}
                   </td>
                   <td className="px-3 py-2 text-gray-800">{r.noi_dung}</td>
-                  <td className={`px-3 py-2 text-right font-medium ${r.direction === 'thu' ? 'text-green-700' : 'text-red-600'}`}>
+                  <td className={`px-3 py-2 text-right font-medium ${r.direction === 'thu' ? 'text-brand-700' : 'text-red-600'}`}>
                     {r.direction === 'thu' ? '+' : '−'} {fmtVND(r.so_tien)}
                   </td>
                   <td className="px-3 py-2 text-center">
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                      r.direction === 'thu' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'
+                      r.direction === 'thu' ? 'bg-brand-50 text-brand-700' : 'bg-red-50 text-red-600'
                     }`}>
                       {r.direction === 'thu' ? 'Thu' : 'Chi'}
                     </span>

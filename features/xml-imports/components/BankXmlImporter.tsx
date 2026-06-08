@@ -363,7 +363,7 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
                       <td className="px-2 py-2 text-right text-red-600 font-medium tabular-nums">
                         {t.debit > 0 ? fmt(t.debit) : ''}
                       </td>
-                      <td className="px-2 py-2 text-right text-green-700 font-medium tabular-nums">
+                      <td className="px-2 py-2 text-right text-brand-700 font-medium tabular-nums">
                         {t.credit > 0 ? fmt(t.credit) : ''}
                       </td>
                       <td className="px-2 py-2 text-right text-gray-500 tabular-nums text-[10px]">
@@ -379,7 +379,7 @@ export function BankXmlImporter({ companies, banks, customers, suppliers }: Prop
                         {check.diff === null ? (
                           <span className="text-[10px] text-gray-300">—</span>
                         ) : check.ok ? (
-                          <span className="text-xs font-bold text-green-700">OK</span>
+                          <span className="text-xs font-bold text-brand-700">OK</span>
                         ) : (
                           <span className="text-[10px] font-medium text-red-600" title={`Chênh ${fmtDiff(check.diff)}`}>
                             ❌ {fmtDiff(check.diff)}
@@ -478,7 +478,7 @@ function ReconciliationBox({ rec, currency }: { rec: any; currency: string }) {
           </div>
           <div className="rounded bg-white px-3 py-2 mt-2">
             <p className="text-xs text-gray-600">Đối chiếu:</p>
-            <p className={`text-base font-bold ${balOk ? 'text-green-700' : 'text-red-600'}`}>
+            <p className={`text-base font-bold ${balOk ? 'text-brand-700' : 'text-red-600'}`}>
               {balOk ? '✓ KHỚP' : '❌ KHÔNG KHỚP'}
               {!balOk && m.closing_balance != null && rec.computed_closing != null &&
                 <span className="text-xs ml-2 font-normal">
@@ -493,7 +493,7 @@ function ReconciliationBox({ rec, currency }: { rec: any; currency: string }) {
       {/* Đối chiếu per-row */}
       <div className="border-t border-brand-200 pt-2 flex items-center gap-4 text-xs">
         <span className="text-gray-600">Đối chiếu từng dòng:</span>
-        <span className="text-green-700 font-medium">✓ {rec.totalRowOk} OK</span>
+        <span className="text-brand-700 font-medium">✓ {rec.totalRowOk} OK</span>
         {rec.totalRowFail > 0 && (
           <span className="text-red-600 font-medium">❌ {rec.totalRowFail} chênh lệch</span>
         )}
@@ -524,7 +524,7 @@ function SummaryBanner({ result, rec, bankName }: { result: BankParseResult; rec
           <BannerStat label="Thành công" value="1" />
           <BannerStat label="Giao dịch" value={String(result.txns.length)} />
           <BannerStat label="Đối chiếu" value={`${rec.totalRowOk}/${result.txns.length}`}
-            valueClass={rec.totalRowFail === 0 ? 'text-green-300' : 'text-amber-300'} />
+            valueClass={rec.totalRowFail === 0 ? 'text-brand-300' : 'text-amber-300'} />
         </div>
       </div>
 
@@ -533,7 +533,7 @@ function SummaryBanner({ result, rec, bankName }: { result: BankParseResult; rec
         <div className="flex items-center justify-between px-5 py-4 border-b">
           <div className="flex items-center gap-3">
             <div className={`h-8 w-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${
-              balOk ? 'bg-green-500' : 'bg-amber-500'
+              balOk ? 'bg-brand-500' : 'bg-amber-500'
             }`}>✓</div>
             <div>
               <p className="font-semibold text-gray-900">{result.raw_filename ?? 'sao kê'}</p>
@@ -545,7 +545,7 @@ function SummaryBanner({ result, rec, bankName }: { result: BankParseResult; rec
             </div>
           </div>
           <span className={`text-xs px-3 py-1 rounded-full font-semibold ${
-            balOk ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'
+            balOk ? 'bg-brand-50 text-brand-700' : 'bg-amber-50 text-amber-700'
           }`}>
             {balOk ? 'KHỚP' : 'CHƯA KHỚP'}
           </span>
@@ -596,7 +596,7 @@ function Row({ label, app, pdf, fmt, compare }: {
         {app != null && <span className="font-mono font-medium text-gray-900">{fmt(app)}</span>}
         {pdf != null && (
           <span className={`ml-2 font-mono text-[10px] ${
-            compare ? (match ? 'text-green-700' : 'text-red-600') : 'text-gray-500'
+            compare ? (match ? 'text-brand-700' : 'text-red-600') : 'text-gray-500'
           }`}>
             {app != null ? '(PDF: ' : ''}{fmt(pdf)}{app != null ? ')' : ''}
             {compare && (match ? ' ✓' : ' ❌')}

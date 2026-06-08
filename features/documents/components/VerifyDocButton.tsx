@@ -18,7 +18,7 @@ export function VerifyDocButton({ documentId, isVerified, canApprove }: Props) {
 
   if (!canApprove) {
     return (
-      <span className={`text-xs px-2 py-0.5 rounded-full ${isVerified ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+      <span className={`text-xs px-2 py-0.5 rounded-full ${isVerified ? 'bg-brand-100 text-brand-700' : 'bg-gray-100 text-gray-500'}`}>
         {isVerified ? '✓ Đã xác nhận' : 'Chờ xác nhận'}
       </span>
     )
@@ -48,7 +48,7 @@ export function VerifyDocButton({ documentId, isVerified, canApprove }: Props) {
         disabled={loading}
         className={`text-xs px-2 py-0.5 rounded-full cursor-pointer transition-colors
           ${isVerified
-            ? 'bg-green-100 text-green-700 hover:bg-green-200'
+            ? 'bg-brand-100 text-brand-700 hover:bg-brand-200'
             : 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100'
           }`}
       >

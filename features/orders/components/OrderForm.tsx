@@ -379,7 +379,7 @@ export function OrderForm({ companies, customers, projects, products, warehouses
             </select>
           </div>
           {stockDeducted && (
-            <p className="text-xs text-green-700 font-medium shrink-0">✓ Đã trừ kho</p>
+            <p className="text-xs text-brand-700 font-medium shrink-0">✓ Đã trừ kho</p>
           )}
           {!stockDeducted && fulfillment === 'draft' && (
             <p className="text-xs text-gray-500 shrink-0">Đơn Nháp chưa trừ; sẽ trừ khi xác nhận</p>

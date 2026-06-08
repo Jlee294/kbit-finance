@@ -6,7 +6,7 @@ import { todayLocal, formatLocalDate }   from '@/lib/format'
 function statusBadge(item: CalendarItem) {
   const today = todayLocal()
   if (item.status === 'filed') {
-    return <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700">Đã nộp</span>
+    return <span className="text-xs px-2 py-0.5 rounded-full bg-brand-50 text-brand-700">Đã nộp</span>
   }
   if (item.due_date < today) {
     return <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">Quá hạn</span>

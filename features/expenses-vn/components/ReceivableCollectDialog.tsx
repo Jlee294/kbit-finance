@@ -77,7 +77,7 @@ export function ReceivableCollectDialog({ receivable, open, onOpenChange }: Prop
             <span className="font-semibold">{formatVND(receivable.amount)}</span>
           </div>
           {receivable.collected_amount > 0 && (
-            <div className="flex justify-between text-green-700">
+            <div className="flex justify-between text-brand-700">
               <span>Đã thu:</span>
               <span>{formatVND(receivable.collected_amount)}</span>
             </div>

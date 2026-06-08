@@ -4,7 +4,7 @@ import { TXN_TYPE_LABELS, ISSUE_REASON_LABELS, type IssueReason } from '../schem
 import type { TxnRow } from '../queries'
 
 const TYPE_COLOR: Record<string, string> = {
-  receipt:         'bg-green-50 text-green-700',
+  receipt:         'bg-brand-50 text-brand-700',
   issue:           'bg-red-50 text-red-700',
   transfer_out:    'bg-orange-50 text-orange-700',
   transfer_in:     'bg-brand-50 text-brand-800',

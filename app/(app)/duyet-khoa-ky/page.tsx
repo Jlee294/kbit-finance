@@ -78,7 +78,7 @@ export default async function DuyetKhoaKyPage() {
                     <td className="px-4 py-2.5 text-gray-700 text-xs">
                       {(row.customers as { name: string } | null)?.name ?? '—'}
                     </td>
-                    <td className="px-4 py-2.5 text-right font-medium text-green-700">
+                    <td className="px-4 py-2.5 text-right font-medium text-brand-700">
                       {formatVND(row.amount)}
                     </td>
                     <td className="px-4 py-2.5 text-gray-500 text-xs max-w-[180px] truncate">
@@ -177,7 +177,7 @@ export default async function DuyetKhoaKyPage() {
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                           isLocked
                             ? 'bg-red-50 text-red-700'
-                            : 'bg-green-50 text-green-700'
+                            : 'bg-brand-50 text-brand-700'
                         }`}>
                           {isLocked ? '🔒 Đã khóa' : '🔓 Đang mở'}
                         </span>

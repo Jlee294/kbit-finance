@@ -9,7 +9,7 @@ function fmt(v: number) {
 
 function fmtDiff(diff: number) {
   const sign = diff > 0 ? '+' : ''
-  const cls  = diff > 0 ? 'text-red-600' : diff < 0 ? 'text-green-600' : 'text-gray-500'
+  const cls  = diff > 0 ? 'text-red-600' : diff < 0 ? 'text-brand-700' : 'text-gray-500'
   return <span className={`font-mono ${cls}`}>{sign}{fmt(diff)}</span>
 }
 

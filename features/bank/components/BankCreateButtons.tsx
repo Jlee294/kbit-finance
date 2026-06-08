@@ -47,7 +47,7 @@ export function BankCreateButtons({
           ↥ Import sao kê
         </a>
         <Button size="sm" onClick={() => setMode('thu')}
-          className="bg-green-600 hover:bg-green-700">
+          className="bg-brand-700 hover:bg-brand-700">
           + Thu tiền
         </Button>
         <Button size="sm" onClick={() => setMode('chi-vn')}

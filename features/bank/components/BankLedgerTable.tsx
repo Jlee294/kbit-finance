@@ -45,7 +45,7 @@ export function BankLedgerTable({ rows }: { rows: BankRow[] }) {
                 <td className="px-3 py-2 text-xs text-gray-500 whitespace-nowrap">{fmtDate(r.txn_date)}</td>
                 <td className="px-3 py-2 text-center">
                   <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                    r.direction === 'thu' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'
+                    r.direction === 'thu' ? 'bg-brand-50 text-brand-700' : 'bg-red-50 text-red-600'
                   }`}>
                     {r.direction === 'thu' ? 'Thu' : (r.region === 'KR' ? 'Chi KR' : 'Chi VN')}
                   </span>
@@ -56,7 +56,7 @@ export function BankLedgerTable({ rows }: { rows: BankRow[] }) {
                   {r.is_unassigned && <span className="ml-1 text-[10px] text-amber-600">·chưa gắn đơn</span>}
                 </td>
                 <td className={`px-3 py-2 text-right font-medium ${
-                  r.direction === 'thu' ? 'text-green-700' : 'text-red-600'
+                  r.direction === 'thu' ? 'text-brand-700' : 'text-red-600'
                 }`}>
                   {r.direction === 'thu' ? '+ ' : '− '}{fmtAmount(r.amount_local, r.currency)}
                 </td>

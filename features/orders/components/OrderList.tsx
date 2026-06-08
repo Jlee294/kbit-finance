@@ -127,7 +127,7 @@ export function OrderList({ initialRows, total, canWrite, companies, customers, 
                   <td className="px-4 py-3 text-right text-gray-700">
                     {Number(row.outstanding) > 0
                       ? formatVND(Number(row.outstanding))
-                      : <span className="text-green-600">—</span>}
+                      : <span className="text-brand-700">—</span>}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <FulfillmentBadge status={row.fulfillment_status} />

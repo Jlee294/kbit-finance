@@ -193,7 +193,7 @@ export function KrSupplierPayForm({ orders, krwBanks, onDone }: Props) {
                 <span>{rateB} VNĐ/KRW</span>
               </div>
               {gainLossPreview !== null && (
-                <div className={`flex justify-between font-bold pt-1 border-t ${gainLossPreview >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                <div className={`flex justify-between font-bold pt-1 border-t ${gainLossPreview >= 0 ? 'text-brand-700' : 'text-red-600'}`}>
                   <span>{gainLossPreview >= 0 ? '✅ Lãi tỷ giá:' : '⚠️ Lỗ tỷ giá:'}</span>
                   <span>{gainLossPreview >= 0 ? '+' : ''}{formatVND(gainLossPreview)}</span>
                 </div>

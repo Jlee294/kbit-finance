@@ -97,7 +97,7 @@ export function ImportOrderTable({ rows, canWrite, companies, suppliers, product
                   </td>
                   <td className="px-4 py-3 text-center">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      row.order_type === 'domestic' ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'
+                      row.order_type === 'domestic' ? 'bg-brand-50 text-brand-700' : 'bg-amber-50 text-amber-700'
                     }`}>
                       {row.order_type === 'domestic' ? 'Trong nước' : 'Nhập khẩu'}
                     </span>
@@ -114,7 +114,7 @@ export function ImportOrderTable({ rows, canWrite, companies, suppliers, product
                     {fmtAmt(row, row.cost_total)}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <span className={row.outstanding > 0 ? 'font-semibold text-amber-700' : 'text-green-700'}>
+                    <span className={row.outstanding > 0 ? 'font-semibold text-amber-700' : 'text-brand-700'}>
                       {row.outstanding > 0 ? fmtAmt(row, row.outstanding) : '✓ Đã thanh toán'}
                     </span>
                   </td>

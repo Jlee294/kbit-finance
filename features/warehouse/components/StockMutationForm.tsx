@@ -175,7 +175,7 @@ export function StockMutationForm({ initialMode = 'receipt', warehouses, product
       </div>
 
       {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
-      {success && <p className="text-sm text-green-600 bg-green-50 rounded-lg px-3 py-2">{success}</p>}
+      {success && <p className="text-sm text-brand-700 bg-brand-50 rounded-lg px-3 py-2">{success}</p>}
 
       <button
         type="submit" disabled={saving}

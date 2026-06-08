@@ -16,7 +16,7 @@ interface Props {
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   draft:     { label: 'Nháp',        cls: 'text-gray-500' },
   confirmed: { label: 'Chờ duyệt',   cls: 'text-amber-600 font-medium' },
-  approved:  { label: 'Đã duyệt',    cls: 'text-green-600 font-medium' },
+  approved:  { label: 'Đã duyệt',    cls: 'text-brand-700 font-medium' },
   void:      { label: 'Đã hủy',      cls: 'text-red-500 line-through' },
 }
 

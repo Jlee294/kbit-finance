@@ -72,7 +72,7 @@ export function OperationLibraryClient({ operations, docTypes, canWrite }: Props
                 <td className="px-4 py-3 text-gray-600 text-xs">{op.tax_gtgt ?? '—'}</td>
                 <td className="px-4 py-3 text-center">
                   {op.tax_tndn_deductible
-                    ? <span className="text-green-600 text-xs">✓ Được trừ</span>
+                    ? <span className="text-brand-700 text-xs">✓ Được trừ</span>
                     : <span className="text-gray-300 text-xs">—</span>}
                 </td>
                 {canWrite && (

@@ -18,7 +18,7 @@ const STATUS_LABEL: Record<string, string> = {
 const STATUS_COLOR: Record<string, string> = {
   draft:     'bg-gray-100 text-gray-600',
   confirmed: 'bg-brand-100 text-brand-800',
-  approved:  'bg-green-100 text-green-700',
+  approved:  'bg-brand-100 text-brand-700',
   void:      'bg-red-100 text-red-600',
 }
 
@@ -209,7 +209,7 @@ export function ExpenseVnList({
                         <span className="line-clamp-1">{r.expense_transactions?.note ?? '—'}</span>
                       </td>
                       <td className="px-4 py-3 text-right text-gray-700">{formatVND(r.amount)}</td>
-                      <td className="px-4 py-3 text-right text-green-700">
+                      <td className="px-4 py-3 text-right text-brand-700">
                         {r.collected_amount > 0 ? formatVND(r.collected_amount) : <span className="text-gray-300">—</span>}
                       </td>
                       <td className="px-4 py-3 text-right font-semibold text-amber-700">{formatVND(remaining)}</td>

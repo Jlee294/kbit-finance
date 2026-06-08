@@ -167,7 +167,7 @@ export function InvoiceXmlImporter({ companies, projects, warehouses, products, 
             if (!ctrl) return null
             return (
               <div key={idx} className={`rounded-xl border-2 ${
-                ctrl.committed ? 'border-green-300 bg-green-50' :
+                ctrl.committed ? 'border-brand-300 bg-brand-50' :
                 ctrl.commit_error ? 'border-red-300 bg-red-50' :
                 'border-gray-200 bg-white'
               } p-4 space-y-3`}>
@@ -186,7 +186,7 @@ export function InvoiceXmlImporter({ companies, projects, warehouses, products, 
                       {inv.supplier_name} <span className="text-xs text-gray-400">[MST {inv.supplier_tax_code ?? '—'}]</span>
                     </p>
                   </div>
-                  {ctrl.committed && <span className="text-sm text-green-700 font-medium">✓ Đã tạo</span>}
+                  {ctrl.committed && <span className="text-sm text-brand-700 font-medium">✓ Đã tạo</span>}
                 </div>
 
                 {/* Warnings */}
@@ -239,7 +239,7 @@ export function InvoiceXmlImporter({ companies, projects, warehouses, products, 
                     <div className="rounded bg-slate-50 border px-3 py-2">
                       <Label className="text-xs font-semibold">NCC (Người bán)</Label>
                       {inv.supplier_match ? (
-                        <p className="text-sm text-green-700 mt-1">
+                        <p className="text-sm text-brand-700 mt-1">
                           ✓ Đã match: <b>{inv.supplier_match.name}</b> [{inv.supplier_match.code}]
                         </p>
                       ) : (

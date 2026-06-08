@@ -116,10 +116,10 @@ export default async function ImportOrderDetailPage({ params, searchParams }: { 
               <span>Tổng phải trả:</span>
               <span>{fmtNative(totalPayable)}</span>
             </div>
-            <div className="flex justify-between text-green-700">
+            <div className="flex justify-between text-brand-700">
               <span>Đã trả:</span><span>{fmtNative(order.amount_paid)}</span>
             </div>
-            <div className={`flex justify-between font-bold border-t pt-1 ${order.outstanding > 0 ? 'text-amber-700' : 'text-green-700'}`}>
+            <div className={`flex justify-between font-bold border-t pt-1 ${order.outstanding > 0 ? 'text-amber-700' : 'text-brand-700'}`}>
               <span>Còn nợ (outstanding):</span>
               <span>{order.outstanding > 0 ? fmtNative(order.outstanding) : '✓ Đã thanh toán'}</span>
             </div>

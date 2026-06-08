@@ -142,7 +142,7 @@ export function AllocationRows({ rows, orders, totalAmount, onChange }: Props) {
             <span className={remaining < 0 ? 'text-red-600' : 'text-gray-600'}>
               {remaining >= 0 ? 'Còn lại (→ tiền cọc/thừa):' : 'VƯỢT QUÁ:'}
             </span>
-            <span className={`font-medium ${remaining < 0 ? 'text-red-600' : remaining > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+            <span className={`font-medium ${remaining < 0 ? 'text-red-600' : remaining > 0 ? 'text-orange-600' : 'text-brand-700'}`}>
               {formatVND(Math.abs(remaining))}
             </span>
           </div>

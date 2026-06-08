@@ -77,7 +77,7 @@ function Section({ title, firstCol, lines }: { title: string; firstCol: string; 
                 <td className="px-4 py-3">{l.label}</td>
                 <td className="px-4 py-3 text-right">{formatVND(l.revenue)}</td>
                 <td className="px-4 py-3 text-right">{formatVND(l.cogs)}</td>
-                <td className={`px-4 py-3 text-right font-medium ${l.profit >= 0 ? 'text-green-700' : 'text-red-600'}`}>{formatVND(l.profit)}</td>
+                <td className={`px-4 py-3 text-right font-medium ${l.profit >= 0 ? 'text-brand-700' : 'text-red-600'}`}>{formatVND(l.profit)}</td>
                 <td className="px-4 py-3 text-right">{l.margin}%</td>
               </tr>
             ))}

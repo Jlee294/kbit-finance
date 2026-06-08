@@ -16,7 +16,7 @@ interface Props {
 }
 
 const ACTION_CLS: Record<string, string> = {
-  INSERT: 'bg-green-50 text-green-700',
+  INSERT: 'bg-brand-50 text-brand-700',
   UPDATE: 'bg-brand-50  text-brand-800',
   DELETE: 'bg-red-50   text-red-700',
 }

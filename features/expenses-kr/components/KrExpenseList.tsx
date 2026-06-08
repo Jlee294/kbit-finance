@@ -14,7 +14,7 @@ const STATUS_LABEL: Record<string, string> = {
 }
 const STATUS_COLOR: Record<string, string> = {
   draft: 'bg-gray-100 text-gray-600', confirmed: 'bg-brand-100 text-brand-800',
-  approved: 'bg-green-100 text-green-700', void: 'bg-red-100 text-red-600',
+  approved: 'bg-brand-100 text-brand-700', void: 'bg-red-100 text-red-600',
 }
 const KIND_LABEL: Record<string, string> = { goods: 'Tiền hàng', service: 'Dịch vụ' }
 

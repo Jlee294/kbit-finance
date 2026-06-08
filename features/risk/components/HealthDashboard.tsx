@@ -3,7 +3,7 @@ import type { AssessmentRow }                        from '../queries'
 import type { Light }                                from '../lights'
 
 const LIGHT_CLS: Record<Light, string> = {
-  green:  'bg-green-100  text-green-800  border-green-200',
+  green:  'bg-brand-100  text-brand-800  border-brand-200',
   yellow: 'bg-amber-100  text-amber-800  border-amber-200',
   red:    'bg-red-100    text-red-800    border-red-200',
 }
@@ -13,7 +13,7 @@ const LIGHT_LABEL: Record<Light, string> = {
   red:    'Rủi ro cao',
 }
 const LIGHT_DOT: Record<Light, string> = {
-  green:  'bg-green-500',
+  green:  'bg-brand-500',
   yellow: 'bg-amber-500',
   red:    'bg-red-500',
 }

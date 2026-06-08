@@ -64,7 +64,7 @@ export function ReconcilePanel({
       {/* Status banner */}
       {requiredDocTypes.length > 0 && (
         <div className={`rounded-lg px-4 py-2.5 text-sm flex items-center gap-2
-          ${isComplete ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-amber-50 border border-amber-200 text-amber-800'}`}>
+          ${isComplete ? 'bg-brand-50 border border-brand-200 text-brand-800' : 'bg-amber-50 border border-amber-200 text-amber-800'}`}>
           {isComplete ? '✅ Đủ hồ sơ bắt buộc' : '⚠️ Thiếu hồ sơ bắt buộc — không thể xác nhận chi phí'}
           {!isComplete && (
             <span className="font-semibold">
