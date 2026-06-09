@@ -26,6 +26,19 @@ export async function receiveStock(input: unknown): Promise<ActionResult> {
     })
     if (error) return { error: error.message }
 
+    // KTT C3: nếu user tick "Chưa có hóa đơn" → update dòng kho vừa ghi
+    if (data.has_invoice === false) {
+      await supabase
+        .from('warehouse_transactions')
+        .update({ has_invoice: false })
+        .eq('warehouse_id', data.warehouse_id)
+        .eq('product_id', data.product_id)
+        .eq('txn_date', data.txn_date)
+        .eq('txn_type', 'receipt')
+        .order('created_at', { ascending: false })
+        .limit(1)
+    }
+
     revalidatePath('/kho')
     revalidatePath('/kho/lich-su')
     return {}
@@ -52,6 +65,19 @@ export async function issueStock(input: unknown): Promise<ActionResult> {
       p_created_by:   me?.id ?? null,
     })
     if (error) return { error: error.message }
+
+    // KTT C3: cờ "chưa có HĐ" cho xuất kho
+    if (data.has_invoice === false) {
+      await supabase
+        .from('warehouse_transactions')
+        .update({ has_invoice: false })
+        .eq('warehouse_id', data.warehouse_id)
+        .eq('product_id', data.product_id)
+        .eq('txn_date', data.txn_date)
+        .eq('txn_type', 'issue')
+        .order('created_at', { ascending: false })
+        .limit(1)
+    }
 
     revalidatePath('/kho')
     revalidatePath('/kho/lich-su')

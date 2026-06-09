@@ -10,18 +10,20 @@ export const dynamic = 'force-dynamic'
 export default async function LichSuKhoPage({
   searchParams,
 }: {
-  searchParams: Promise<{ warehouse?: string; type?: string }>
+  searchParams: Promise<{ warehouse?: string; type?: string; invoice?: string }>
 }) {
   const sp = await searchParams
   const { companyId: gCompany } = await getGlobalFilter()
   const companyId = gCompany || undefined
+  const onlyNoInvoice = sp.invoice === 'missing'
   const [warehouses, transactions] = await Promise.all([
     listWarehouses(companyId),
     listTransactions({
-      warehouseId: sp.warehouse || undefined,
-      txnType:     sp.type || undefined,
-      companyId:   companyId,
-      limit:       200,
+      warehouseId:   sp.warehouse || undefined,
+      txnType:       sp.type || undefined,
+      companyId:     companyId,
+      onlyNoInvoice,
+      limit:         200,
     }),
   ])
 
@@ -47,6 +49,12 @@ export default async function LichSuKhoPage({
             <option value="transfer_out">Luân chuyển ra</option>
             <option value="transfer_in">Luân chuyển vào</option>
             <option value="order_deduction">Xuất theo đơn</option>
+          </select>
+        </FilterField>
+        <FilterField label="Hóa đơn">
+          <select name="invoice" defaultValue={sp.invoice ?? ''} className={FILTER_CONTROL}>
+            <option value="">Tất cả</option>
+            <option value="missing">⚠ Chưa có HĐ</option>
           </select>
         </FilterField>
         <FilterSubmit />

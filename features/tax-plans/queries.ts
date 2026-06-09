@@ -6,19 +6,52 @@ export interface TaxPlan {
   company_id: string
   project_id: string | null
   year:       number
-  plan_data:  { lines: TaxPlanLine[] }
+  // Có thể là shape cũ (lines) hoặc mới (template 16 chỉ tiêu)
+  plan_data:  { lines: TaxPlanLine[] } | { template: 'kht_v1'; rows: any[]; meta?: any }
 }
 
-export async function getTaxPlan(companyId: string, year: number): Promise<TaxPlan | null> {
+export async function getTaxPlan(companyId: string, year: number, projectId?: string | null): Promise<TaxPlan | null> {
   const supabase = await createClient()
-  const { data, error } = await supabase
+  let q = supabase
     .from('tax_plans')
     .select('id, company_id, project_id, year, plan_data')
     .eq('company_id', companyId)
     .eq('year', year)
-    .maybeSingle()
+  q = projectId ? q.eq('project_id', projectId) : q.is('project_id', null)
+  const { data, error } = await q.maybeSingle()
   if (error) throw new Error(error.message)
   return data as TaxPlan | null
+}
+
+/** List tất cả tax_plans (KTT C1: nhiều plan/cty/dự án/năm) */
+export interface TaxPlanListRow {
+  id:           string
+  company_id:   string
+  company_name: string | null
+  project_id:   string | null
+  project_name: string | null
+  year:         number
+  has_template: boolean       // true = đã dùng template mẫu mới
+}
+
+export async function listTaxPlans(companyId?: string): Promise<TaxPlanListRow[]> {
+  const supabase = await createClient()
+  let q = supabase
+    .from('tax_plans')
+    .select('id, company_id, project_id, year, plan_data, companies!company_id ( name ), projects!project_id ( name )')
+    .order('year', { ascending: false })
+  if (companyId) q = q.eq('company_id', companyId)
+  const { data, error } = await q
+  if (error) { console.error('[listTaxPlans]', error.message); return [] }
+  return ((data ?? []) as any[]).map((r) => ({
+    id:           r.id,
+    company_id:   r.company_id,
+    company_name: r.companies?.name ?? null,
+    project_id:   r.project_id,
+    project_name: r.projects?.name ?? null,
+    year:         r.year,
+    has_template: r.plan_data?.template === 'kht_v1',
+  }))
 }
 
 // Thực tế GTGT: tổng vat_amount của expense_transactions confirmed/approved trong năm.

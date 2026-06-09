@@ -36,6 +36,7 @@ export function StockMutationForm({ initialMode = 'receipt', warehouses, product
   const [reason, setReason] = useState<string>('sale')
   const [txnDate, setTxnDate] = useState(today)
   const [note, setNote] = useState('')
+  const [noInvoice, setNoInvoice] = useState(false)   // KTT C3
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -49,9 +50,9 @@ export function StockMutationForm({ initialMode = 'receipt', warehouses, product
     let result: { error?: string }
 
     if (mode === 'receipt') {
-      result = await receiveStock({ warehouse_id: warehouseId, product_id: productId, qty, txn_date: txnDate, note, unit_cost: unitCost || null })
+      result = await receiveStock({ warehouse_id: warehouseId, product_id: productId, qty, txn_date: txnDate, note, unit_cost: unitCost || null, has_invoice: !noInvoice })
     } else if (mode === 'issue') {
-      result = await issueStock({ warehouse_id: warehouseId, product_id: productId, qty, reason, txn_date: txnDate, note })
+      result = await issueStock({ warehouse_id: warehouseId, product_id: productId, qty, reason, txn_date: txnDate, note, has_invoice: !noInvoice })
     } else {
       result = await transferStock({ from_warehouse_id: warehouseId, to_warehouse_id: toWarehouseId, product_id: productId, qty, txn_date: txnDate, note })
     }
@@ -65,6 +66,7 @@ export function StockMutationForm({ initialMode = 'receipt', warehouses, product
       setQty('')
       setUnitCost('')
       setNote('')
+      setNoInvoice(false)
       router.refresh()
     }
   }
@@ -173,6 +175,19 @@ export function StockMutationForm({ initialMode = 'receipt', warehouses, product
           className={fieldCls}
         />
       </div>
+
+      {/* KTT C3: cờ chưa có hóa đơn (chỉ cho nhập/xuất kho thủ công) */}
+      {mode !== 'transfer' && (
+        <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={noInvoice}
+            onChange={(e) => setNoInvoice(e.target.checked)}
+            className="rounded border-gray-300 text-brand-700 focus:ring-brand-500"
+          />
+          <span>Chưa có hóa đơn <span className="text-xs text-gray-400">(sẽ bổ sung sau)</span></span>
+        </label>
+      )}
 
       {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
       {success && <p className="text-sm text-brand-700 bg-brand-50 rounded-lg px-3 py-2">{success}</p>}

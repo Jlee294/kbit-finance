@@ -35,6 +35,7 @@ export interface TxnRow {
   ref_order_id:     string | null
   created_by_name:  string | null
   company_name:     string
+  has_invoice:      boolean   // KTT C3
 }
 
 export const listWarehouses = cache(async (companyId?: string): Promise<Warehouse[]> => {
@@ -100,13 +101,14 @@ export async function listTransactions(opts: {
   productId?: string
   txnType?: string
   companyId?: string
+  onlyNoInvoice?: boolean   // KTT C3: filter chưa có hóa đơn
   limit?: number
 }): Promise<TxnRow[]> {
   const supabase = await createClient()
   let q = supabase
     .from('warehouse_transactions')
     .select(`
-      id, txn_date, txn_type, qty, reason, note, ref_order_id,
+      id, txn_date, txn_type, qty, reason, note, ref_order_id, has_invoice,
       warehouses!warehouse_id        ( name ),
       products!product_id            ( code, name ),
       to_wh:warehouses!to_warehouse_id ( name ),
@@ -116,10 +118,11 @@ export async function listTransactions(opts: {
     .order('created_at', { ascending: false })
     .limit(opts.limit ?? 100)
 
-  if (opts.warehouseId) q = q.eq('warehouse_id', opts.warehouseId)
-  if (opts.productId)   q = q.eq('product_id', opts.productId)
-  if (opts.txnType)     q = q.eq('txn_type', opts.txnType)
-  if (opts.companyId)   q = q.eq('company_id', opts.companyId)
+  if (opts.warehouseId)   q = q.eq('warehouse_id', opts.warehouseId)
+  if (opts.productId)     q = q.eq('product_id', opts.productId)
+  if (opts.txnType)       q = q.eq('txn_type', opts.txnType)
+  if (opts.companyId)     q = q.eq('company_id', opts.companyId)
+  if (opts.onlyNoInvoice) q = q.eq('has_invoice', false)
 
   const { data, error } = await q
   if (error) { console.error('[listTransactions]', error.message); return [] }
@@ -132,6 +135,7 @@ export async function listTransactions(opts: {
     reason: string | null
     note: string | null
     ref_order_id: string | null
+    has_invoice: boolean | null
     warehouses: { name: string } | null
     products: { code: string; name: string } | null
     to_wh: { name: string } | null
@@ -152,6 +156,7 @@ export async function listTransactions(opts: {
     ref_order_id:     r.ref_order_id ?? null,
     created_by_name:  r.users?.full_name ?? null,
     company_name:     r.companies?.name ?? '',
+    has_invoice:      r.has_invoice ?? true,
   }))
 }
 

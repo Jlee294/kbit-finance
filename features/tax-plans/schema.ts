@@ -17,11 +17,40 @@ export const taxPlanLineSchema = z.object({
   planned_amount: z.coerce.number().min(0),
 })
 
+// ── KTT C1: Template mới (mẫu 16 chỉ tiêu) ─────────────────────────
+const templateRowSchema = z.object({
+  id:       z.string(),
+  code:     z.string(),
+  name:     z.string(),
+  parent:   z.string().nullable(),
+  amount:   z.coerce.number(),
+  formula:  z.string().nullable(),
+  kind:     z.enum(['fixed', 'sub']),
+  operation_id: z.string().uuid().optional().nullable(),
+  pct:      z.coerce.number().nullable().optional(),
+})
+
+const templatePlanSchema = z.object({
+  template: z.literal('kht_v1'),
+  rows:     z.array(templateRowSchema),
+  meta: z.object({
+    from:  z.string().optional(),
+    to:    z.string().optional(),
+    notes: z.string().optional(),
+  }).optional(),
+})
+
+// Cho phép cả 2 shape (cũ với { lines } và mới với template)
+const planDataSchema = z.union([
+  z.object({ lines: z.array(taxPlanLineSchema) }),
+  templatePlanSchema,
+])
+
 export const taxPlanSchema = z.object({
   company_id: z.string().uuid(),
   project_id: z.string().uuid().nullable().optional(),
   year:       z.coerce.number().int().min(2020).max(2100),
-  plan_data:  z.object({ lines: z.array(taxPlanLineSchema) }),
+  plan_data:  planDataSchema,
 })
 
 export type TaxPlanLine  = z.infer<typeof taxPlanLineSchema>

@@ -28,6 +28,7 @@ export const receiptSchema = z.object({
   txn_date:     z.string().regex(dateRegex, 'Ngày không hợp lệ'),
   note:         z.string().optional().nullable(),
   unit_cost:    z.coerce.number().nonnegative('Đơn giá vốn ≥ 0').optional().nullable(),  // giá vốn nhập/đv
+  has_invoice:  z.boolean().optional().default(true),  // KTT C3: false = chưa có HĐ
 })
 
 export const issueSchema = receiptSchema.extend({

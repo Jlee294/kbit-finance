@@ -68,6 +68,9 @@ export function TransactionHistory({ rows }: { rows: TxnRow[] }) {
                 {r.ref_order_id && (
                   <span className="text-purple-500"> [Đơn hàng]</span>
                 )}
+                {!r.has_invoice && (
+                  <span className="ml-1 text-[10px] font-medium bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded">⚠ Chưa có HĐ</span>
+                )}
               </td>
             </tr>
           ))}
