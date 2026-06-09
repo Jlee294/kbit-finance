@@ -3,8 +3,8 @@ import {
   BarChart3, Wallet, ClipboardList, ClipboardCheck, Activity,
   ShoppingCart, Truck, Landmark, Files,
   Package, History,
-  Lock, Paperclip, ListTodo, CalendarRange, FileType, BookOpen,
-  Calculator, CalendarClock, Percent,
+  Lock, Paperclip, ListTodo, FileType, BookOpen,
+  Calculator, CalendarClock,
   Building2, FolderKanban, Users, Barcode, CreditCard, Box, ArrowRightLeft,
   Boxes, TrendingUp, Warehouse,
 } from 'lucide-react'
@@ -37,14 +37,12 @@ export const navGroups: NavGroup[] = [
     { href: '/duyet-khoa-ky',               label: 'Duyệt & Khóa kỳ',   icon: Lock },
     { href: '/chung-tu',                    label: 'Tài liệu đính kèm', icon: Paperclip },
     { href: '/cong-viec',                   label: 'Công việc',         icon: ListTodo },
-    { href: '/danh-muc/ky-ke-toan',         label: 'Kỳ kế toán',        icon: CalendarRange },
     { href: '/danh-muc/loai-chung-tu',      label: 'Loại chứng từ',     icon: FileType },
     { href: '/danh-muc/thu-vien-nghiep-vu', label: 'Thư viện NV',       icon: BookOpen },
   ]},
   { label: 'Tài chính', items: [
-    { href: '/ke-hoach-thue',     label: 'Kế hoạch thuế', icon: Calculator },
-    { href: '/lich-thue',         label: 'Lịch thuế',     icon: CalendarClock },
-    { href: '/danh-muc/loai-thue', label: 'Loại thuế',    icon: Percent },
+    { href: '/ke-hoach-thue', label: 'Kế hoạch thuế', icon: Calculator },
+    { href: '/lich-thue',     label: 'Lịch thuế',     icon: CalendarClock },
   ]},
   { label: 'Danh mục', items: [
     { href: '/danh-muc/cong-ty',             label: 'Công ty',      icon: Building2 },

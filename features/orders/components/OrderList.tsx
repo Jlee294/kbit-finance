@@ -37,6 +37,16 @@ export function OrderList({ initialRows, total, canWrite, companies, customers, 
   const [rows] = useState<OrderListRow[]>(initialRows)
   const [addOpen, setAddOpen] = useState(false)
 
+  // Tổng cộng cho dòng đầu (để so với Bảng kê bán ra)
+  const totals = rows.reduce(
+    (acc, r) => {
+      acc.grand += Number(r.grand_total) || 0
+      acc.outstanding += Number(r.outstanding) || 0
+      return acc
+    },
+    { grand: 0, outstanding: 0 },
+  )
+
   return (
     <div className={PAGE_WRAPPER}>
       <PageHeader
@@ -98,6 +108,17 @@ export function OrderList({ initialRows, total, canWrite, companies, customers, 
               </tr>
             </thead>
             <tbody>
+              {/* Dòng TỔNG CỘNG — so với Bảng kê bán ra */}
+              <tr className="bg-brand-50/60 font-semibold text-brand-800 border-b-2 border-brand-200">
+                <td className="px-4 py-2.5" colSpan={4}>
+                  TỔNG CỘNG <span className="text-xs font-normal text-brand-700">({rows.length} đơn)</span>
+                </td>
+                <td className="px-4 py-2.5 text-right">{formatVND(totals.grand)}</td>
+                <td className="px-4 py-2.5 text-right">
+                  {totals.outstanding > 0 ? formatVND(totals.outstanding) : '—'}
+                </td>
+                <td className="px-4 py-2.5" colSpan={canWrite ? 3 : 2}></td>
+              </tr>
               {rows.map((row) => (
                 <tr
                   key={row.id}

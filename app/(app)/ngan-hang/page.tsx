@@ -114,7 +114,13 @@ export default async function NganHangPage({
         <FilterReset href="/ngan-hang" />
       </FilterBar>
 
-      <BankLedgerTable rows={rows} />
+      <BankLedgerTable
+        rows={rows}
+        canWrite={canWrite}
+        customers={customers.map((c: any) => ({ id: c.id, code: c.code, name: c.name }))}
+        suppliers={suppliersForForms}
+        krSuppliers={krSuppliersForForms}
+      />
     </div>
   )
 }

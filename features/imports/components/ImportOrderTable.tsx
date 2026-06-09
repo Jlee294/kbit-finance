@@ -35,6 +35,21 @@ export function ImportOrderTable({ rows, canWrite, companies, suppliers, product
   const fmtAmt = (row: ImportOrderRow, val: number) =>
     row.currency === 'KRW' ? formatKRW(val) : formatVND(val)
 
+  // Tổng cộng để so với Bảng kê mua vào (tách VND/KRW vì hỗn hợp tiền tệ)
+  const totals = rows.reduce(
+    (acc, r) => {
+      if (r.currency === 'KRW') {
+        acc.krw += Number(r.cost_total) || 0
+        acc.krwOutstanding += Number(r.outstanding) || 0
+      } else {
+        acc.vnd += Number(r.cost_total) || 0
+        acc.vndOutstanding += Number(r.outstanding) || 0
+      }
+      return acc
+    },
+    { vnd: 0, krw: 0, vndOutstanding: 0, krwOutstanding: 0 },
+  )
+
   return (
     <div className={PAGE_WRAPPER}>
       <PageHeader
@@ -86,6 +101,25 @@ export function ImportOrderTable({ rows, canWrite, companies, suppliers, product
               </tr>
             </thead>
             <tbody>
+              {/* Dòng TỔNG CỘNG — so với Bảng kê mua vào */}
+              <tr className="bg-brand-50/60 font-semibold text-brand-800 border-b-2 border-brand-200">
+                <td className="px-4 py-2.5" colSpan={5}>
+                  TỔNG CỘNG <span className="text-xs font-normal text-brand-700">({rows.length} hóa đơn)</span>
+                </td>
+                <td className="px-4 py-2.5 text-right">
+                  <div>{formatVND(totals.vnd)}</div>
+                  {totals.krw > 0 && (
+                    <div className="text-xs font-normal text-orange-700">{formatKRW(totals.krw)}</div>
+                  )}
+                </td>
+                <td className="px-4 py-2.5 text-right">
+                  <div>{totals.vndOutstanding > 0 ? formatVND(totals.vndOutstanding) : '—'}</div>
+                  {totals.krwOutstanding > 0 && (
+                    <div className="text-xs font-normal text-orange-700">{formatKRW(totals.krwOutstanding)}</div>
+                  )}
+                </td>
+                <td className="px-4 py-2.5" colSpan={canWrite ? 2 : 1}></td>
+              </tr>
               {rows.map((row) => (
                 <tr key={row.id}
                   className={LIST_ROW}
