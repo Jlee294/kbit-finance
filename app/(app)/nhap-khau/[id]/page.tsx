@@ -8,6 +8,8 @@ import { listProducts }   from '@/features/products/queries'
 import { listProjects }   from '@/features/projects/queries'
 import { formatVND, formatKRW } from '@/lib/format'
 import { ImportOrderDetailClient } from '@/features/imports/components/ImportOrderDetailClient'
+import { getOperationChecklist } from '@/features/operation-library/checklist'
+import { DocumentChecklist } from '@/features/operation-library/components/DocumentChecklist'
 import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -26,6 +28,13 @@ export default async function ImportOrderDetailPage({ params, searchParams }: { 
   ])
 
   if (!order) notFound()
+
+  // KTT D3: lấy checklist chứng từ theo nghiệp vụ (operation_id)
+  const checklist = await getOperationChecklist(
+    (order as any).operation_id ?? null,
+    'supplier_order',
+    order.id,
+  )
 
   const supabase = await createClient()
   const { data: bankRows } = await supabase
@@ -186,26 +195,8 @@ export default async function ImportOrderDetailPage({ params, searchParams }: { 
         </table>
       </div>
 
-      {/* ── Hồ sơ nhập khẩu (checklist tĩnh — upload Phase 6) ─── */}
-      <div className="rounded-xl border bg-white shadow-sm p-6">
-        <h2 className="font-semibold text-gray-800 mb-3">Hồ sơ nhập khẩu</h2>
-        <p className="text-xs text-gray-400 mb-3">Gắn chứng từ ở Phase 6</p>
-        <ul className="space-y-1.5 text-sm text-gray-600">
-          {[
-            'Hóa đơn thương mại (Commercial Invoice)',
-            'Phiếu đóng gói (Packing List)',
-            'Vận đơn (Bill of Lading / Airway Bill)',
-            'Tờ khai hải quan (Customs Declaration)',
-            'Giấy nộp thuế nhập khẩu & VAT',
-            'Giấy chứng nhận chất lượng (COA — Certificate of Analysis)',
-          ].map((doc) => (
-            <li key={doc} className="flex items-center gap-2">
-              <span className="h-4 w-4 rounded border border-gray-300 inline-block flex-shrink-0" />
-              {doc}
-            </li>
-          ))}
-        </ul>
-      </div>
+      {/* ── Hồ sơ nhập khẩu (KTT D3: auto theo nghiệp vụ) ─── */}
+      <DocumentChecklist result={checklist} />
     </div>
   )
 }

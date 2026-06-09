@@ -37,6 +37,7 @@ export const supplierImportSchema = z.object({
   dinh_khoan_co:     z.string().optional().nullable(),
   nhan_su_thuc_hien: z.string().uuid().optional().nullable(),
   warehouse_id:      z.string().uuid().optional().nullable(),
+  operation_id:      z.string().uuid().optional().nullable(),  // KTT D3: nghiệp vụ → checklist HS
   items: z.array(importItemSchema).min(1, 'Cần ít nhất 1 dòng hàng'),
 })
   .superRefine((v, ctx) => {

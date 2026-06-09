@@ -40,13 +40,23 @@ export default async function DuyetKhoaKyPage() {
 
       {/* ── Hàng chờ duyệt ─────────────────────────────────────────────── */}
       <section className="space-y-4">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <h2 className="font-semibold text-gray-800">Hàng chờ duyệt</h2>
           {totalPending > 0 && (
             <span className="text-xs bg-amber-100 text-amber-700 font-semibold px-2 py-0.5 rounded-full">
               {totalPending}
             </span>
           )}
+          {/* KTT D2: tổng số giao dịch thiếu chứng từ */}
+          {(() => {
+            const missing = pendingIncome.filter((r) => r.doc_count === 0).length + pendingExpense.filter((r) => r.doc_count === 0).length
+            if (missing === 0) return null
+            return (
+              <span className="text-xs bg-danger-50 text-danger-700 ring-1 ring-danger-500/30 font-semibold px-2.5 py-0.5 rounded-full">
+                ⚠ {missing} giao dịch chưa có chứng từ
+              </span>
+            )
+          })()}
         </div>
 
         {/* Thu tiền */}
@@ -69,6 +79,7 @@ export default async function DuyetKhoaKyPage() {
                   <th className="px-4 py-2.5 text-left">Công ty</th>
                   <th className="px-4 py-2.5 text-left">Khách hàng</th>
                   <th className="px-4 py-2.5 text-right">Số tiền</th>
+                  <th className="px-4 py-2.5 text-center">Chứng từ</th>
                   <th className="px-4 py-2.5 text-left">Ghi chú</th>
                   <th className="px-4 py-2.5 text-left">Thao tác</th>
                 </tr>
@@ -85,6 +96,17 @@ export default async function DuyetKhoaKyPage() {
                     </td>
                     <td className="px-4 py-2.5 text-right font-medium text-brand-700">
                       {formatVND(row.amount)}
+                    </td>
+                    <td className="px-4 py-2.5 text-center">
+                      {row.doc_count === 0 ? (
+                        <span className="text-xs font-semibold bg-danger-50 text-danger-700 px-2 py-0.5 rounded-full">
+                          ⚠ 0
+                        </span>
+                      ) : (
+                        <span className="text-xs font-semibold bg-success-50 text-success-700 px-2 py-0.5 rounded-full">
+                          📎 {row.doc_count}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-2.5 text-gray-500 text-xs max-w-[180px] truncate">
                       {row.note ?? '—'}
@@ -118,6 +140,7 @@ export default async function DuyetKhoaKyPage() {
                   <th className="px-4 py-2.5 text-left">Ngày</th>
                   <th className="px-4 py-2.5 text-left">Công ty</th>
                   <th className="px-4 py-2.5 text-right">Số tiền</th>
+                  <th className="px-4 py-2.5 text-center">Chứng từ</th>
                   <th className="px-4 py-2.5 text-left">Ghi chú</th>
                   <th className="px-4 py-2.5 text-left">Thao tác</th>
                 </tr>
@@ -131,6 +154,17 @@ export default async function DuyetKhoaKyPage() {
                     </td>
                     <td className="px-4 py-2.5 text-right font-medium text-red-700">
                       {formatVND(row.amount_vnd)}
+                    </td>
+                    <td className="px-4 py-2.5 text-center">
+                      {row.doc_count === 0 ? (
+                        <span className="text-xs font-semibold bg-danger-50 text-danger-700 px-2 py-0.5 rounded-full">
+                          ⚠ 0
+                        </span>
+                      ) : (
+                        <span className="text-xs font-semibold bg-success-50 text-success-700 px-2 py-0.5 rounded-full">
+                          📎 {row.doc_count}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-2.5 text-gray-500 text-xs max-w-[180px] truncate">
                       {row.note ?? '—'}

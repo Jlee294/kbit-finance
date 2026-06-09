@@ -6,6 +6,7 @@ import { listProducts }      from '@/features/products/queries'
 import { listProjects }      from '@/features/projects/queries'
 import { listUsers }         from '@/features/users/queries'
 import { listWarehouses }    from '@/features/warehouse/queries'
+import { listOperations }    from '@/features/operation-library/queries'
 import { getGlobalFilter }   from '@/lib/global-filter'
 import { ImportOrderTable }  from '@/features/imports/components/ImportOrderTable'
 
@@ -13,7 +14,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function NhapKhauPage() {
   const { companyId } = await getGlobalFilter()
-  const [me, orders, companies, suppliersRaw, productsRaw, projects, users, warehouses] = await Promise.all([
+  const [me, orders, companies, suppliersRaw, productsRaw, projects, users, warehouses, operations] = await Promise.all([
     getCurrentUser(),
     listImportOrders(companyId || undefined),
     listCompanies(),
@@ -22,6 +23,7 @@ export default async function NhapKhauPage() {
     listProjects(),
     listUsers(),
     listWarehouses(),
+    listOperations(),
   ])
 
   const suppliers = suppliersRaw.map((s) => ({ id: s.id, code: s.code as string, name: s.name }))
@@ -37,6 +39,7 @@ export default async function NhapKhauPage() {
       projects={projects.map((p) => ({ id: p.id, code: p.code, name: p.name, company_id: p.company_id }))}
       users={users.map((u) => ({ id: u.id, name: u.full_name }))}
       warehouses={warehouses.map((w) => ({ id: w.id, code: w.code, name: w.name, company_id: w.company_id, is_default: w.is_default }))}
+      operations={operations.map((o) => ({ id: o.id, code: o.code, name: o.name, group_name: o.group_name }))}
     />
   )
 }

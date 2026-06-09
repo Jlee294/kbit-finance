@@ -23,6 +23,8 @@ type ProjectOpt    = { id: string; code: string; name: string; company_id: strin
 type UserOpt       = { id: string; name: string }
 type WarehouseOpt  = { id: string; code: string; name: string; company_id?: string; is_default?: boolean }
 
+type OperationOpt = { id: string; code: string; name: string; group_name: string | null }
+
 interface Props {
   companies:   SimpleOption[]
   suppliers:   SupplierOpt[]
@@ -30,6 +32,7 @@ interface Props {
   projects:    ProjectOpt[]
   users?:      UserOpt[]
   warehouses?: WarehouseOpt[]
+  operations?: OperationOpt[]   // KTT D3: nghiệp vụ → checklist HS
   editOrder?:  ImportOrderDetail | null
   onDone:      () => void
 }
@@ -47,7 +50,7 @@ function pickDefaultWarehouse(warehouses: WarehouseOpt[], companyId: string): st
   return (list.find((w) => w.is_default) ?? list[0]).id
 }
 
-export function ImportOrderForm({ companies, suppliers, products, projects, users = [], warehouses = [], editOrder, onDone }: Props) {
+export function ImportOrderForm({ companies, suppliers, products, projects, users = [], warehouses = [], operations = [], editOrder, onDone }: Props) {
   const router = useRouter()
   const isEdit = !!editOrder
 
@@ -55,6 +58,7 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
   const [supplierId,      setSupplierId]      = useState(editOrder?.supplier_id ?? '')
   const [quickSupOpen,    setQuickSupOpen]    = useState(false)
   const [extraSuppliers,  setExtraSuppliers]  = useState<SupplierOpt[]>([])
+  const [operationId,     setOperationId]     = useState<string>((editOrder as any)?.operation_id ?? '')
   const [projectId,       setProjectId]       = useState(editOrder?.project_id ?? '')
   const [orderCode,       setOrderCode]       = useState(editOrder?.order_code ?? '')
   const [orderDate,       setOrderDate]       = useState(editOrder?.order_date ?? todayLocal())
@@ -149,6 +153,7 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
         dinh_khoan_co:     dinhKhoanCo      || null,
         nhan_su_thuc_hien: nhanSuId         || null,
         warehouse_id:      warehouseId      || null,
+        operation_id:      operationId      || null,
         items: items.map((r) => ({
           product_id:  r.product_id || null,
           description: r.description || null,
@@ -248,6 +253,21 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
             <option value="domestic">Mua trong nước</option>
           </select>
         </div>
+
+        {/* KTT D3: Nghiệp vụ → checklist hồ sơ */}
+        {operations.length > 0 && (
+          <div className="space-y-1">
+            <Label>Nghiệp vụ <span className="text-xs text-gray-400 font-normal">(checklist HS)</span></Label>
+            <select value={operationId} onChange={(e) => setOperationId(e.target.value)} className={sel}>
+              <option value="">— Không gắn —</option>
+              {operations.map((o) => (
+                <option key={o.id} value={o.id}>
+                  [{o.code}] {o.name}{o.group_name ? ` · ${o.group_name}` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="space-y-1">
           <Label>Đơn vị tiền <span className="text-red-500">*</span></Label>
           <select value={currency} onChange={(e) => { setCurrency(e.target.value as 'VND' | 'KRW'); setExchangeRate('') }} className={sel}>

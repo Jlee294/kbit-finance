@@ -10,6 +10,7 @@ export interface PendingIncome {
   note: string | null
   companies: { name: string } | null
   customers: { name: string } | null
+  doc_count: number          // KTT D2: số chứng từ đính kèm
 }
 
 export interface PendingExpense {
@@ -21,6 +22,26 @@ export interface PendingExpense {
   created_by: string | null
   note: string | null
   companies: { name: string } | null
+  doc_count: number          // KTT D2
+}
+
+/** Đếm chứng từ cho mảng entity_id (KTT D2) */
+async function countDocsByEntity(
+  entityType: 'income' | 'expense',
+  ids: string[],
+): Promise<Map<string, number>> {
+  const result = new Map<string, number>()
+  if (ids.length === 0) return result
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('documents')
+    .select('entity_id')
+    .eq('entity_type', entityType)
+    .in('entity_id', ids)
+  for (const d of (data ?? []) as { entity_id: string }[]) {
+    result.set(d.entity_id, (result.get(d.entity_id) ?? 0) + 1)
+  }
+  return result
 }
 
 export async function listPendingIncome(): Promise<PendingIncome[]> {
@@ -31,7 +52,9 @@ export async function listPendingIncome(): Promise<PendingIncome[]> {
     .in('status', ['draft', 'confirmed'])
     .order('txn_date', { ascending: false })
   if (error) throw new Error(error.message)
-  return (data ?? []) as unknown as PendingIncome[]
+  const rows = (data ?? []) as unknown as Omit<PendingIncome, 'doc_count'>[]
+  const counts = await countDocsByEntity('income', rows.map((r) => r.id))
+  return rows.map((r) => ({ ...r, doc_count: counts.get(r.id) ?? 0 }))
 }
 
 export async function listPendingExpense(): Promise<PendingExpense[]> {
@@ -42,7 +65,9 @@ export async function listPendingExpense(): Promise<PendingExpense[]> {
     .in('status', ['draft', 'confirmed'])
     .order('txn_date', { ascending: false })
   if (error) throw new Error(error.message)
-  return (data ?? []) as unknown as PendingExpense[]
+  const rows = (data ?? []) as unknown as Omit<PendingExpense, 'doc_count'>[]
+  const counts = await countDocsByEntity('expense', rows.map((r) => r.id))
+  return rows.map((r) => ({ ...r, doc_count: counts.get(r.id) ?? 0 }))
 }
 
 export async function countPending(): Promise<number> {

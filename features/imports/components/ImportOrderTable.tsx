@@ -16,6 +16,7 @@ type ProductOpt    = { id: string; code: string; name: string; unit?: string | n
 type ProjectOpt    = { id: string; code: string; name: string; company_id: string }
 type UserOpt       = { id: string; name: string }
 type WarehouseOpt  = { id: string; code: string; name: string; company_id?: string; is_default?: boolean }
+type OperationOpt  = { id: string; code: string; name: string; group_name: string | null }
 
 interface Props {
   rows:        ImportOrderRow[]
@@ -26,9 +27,10 @@ interface Props {
   projects:    ProjectOpt[]
   users?:      UserOpt[]
   warehouses?: WarehouseOpt[]
+  operations?: OperationOpt[]
 }
 
-export function ImportOrderTable({ rows, canWrite, companies, suppliers, products, projects, users = [], warehouses = [] }: Props) {
+export function ImportOrderTable({ rows, canWrite, companies, suppliers, products, projects, users = [], warehouses = [], operations = [] }: Props) {
   const router = useRouter()
   const [addOpen, setAddOpen] = useState(false)
 
@@ -75,6 +77,7 @@ export function ImportOrderTable({ rows, canWrite, companies, suppliers, product
             companies={companies} suppliers={suppliers}
             products={products} projects={projects}
             users={users} warehouses={warehouses}
+            operations={operations}
             onDone={() => setAddOpen(false)}
           />
         </DialogContent>

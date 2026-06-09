@@ -1,6 +1,7 @@
 import { listCompanies }       from '@/features/companies/queries'
 import { listCalendar }         from '@/features/tax-calendar/queries'
 import { TaxCalendarTable }     from '@/features/tax-calendar/components/TaxCalendarTable'
+import { GenerateYearlyButton } from '@/features/tax-calendar/components/GenerateYearlyButton'
 import { upsertCalendarItem }   from '@/features/tax-calendar/actions'
 import { getCurrentUser, canApprove } from '@/lib/auth'
 import { listTaxTypes, taxTypeLabelMap } from '@/features/tax-types/queries'
@@ -39,17 +40,18 @@ export default async function LichThuePage({
         title="Lịch tuân thủ thuế"
         subtitle="Theo dõi nghĩa vụ thuế, nhắc hạn nộp"
         actions={companyId ? (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
             {overdueCount > 0 && (
               <span className="text-xs bg-danger-50 text-danger-700 ring-1 ring-danger-500/30 font-semibold px-2.5 py-1 rounded-full">
-                {overdueCount} quá hạn
+                🔴 {overdueCount} quá hạn
               </span>
             )}
             {dueSoonCount > 0 && (
               <span className="text-xs bg-warning-50 text-warning-700 ring-1 ring-warning-500/30 font-semibold px-2.5 py-1 rounded-full">
-                {dueSoonCount} đến hạn ≤7 ngày
+                ⚠ {dueSoonCount} đến hạn ≤7 ngày
               </span>
             )}
+            {canEdit && <GenerateYearlyButton companyId={companyId} />}
           </div>
         ) : undefined}
       />
