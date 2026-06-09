@@ -28,22 +28,32 @@ export const TABLE_CELL_COMPACT = 'px-2 py-1.5'
 export const CARD = 'rounded-xl border border-gray-200 bg-white shadow-sm'
 
 /* ─────────────────────────────────────────────────────────────
- * DIALOG (form nhập liệu) — 3 cỡ chuẩn, đã kèm sẵn thanh cuộn.
+ * DIALOG (form nhập liệu) — 4 cỡ chuẩn, đã kèm sẵn thanh cuộn.
  * Truyền vào className của <DialogContent>. tailwind-merge sẽ
  * tự ghi đè width mặc định (sm:max-w-sm = 384px) của dialog.tsx.
- *   S ~480px   → form 2–3 trường (1 cột)
- *   M ~640px   → chủ đạo, form danh mục 2 cột
- *   L ~1024px  → form lớn có bảng dòng hàng (đủ chứa bảng min-w-[900px] + padding)
+ *
+ * KTT (E6): đã NỚI rộng dialog để fields hiển thị thoáng — trước đây
+ *           dialog quá hẹp, fields wrap dồn xuống không thấy hết.
+ *
+ *   S  ~560px   → form 2–3 trường (1 cột) — confirm, quick action
+ *   M  ~896px   → form danh mục 2 cột, đối tác, kế hoạch
+ *   L  ~1280px  → form đơn hàng/mua vào có bảng dòng hàng
+ *   XL ~95vw    → grid lớn (KHT 16 chỉ tiêu, bảng kê nhiều cột)
+ *
+ * 'w-[calc(100vw-2rem)]' đảm bảo dialog dùng gần hết viewport ở mọi
+ * breakpoint trước khi max-w cap lại — không bị stuck ở 384px nữa.
  * ───────────────────────────────────────────────────────────── */
-export const DIALOG_SM = 'sm:max-w-md max-h-[90vh] overflow-y-auto'
-export const DIALOG_MD = 'sm:max-w-2xl max-h-[90vh] overflow-y-auto'
-export const DIALOG_LG = 'sm:max-w-5xl max-h-[90vh] overflow-y-auto'
+export const DIALOG_SM = 'w-[calc(100vw-2rem)] sm:max-w-xl max-h-[92vh] overflow-y-auto'
+export const DIALOG_MD = 'w-[calc(100vw-2rem)] sm:max-w-4xl max-h-[92vh] overflow-y-auto'
+export const DIALOG_LG = 'w-[calc(100vw-2rem)] sm:max-w-7xl max-h-[92vh] overflow-y-auto'
+export const DIALOG_XL = 'w-[95vw] !max-w-[95vw] max-h-[95vh] overflow-y-auto'
 
 /** Map cỡ → class, dùng cho prop dialogSize */
 export const DIALOG_SIZE = {
   sm: DIALOG_SM,
   md: DIALOG_MD,
   lg: DIALOG_LG,
+  xl: DIALOG_XL,
 } as const
 
 export type DialogSize = keyof typeof DIALOG_SIZE
