@@ -13,6 +13,7 @@ import type { CreateOrderInput } from '../schema'
 import { FormSection } from '@/components/shared/FormSection'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { QuickProductForm } from '@/features/products/components/QuickProductForm'
+import { QuickAddPartnerDialog } from '@/features/partners/components/QuickAddPartnerDialog'
 import { DIALOG_SM } from '@/lib/ui-tokens'
 import { toast } from 'sonner'
 
@@ -78,6 +79,8 @@ export function OrderForm({ companies, customers, projects, products, warehouses
   // ── Header state ─────────────────────────────────────────────────────────
   const [companyId,     setCompanyId]     = useState(initial?.company?.id   ?? '')
   const [customerId,    setCustomerId]    = useState(initial?.customer?.id  ?? '')
+  const [quickCustOpen, setQuickCustOpen] = useState(false)
+  const [extraCustomers, setExtraCustomers] = useState<CustomerOption[]>([])
   const [projectId,     setProjectId]     = useState(initial?.project?.id   ?? '')
   const [orderDate,     setOrderDate]     = useState(initial?.order_date    ?? todayLocal())
   const [deliveryDate,  setDeliveryDate]  = useState(initial?.delivery_date ?? '')
@@ -243,12 +246,29 @@ export function OrderForm({ companies, customers, projects, products, warehouses
 
         <div className="space-y-1">
           <Label>Khách hàng <span className="text-red-500">*</span></Label>
-          <select value={customerId} onChange={(e) => setCustomerId(e.target.value)}
-            required className={sel}>
-            <option value="">— Chọn khách hàng —</option>
-            {customers.map((c) => <option key={c.id} value={c.id}>[{c.code}] {c.name}</option>)}
-          </select>
+          <div className="flex gap-2">
+            <select value={customerId} onChange={(e) => setCustomerId(e.target.value)}
+              required className={sel + ' flex-1'}>
+              <option value="">— Chọn khách hàng —</option>
+              {[...extraCustomers, ...customers].map((c) => <option key={c.id} value={c.id}>[{c.code}] {c.name}</option>)}
+            </select>
+            <button
+              type="button"
+              onClick={() => setQuickCustOpen(true)}
+              className="h-9 px-3 rounded-md border border-brand-200 bg-brand-50 hover:bg-brand-100 text-brand-700 text-sm font-medium whitespace-nowrap"
+              title="Thêm nhanh khách hàng mới"
+            >+ Mới</button>
+          </div>
         </div>
+        <QuickAddPartnerDialog
+          kind="customer"
+          open={quickCustOpen}
+          onClose={() => setQuickCustOpen(false)}
+          onCreated={(p) => {
+            setExtraCustomers((prev) => [{ id: p.id, code: p.code, name: p.name }, ...prev])
+            setCustomerId(p.id)
+          }}
+        />
 
         <div className="space-y-1">
           <Label>Dự án</Label>

@@ -16,7 +16,11 @@ export async function setOpeningStock(input: unknown): Promise<{ error?: string 
     p_unit_cost:    data.unit_cost,
   })
   if (error) return { error: error.message }
+  // KTT fix: opening phải nhảy ngay lên các view liên quan
   revalidatePath('/kho/so-du-dau-ky')
+  revalidatePath('/kho')               // bảng tồn kho chính
+  revalidatePath('/kho/lich-su')       // sổ kho hiện 'opening'
+  revalidatePath('/kho/gia-von')       // giá vốn moving avg
   return {}
 }
 

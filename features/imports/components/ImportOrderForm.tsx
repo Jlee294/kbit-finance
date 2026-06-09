@@ -12,6 +12,7 @@ import type { ImportOrderDetail } from '../queries'
 import { FormSection } from '@/components/shared/FormSection'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { QuickProductForm } from '@/features/products/components/QuickProductForm'
+import { QuickAddPartnerDialog } from '@/features/partners/components/QuickAddPartnerDialog'
 import { DIALOG_SM } from '@/lib/ui-tokens'
 import { toast } from 'sonner'
 
@@ -52,6 +53,8 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
 
   const [companyId,       setCompanyId]       = useState(editOrder?.company_id ?? '')
   const [supplierId,      setSupplierId]      = useState(editOrder?.supplier_id ?? '')
+  const [quickSupOpen,    setQuickSupOpen]    = useState(false)
+  const [extraSuppliers,  setExtraSuppliers]  = useState<SupplierOpt[]>([])
   const [projectId,       setProjectId]       = useState(editOrder?.project_id ?? '')
   const [orderCode,       setOrderCode]       = useState(editOrder?.order_code ?? '')
   const [orderDate,       setOrderDate]       = useState(editOrder?.order_date ?? todayLocal())
@@ -184,11 +187,28 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
         </div>
         <div className="space-y-1">
           <Label>Nhà cung cấp <span className="text-red-500">*</span></Label>
-          <select value={supplierId} onChange={(e) => setSupplierId(e.target.value)} required className={sel}>
-            <option value="">— Chọn NCC —</option>
-            {suppliers.map((s) => <option key={s.id} value={s.id}>[{s.code}] {s.name}</option>)}
-          </select>
+          <div className="flex gap-2">
+            <select value={supplierId} onChange={(e) => setSupplierId(e.target.value)} required className={sel + ' flex-1'}>
+              <option value="">— Chọn NCC —</option>
+              {[...extraSuppliers, ...suppliers].map((s) => <option key={s.id} value={s.id}>[{s.code}] {s.name}</option>)}
+            </select>
+            <button
+              type="button"
+              onClick={() => setQuickSupOpen(true)}
+              className="h-9 px-3 rounded-md border border-brand-200 bg-brand-50 hover:bg-brand-100 text-brand-700 text-sm font-medium whitespace-nowrap"
+              title="Thêm nhanh NCC mới"
+            >+ Mới</button>
+          </div>
         </div>
+        <QuickAddPartnerDialog
+          kind={orderType === 'import' && currency === 'KRW' ? 'supplier_kr' : 'supplier_vn'}
+          open={quickSupOpen}
+          onClose={() => setQuickSupOpen(false)}
+          onCreated={(p) => {
+            setExtraSuppliers((prev) => [{ id: p.id, code: p.code, name: p.name }, ...prev])
+            setSupplierId(p.id)
+          }}
+        />
         <div className="space-y-1">
           <Label>Mã đơn <span className="text-xs text-gray-400 font-normal">(để trống = tự sinh)</span></Label>
           <Input value={orderCode} onChange={(e) => setOrderCode(e.target.value)} placeholder="Để trống để tự sinh" />

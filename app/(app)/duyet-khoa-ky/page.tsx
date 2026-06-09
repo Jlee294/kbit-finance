@@ -3,19 +3,24 @@ import { getCurrentUser, canApprove } from '@/lib/auth'
 import { listPendingIncome, listPendingExpense } from '@/features/approvals/queries'
 import { listPeriods } from '@/features/periods/queries'
 import { lockPeriod, unlockPeriod } from '@/features/periods/actions'
+import { listCompanies } from '@/features/companies/queries'
+import { BulkLockPanel } from '@/features/periods/components/BulkLockPanel'
 import { ApproveButton } from '@/features/approvals/components/ApproveButton'
 import { formatVND } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/shared/PageHeader'
+import { getGlobalFilter } from '@/lib/global-filter'
 
 export const dynamic = 'force-dynamic'
 
 export default async function DuyetKhoaKyPage() {
-  const [me, pendingIncome, pendingExpense, periods] = await Promise.all([
+  const { year } = await getGlobalFilter()
+  const [me, pendingIncome, pendingExpense, periods, companies] = await Promise.all([
     getCurrentUser(),
     listPendingIncome(),
     listPendingExpense(),
     listPeriods(),
+    listCompanies(),
   ])
 
   const approve = !!me && canApprove(me.role)
@@ -144,13 +149,19 @@ export default async function DuyetKhoaKyPage() {
       {/* ── Khóa kỳ ─────────────────────────────────────────────────────── */}
       <section className="space-y-4">
         <h2 className="font-semibold text-gray-800">Kỳ kế toán</h2>
+
+        {/* B1 (KTT): Khóa nhanh theo quý/năm */}
+        {approve && companies.length > 0 && (
+          <BulkLockPanel
+            companies={companies.map((c: any) => ({ id: c.id, name: c.name, code: c.code }))}
+            defaultYear={year}
+          />
+        )}
+
         <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
           {periods.length === 0 ? (
             <div className="px-5 py-8 text-center text-sm text-gray-400">
-              Chưa có kỳ kế toán.{' '}
-              <Link href="/danh-muc/ky-ke-toan" className="text-brand-700 hover:underline">
-                Tạo kỳ ở đây →
-              </Link>
+              Chưa có kỳ kế toán nào. Dùng nút <span className="font-medium text-brand-700">Khóa Q1/Q2/Q3/Q4 / Cả năm</span> phía trên — kỳ sẽ tự được tạo khi khóa.
             </div>
           ) : (
             <table className="w-full text-sm">
