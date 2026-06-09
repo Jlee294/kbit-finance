@@ -23,7 +23,8 @@ interface Props {
   initial?: { rows: TemplateRow[]; meta?: { from?: string; to?: string; notes?: string } } | null
 }
 
-const PARENTS_ALLOW_SUB = new Set(['6', '7', '8'])
+// KTT E3: cho phép thêm sub ở mọi mục input thuần (formula=null, không phải sub)
+const PARENTS_ALLOW_SUB = new Set(['1', '2', '4', '6', '7', '8', '10', '11'])
 
 const INPUT = 'w-full h-8 rounded-md border border-gray-300 bg-white px-2 text-sm text-right focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100'
 
@@ -147,11 +148,15 @@ export function TaxPlanTemplateForm({ companyId, companyName, projectId, project
           </thead>
           <tbody className="divide-y divide-gray-100">
             {computed.map((r) => {
-              const isFormula = !!r.formula && !(r.formula.startsWith('sum_children') && !rows.some((x) => x.parent === r.id && x.kind === 'sub'))
-              const isParent = PARENTS_ALLOW_SUB.has(r.id)
               const isSub    = r.kind === 'sub'
               const isFixed  = r.kind === 'fixed'
-              const indent   = isSub ? 'pl-10' : (r.parent ? 'pl-10' : '')
+              const isParent = PARENTS_ALLOW_SUB.has(r.id)
+              const hasSubs  = rows.some((x) => x.parent === r.id && x.kind === 'sub')
+              // Read-only nếu: (1) là formula, HOẶC (2) là input-parent đã có sub → auto-sum
+              const isFormula = !!r.formula && !(r.formula.startsWith('sum_children') && !hasSubs)
+              const isAutoSum = isParent && hasSubs && !r.formula
+              const readOnly  = isFormula || isAutoSum
+              const indent    = isSub ? 'pl-10' : (r.parent ? 'pl-10' : '')
               return (
                 <tr key={r.id} className={`${isFixed && !r.parent ? 'bg-brand-50/20' : ''} hover:bg-brand-50/30`}>
                   <td className={`px-3 py-2 text-gray-700 font-mono text-xs ${isFixed && !r.parent ? 'font-semibold text-brand-800' : ''}`}>{r.id}</td>
@@ -167,11 +172,12 @@ export function TaxPlanTemplateForm({ companyId, companyName, projectId, project
                       <span className={isFixed && !r.parent ? 'font-semibold text-brand-800' : 'text-gray-800'}>
                         {r.name}
                         {isFormula && <span className="ml-1 text-[10px] text-gray-400">(tự tính)</span>}
+                        {isAutoSum  && <span className="ml-1 text-[10px] text-gray-400">(tổng các mục con)</span>}
                       </span>
                     )}
                   </td>
                   <td className="px-3 py-2 text-right">
-                    {isFormula ? (
+                    {readOnly ? (
                       <span className={`font-mono ${isFixed && !r.parent ? 'font-semibold text-brand-800' : 'text-gray-700'}`}>
                         {fmtVND(r.amount)}
                       </span>
@@ -223,8 +229,8 @@ export function TaxPlanTemplateForm({ companyId, companyName, projectId, project
       </div>
 
       <p className="text-xs text-gray-500">
-        💡 Mục 6, 7, 8 cho phép thêm chỉ tiêu con (chi phí chi tiết). Nếu CHƯA có chỉ tiêu con,
-        bạn nhập trực tiếp vào parent. Khi thêm con, parent sẽ tự tính = tổng các con.
+        💡 Các mục <strong>1, 2, 4, 6, 7, 8, 10, 11</strong> cho phép thêm chỉ tiêu con (VD: Doanh thu = bán hàng + dịch vụ + cho thuê...).
+        Nếu CHƯA có chỉ tiêu con, bạn nhập trực tiếp vào parent. Khi thêm con, parent sẽ tự tính = tổng các con.
       </p>
 
       <div className="flex gap-2 justify-end">

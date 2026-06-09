@@ -106,7 +106,7 @@ export function CongNoLedger({
                       <td className="px-2 py-1.5 border-r text-gray-800 break-words align-top">
                         {r.party_name}
                         <span className="text-[10px] text-gray-400 ml-1">[{r.party_code}]</span>
-                        {r.deposit ? <span className="block text-[10px] text-blue-600">Đã đặt cọc: {n(r.deposit)} (chưa gắn đơn)</span> : null}
+                        {/* KTT E1: phiếu thu chưa gắn đơn đã được tính vào settled — không show banner deposit nữa */}
                         {isOverSettled(r) ? <span className="block text-[10px] text-red-600 font-medium">⚠ Đã {kind === 'AR' ? 'thu' : 'trả'} vượt số nợ — kiểm tra ghi trùng</span> : null}
                       </td>
                       <td className="px-2 py-1.5 border-r font-mono text-gray-500 break-all align-top">{r.tax_code ?? '—'}</td>

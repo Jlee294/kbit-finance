@@ -18,7 +18,7 @@ interface Props {
   onDone?: () => void
 }
 
-export function OperationForm({ editItem, docTypes, onDone }: Props) {
+export function OperationForm({ editItem, docTypes: initialDocTypes, onDone }: Props) {
   const router = useRouter()
   const [code, setCode] = useState(editItem?.code ?? '')
   const [name, setName] = useState(editItem?.name ?? '')
@@ -32,6 +32,11 @@ export function OperationForm({ editItem, docTypes, onDone }: Props) {
   const [notes, setNotes] = useState(editItem?.notes ?? '')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  // KTT E4: cho phép tạo nhanh doc_types ngay trong form, push vào local list
+  const [docTypes, setDocTypes] = useState<DocumentType[]>(initialDocTypes)
+  function handleDocTypeCreated(dt: { id: string; code: string; name: string }) {
+    setDocTypes((prev) => prev.some((x) => x.id === dt.id) ? prev : [...prev, dt as DocumentType])
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -112,19 +117,21 @@ export function OperationForm({ editItem, docTypes, onDone }: Props) {
         </label>
       </div>
 
-      {/* Doc checklist */}
+      {/* Doc checklist (E4: hỗ trợ tạo nhanh loại chứng từ inline) */}
       <div className="space-y-3">
         <DocChecklistPicker
           label="Hồ sơ bắt buộc"
           docTypes={docTypes}
           selected={requiredIds}
           onChange={setRequiredIds}
+          onDocTypeCreated={handleDocTypeCreated}
         />
         <DocChecklistPicker
           label="Hồ sơ khuyến nghị (không bắt buộc)"
           docTypes={docTypes}
           selected={recommendedIds.filter((id) => !requiredIds.includes(id))}
           onChange={(ids) => setRecommendedIds(ids)}
+          onDocTypeCreated={handleDocTypeCreated}
         />
       </div>
 

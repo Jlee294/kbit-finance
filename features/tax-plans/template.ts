@@ -57,8 +57,11 @@ export const FIXED_TEMPLATE: TemplateRow[] = [
  * Tính theo thứ tự xuất hiện trong array; vì 1→16 cố định nên formula tham chiếu
  * id thấp hơn LUÔN có giá trị đã tính trước khi đến formula đó.
  *
- * Special: 8.1 là sub-info-only của 8 (lãi vay nằm trong chi phí tài chính),
- * KHÔNG được cộng vào parent. Hardcode skip 8.1 trong sum_children:8.
+ * Special:
+ *   • 8.1 là sub-info-only (lãi vay trong chi phí tài chính), KHÔNG cộng vào parent 8
+ *   • E3 (KTT): MỌI mục input (formula=null) đều cho thêm sub-items.
+ *     Nếu mục có ≥1 sub thì amount = tổng các sub (auto-sum). Nếu không có sub
+ *     thì giữ giá trị user nhập trực tiếp. Áp cho 1,2,4,6,7,8,10,11.
  */
 export function recomputeTemplate(rows: TemplateRow[]): TemplateRow[] {
   const map = new Map<string, TemplateRow>()
@@ -68,6 +71,26 @@ export function recomputeTemplate(rows: TemplateRow[]): TemplateRow[] {
     return Number(map.get(id)?.amount ?? 0)
   }
 
+  // Helper: sum các sub của 1 parent (loại trừ {parent}.1 = sub-info-only của 8)
+  function sumChildren(parentId: string): { sum: number; hasSub: boolean } {
+    const subs = rows.filter((x) => x.parent === parentId && x.kind === 'sub' && x.id !== `${parentId}.1`)
+    return { sum: subs.reduce((s, x) => s + Number(x.amount), 0), hasSub: subs.length > 0 }
+  }
+
+  // PASS 1: với mục input thuần (formula=null, fixed, không có parent) — nếu có sub
+  //   thì auto-sum (KTT E3). 8.1 là sub-info-only nên parent 8 chỉ tổng các sub khác
+  //   (skip 8.1 — đã handle trong sumChildren). Mục 9/12/13/15/16 vẫn được tính từ
+  //   các giá trị tổng hợp này ở PASS 2.
+  const INPUT_PARENTS = new Set(['1', '2', '4', '6', '7', '8', '10', '11'])
+  for (const r of rows) {
+    if (r.kind !== 'fixed' || r.formula !== null) continue
+    if (!INPUT_PARENTS.has(r.id)) continue
+    const { sum, hasSub } = sumChildren(r.id)
+    if (hasSub) map.set(r.id, { ...map.get(r.id)!, amount: round2(sum) })
+    // không có sub → giữ giá trị user nhập (skip update)
+  }
+
+  // PASS 2: tính các formula rows
   for (const r of rows) {
     if (!r.formula) continue
     const [op, argStr] = r.formula.split(':')
@@ -88,13 +111,11 @@ export function recomputeTemplate(rows: TemplateRow[]): TemplateRow[] {
         break
       }
       case 'sum_children': {
-        const parent = args[0]
-        val = rows
-          .filter((x) => x.parent === parent && x.id !== `${parent}.1` && x.kind === 'sub')
-          .reduce((s, x) => s + Number(x.amount), 0)
-        // Nếu không có sub nào, GIỮ giá trị user nhập trực tiếp (input fallback)
-        const hasSub = rows.some((x) => x.parent === parent && x.kind === 'sub')
-        if (!hasSub) val = rowAmount(r.id)
+        // Legacy formula cho 6/7/8 (giờ đã chuyển sang PASS 1, formula vẫn giữ để
+        // backward compat). Lấy lại tổng từ map đã update ở PASS 1.
+        val = rowAmount(r.id)
+        const { sum, hasSub } = sumChildren(args[0])
+        if (hasSub) val = sum
         break
       }
       default: val = rowAmount(r.id)

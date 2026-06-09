@@ -318,22 +318,32 @@ export async function getReceivableLedger(year: number, companyId?: string): Pro
       g.detail.push({ id: c.id, order_code: `CTK ${c.ky_hieu ?? ''}`.trim(), order_date: c.txn_date, total: src.total, paid: src.paid, outstanding: 0, is_cash: true })
     }
   }
-  const rows = assembleLedger(groups, year, '131')
-  // Tiền cọc KH chưa gắn đơn (income.is_unassigned) — hiển thị cạnh số dư để nhắc, KHÔNG tự trừ
-  let dq = supabase.from('income_transactions').select('customer_id, amount_vnd, amount').eq('is_unassigned', true)
+  // KTT E1: Phiếu thu CHƯA GẮN ĐƠN vẫn vào công nợ phải thu (giảm closing).
+  // Gộp tất cả income.is_unassigned có customer_id vào settled — tạo group mới nếu KH chưa có order.
+  let dq = supabase
+    .from('income_transactions')
+    .select('id, customer_id, amount_vnd, amount, txn_date, status, customers!customer_id ( code, name )')
+    .eq('is_unassigned', true)
+    .in('status', ['confirmed', 'approved'])
+    .lte('txn_date', yearEnd)
   if (companyId) dq = dq.eq('company_id', companyId)
   const { data: depData } = await dq
-  const depMap = new Map<string, number>()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const d of (depData ?? []) as any[]) {
     if (!d.customer_id) continue
-    depMap.set(d.customer_id, (depMap.get(d.customer_id) ?? 0) + Number(d.amount_vnd ?? d.amount ?? 0))
+    const amount = Number(d.amount_vnd ?? d.amount ?? 0)
+    let g = groups.get(d.customer_id)
+    if (!g) {
+      g = { party_id: d.customer_id, party_code: d.customers?.code ?? '', party_name: d.customers?.name ?? '', tax_code: null, source: [], detail: [] }
+      groups.set(d.customer_id, g)
+    }
+    // Treat as "fully paid" pseudo-order: total=0, paid=amount → giảm closing
+    g.source.push({ order_date: d.txn_date, total: 0, paid: amount })
+    if (d.txn_date >= yearStart) {
+      g.detail.push({ id: d.id, order_code: 'Thu chưa gắn đơn', order_date: d.txn_date, total: 0, paid: amount, outstanding: -amount, is_cash: true })
+    }
   }
-  for (const r of rows) {
-    const dep = depMap.get(r.party_id)
-    if (dep) r.deposit = dep
-  }
-  return rows
+  return assembleLedger(groups, year, '131')
 }
 
 export async function getPayableLedger(year: number, companyId?: string): Promise<LedgerRow[]> {
@@ -395,6 +405,32 @@ export async function getPayableLedger(year: number, companyId?: string): Promis
     g.source.push(src)
     if (c.txn_date >= yearStart) {
       g.detail.push({ id: c.id, order_code: `CTK ${c.ky_hieu ?? ''}`.trim(), order_date: c.txn_date, total: src.total, paid: src.paid, outstanding: 0, is_cash: true })
+    }
+  }
+
+  // KTT E1: Phiếu chi gắn NCC nhưng CHƯA gắn đơn (supplier_order_id IS NULL)
+  // vẫn vào công nợ phải trả → giảm closing balance NCC đó.
+  let eq = supabase
+    .from('expense_transactions')
+    .select('id, supplier_id, supplier_order_id, amount_vnd, txn_date, status, suppliers!supplier_id ( code, name )')
+    .not('supplier_id', 'is', null)
+    .is('supplier_order_id', null)
+    .in('status', ['confirmed', 'approved'])
+    .lte('txn_date', yearEnd)
+  if (companyId) eq = eq.eq('company_id', companyId)
+  const { data: expData } = await eq
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const e of (expData ?? []) as any[]) {
+    const id = e.supplier_id
+    let g = groups.get(id)
+    if (!g) {
+      g = { party_id: id, party_code: e.suppliers?.code ?? '', party_name: e.suppliers?.name ?? '', tax_code: null, source: [], detail: [] }
+      groups.set(id, g)
+    }
+    const amount = Number(e.amount_vnd ?? 0)
+    g.source.push({ order_date: e.txn_date, total: 0, paid: amount })
+    if (e.txn_date >= yearStart) {
+      g.detail.push({ id: e.id, order_code: 'Chi chưa gắn đơn', order_date: e.txn_date, total: 0, paid: amount, outstanding: -amount, is_cash: true })
     }
   }
   return assembleLedger(groups, year, '331')

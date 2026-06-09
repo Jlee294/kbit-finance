@@ -105,26 +105,36 @@ export async function listTransactions(opts: {
   limit?: number
 }): Promise<TxnRow[]> {
   const supabase = await createClient()
-  let q = supabase
-    .from('warehouse_transactions')
-    .select(`
-      id, txn_date, txn_type, qty, reason, note, ref_order_id, has_invoice,
+  // KTT C3: has_invoice optional — fallback nếu migration 0041 chưa chạy
+  const buildSelect = (withInvoice: boolean) => `
+      id, txn_date, txn_type, qty, reason, note, ref_order_id${withInvoice ? ', has_invoice' : ''},
       warehouses!warehouse_id        ( name ),
       products!product_id            ( code, name ),
       to_wh:warehouses!to_warehouse_id ( name ),
       users!created_by               ( full_name ),
       companies!company_id           ( name )
-    `)
-    .order('created_at', { ascending: false })
-    .limit(opts.limit ?? 100)
+    `
 
-  if (opts.warehouseId)   q = q.eq('warehouse_id', opts.warehouseId)
-  if (opts.productId)     q = q.eq('product_id', opts.productId)
-  if (opts.txnType)       q = q.eq('txn_type', opts.txnType)
-  if (opts.companyId)     q = q.eq('company_id', opts.companyId)
-  if (opts.onlyNoInvoice) q = q.eq('has_invoice', false)
+  function build(withInvoice: boolean) {
+    let q = supabase
+      .from('warehouse_transactions')
+      .select(buildSelect(withInvoice))
+      .order('created_at', { ascending: false })
+      .limit(opts.limit ?? 100)
+    if (opts.warehouseId)   q = q.eq('warehouse_id', opts.warehouseId)
+    if (opts.productId)     q = q.eq('product_id', opts.productId)
+    if (opts.txnType)       q = q.eq('txn_type', opts.txnType)
+    if (opts.companyId)     q = q.eq('company_id', opts.companyId)
+    if (opts.onlyNoInvoice && withInvoice) q = q.eq('has_invoice', false)
+    return q
+  }
 
-  const { data, error } = await q
+  let { data, error } = await build(true)
+  if (error && /has_invoice/i.test(error.message)) {
+    // Column chưa có (mig 0041 chưa chạy) → fallback không có has_invoice
+    const fb = await build(false)
+    data = fb.data; error = fb.error
+  }
   if (error) { console.error('[listTransactions]', error.message); return [] }
 
   interface TxnRaw {
