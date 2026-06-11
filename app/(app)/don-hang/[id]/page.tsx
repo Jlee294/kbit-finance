@@ -10,6 +10,7 @@ import { listWarehouses } from '@/features/warehouse/queries'
 import { listUsers } from '@/features/users/queries'
 import { FulfillmentBadge, PaymentBadge } from '@/features/orders/components/StatusBadges'
 import { OrderDetailActions } from '@/features/orders/components/OrderDetailActions'
+import { PushOrderToStockButton } from '@/features/orders/components/PushOrderToStockButton'
 import { computeOrderTotals } from '@/features/orders/status'
 import { formatVND, formatDate } from '@/lib/format'
 
@@ -87,6 +88,19 @@ export default async function OrderDetailPage({ params, searchParams }: Props) {
             />
           )}
         </div>
+
+        {/* KTT H2: trạng thái kho + nút trừ kho thủ công nếu chưa trừ */}
+        {write && (
+          <div className="mt-4">
+            <PushOrderToStockButton
+              orderId={order.id}
+              stockDeducted={order.stock_deducted}
+              fulfillmentStatus={order.fulfillment_status}
+              warehouseId={order.warehouse?.id ?? null}
+              hasProducts={order.items.some((it: any) => !!it.product_id)}
+            />
+          </div>
+        )}
 
         {/* Financial summary */}
         <div className="mt-6 grid grid-cols-3 gap-4">

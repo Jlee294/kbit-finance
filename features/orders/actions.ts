@@ -14,6 +14,7 @@ import { computeOrderTotals, derivePaymentStatus } from './status'
 import { buildOrderCode, orderCodePrefix } from './order-code'
 import { getNextOrderSeq } from './queries'
 import { defaultWarehouseId } from '@/features/warehouse/queries'
+import { deductOrderStock }   from '@/features/warehouse/actions'
 import { computeStockDeltas } from './stock-deltas'
 import { maybeDeductOrderStock } from './stock-sync'
 
@@ -396,4 +397,49 @@ export async function deleteOrder(id: string) {
   if (error) throw new Error(error.message)
 
   revalidatePath('/don-hang')
+}
+
+/**
+ * KTT H2: Đẩy đơn bán (chưa có stock_deducted) vào kho thủ công.
+ * Cho đơn cũ không tự trừ kho khi tạo / order_date trước khi có kho / draft sau đó duyệt.
+ */
+export async function pushOrderToStock(orderId: string): Promise<{ ok: true; pushed: number } | { ok: false; error: string }> {
+  const supabase = await createClient()
+  const { data: order } = await supabase
+    .from('customer_orders')
+    .select('id, company_id, fulfillment_status, warehouse_id, stock_deducted, order_date')
+    .eq('id', orderId)
+    .single()
+  if (!order) return { ok: false, error: 'Không tìm thấy đơn' }
+  if (order.stock_deducted) return { ok: false, error: 'Đơn đã trừ kho rồi. Vào Kho → Lịch sử xem dòng.' }
+  if (order.fulfillment_status === 'draft') return { ok: false, error: 'Đơn còn Nháp — chuyển sang Đã xác nhận / Đã giao trước khi đẩy kho.' }
+
+  let warehouseId: string | null = order.warehouse_id as string | null
+  if (!warehouseId) {
+    warehouseId = await defaultWarehouseId(order.company_id as string)
+    if (!warehouseId) return { ok: false, error: 'Công ty này chưa có kho. Vào Danh mục → Kho để tạo trước.' }
+    await supabase.from('customer_orders').update({ warehouse_id: warehouseId }).eq('id', orderId)
+  }
+
+  const { data: items } = await supabase
+    .from('customer_order_items')
+    .select('product_id, qty')
+    .eq('order_id', orderId)
+
+  const stockItems = (items ?? [])
+    .filter((r: any) => !!r.product_id)
+    .map((r: any) => ({ product_id: r.product_id, quantity: Number(r.qty) }))
+
+  if (stockItems.length === 0) {
+    return { ok: false, error: 'Đơn không có dòng nào gắn Mã hàng. Sửa đơn rồi đẩy lại.' }
+  }
+
+  const res = await deductOrderStock(orderId, warehouseId, stockItems, order.order_date as string)
+  if (res.error) return { ok: false, error: res.error }
+
+  revalidatePath('/don-hang')
+  revalidatePath(`/don-hang/${orderId}`)
+  revalidatePath('/kho')
+  revalidatePath('/kho/lich-su')
+  return { ok: true, pushed: stockItems.length }
 }

@@ -208,12 +208,79 @@ export async function updateImportOrder(id: string, input: unknown): Promise<voi
     qty:         it.qty,
     unit_price:  it.unit_price,
     unit_cost:   unitCosts[i],
+    lot_no:      it.lot_no      || null,      // KTT G
+    expiry_date: it.expiry_date || null,      // KTT G
   }))
   const { error: e2 } = await supabase.from('supplier_order_items').insert(rows)
   if (e2) throw new Error(e2.message)
 
   revalidatePath('/nhap-khau')
   revalidatePath(`/nhap-khau/${id}`)
+}
+
+/**
+ * KTT H2: Đẩy đơn nhập (chưa có stock_added) vào kho.
+ * Hữu ích cho đơn cũ tạo trước khi có kho hoặc đơn lúc tạo bị skip vì thiếu kho/sản phẩm.
+ *
+ * Idempotent: nếu đơn đã stock_added=true → không làm gì.
+ */
+export async function pushImportOrderToStock(orderId: string): Promise<{ ok: true; pushed: number } | { ok: false; error: string }> {
+  const supabase = await createClient()
+  const { data: order, error: oErr } = await supabase
+    .from('supplier_orders')
+    .select('id, company_id, warehouse_id, stock_added, order_date')
+    .eq('id', orderId)
+    .single()
+  if (oErr) return { ok: false, error: oErr.message }
+  if (!order) return { ok: false, error: 'Không tìm thấy đơn' }
+  if (order.stock_added) return { ok: false, error: 'Đơn đã đẩy vào kho rồi (stock_added=true). Vào trang Kho → Lịch sử để xem.' }
+
+  // Nếu chưa có warehouse_id → tự pick kho chính của công ty
+  let warehouseId: string | null = order.warehouse_id as string | null
+  if (!warehouseId) {
+    warehouseId = await defaultWarehouseId(order.company_id as string)
+    if (!warehouseId) return { ok: false, error: 'Công ty này chưa có kho nào. Vào Danh mục → Kho để tạo kho trước.' }
+    // Cập nhật đơn để ghi nhận kho đã chọn
+    await supabase.from('supplier_orders').update({ warehouse_id: warehouseId }).eq('id', orderId)
+  }
+
+  // Lấy dòng hàng (chỉ những dòng có product_id mới đẩy được)
+  const { data: itemsRaw, error: iErr } = await supabase
+    .from('supplier_order_items')
+    .select('product_id, qty, unit_cost, lot_no, expiry_date')
+    .eq('order_id', orderId)
+  if (iErr) return { ok: false, error: iErr.message }
+
+  const stockItems = (itemsRaw ?? [])
+    .filter((it: any) => !!it.product_id)
+    .map((it: any) => ({
+      product_id:  it.product_id,
+      qty:         it.qty,
+      unit_cost:   it.unit_cost,
+      lot_no:      it.lot_no      ?? null,
+      expiry_date: it.expiry_date ?? null,
+    }))
+
+  if (stockItems.length === 0) {
+    return { ok: false, error: 'Đơn này không có dòng nào gắn Mã hàng (chỉ có mô tả). Sửa đơn, chọn Mã hàng cho từng dòng rồi đẩy lại.' }
+  }
+
+  const { error: rpcErr } = await supabase.rpc('kbit_receive_stock_batch', {
+    p_warehouse_id: warehouseId,
+    p_items:        stockItems,
+    p_txn_date:     order.order_date,
+    p_note:         `Đẩy vào kho từ đơn ${orderId}`,
+    p_created_by:   null,
+  })
+  if (rpcErr) return { ok: false, error: 'RPC lỗi: ' + rpcErr.message }
+
+  await supabase.from('supplier_orders').update({ stock_added: true }).eq('id', orderId)
+
+  revalidatePath('/nhap-khau')
+  revalidatePath(`/nhap-khau/${orderId}`)
+  revalidatePath('/kho')
+  revalidatePath('/kho/lich-su')
+  return { ok: true, pushed: stockItems.length }
 }
 
 /** Ghi thanh toán NCC: cộng dồn amount_paid → DB tự tính lại outstanding. */

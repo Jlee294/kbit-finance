@@ -8,6 +8,7 @@ import { listProducts }   from '@/features/products/queries'
 import { listProjects }   from '@/features/projects/queries'
 import { formatVND, formatKRW } from '@/lib/format'
 import { ImportOrderDetailClient } from '@/features/imports/components/ImportOrderDetailClient'
+import { PushToStockButton } from '@/features/imports/components/PushToStockButton'
 import { getOperationChecklist } from '@/features/operation-library/checklist'
 import { DocumentChecklist } from '@/features/operation-library/components/DocumentChecklist'
 import { createClient } from '@/lib/supabase/server'
@@ -150,6 +151,16 @@ export default async function ImportOrderDetailPage({ params, searchParams }: { 
           <div className="rounded-lg bg-purple-50 border border-purple-100 px-4 py-2 text-xs text-purple-700">
             🔗 Giao dịch nội bộ — loại trừ khi hợp nhất báo cáo Group
           </div>
+        )}
+
+        {/* KTT H2: trạng thái đồng bộ kho + nút đẩy thủ công nếu chưa đẩy */}
+        {canWrite && (
+          <PushToStockButton
+            orderId={order.id}
+            stockAdded={order.stock_added}
+            warehouseId={order.warehouse_id ?? null}
+            hasProducts={order.supplier_order_items.some((it) => !!it.product_id)}
+          />
         )}
       </div>
 
