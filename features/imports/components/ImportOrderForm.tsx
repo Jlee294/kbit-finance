@@ -182,7 +182,7 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
     <form onSubmit={handleSubmit} className="space-y-6">
 
       {/* ── Header ────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1">
           <Label>Công ty <span className="text-red-500">*</span></Label>
           <select value={companyId} onChange={(e) => { setCompanyId(e.target.value); setProjectId(''); setWarehouseId(pickDefaultWarehouse(warehouses, e.target.value)) }} required className={sel}>
@@ -278,14 +278,14 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
 
         {/* C4/D4: tỷ giá chỉ hiện khi KRW */}
         {currency === 'KRW' && (
-          <div className="space-y-1 col-span-2">
+          <div className="space-y-1 md:col-span-2">
             <Label>
               Tỷ giá ghi nợ (KRW→VNĐ) <span className="text-red-500">*</span>
-              <span className="ml-2 text-xs text-gray-400 font-normal">Phase 4 dùng để tính chênh lệch tỷ giá khi trả NCC</span>
             </Label>
             <Input type="number" min="0.001" step="0.001"
               value={exchangeRate} onChange={(e) => setExchangeRate(e.target.value)}
               placeholder="VD: 18" required={currency === 'KRW'} />
+            <p className="text-xs text-gray-400">Phase 4 dùng để tính chênh lệch tỷ giá khi trả NCC</p>
           </div>
         )}
       </div>
@@ -293,29 +293,25 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
       {/* ── Chi phí nhập khẩu ─────────────────────────────────────── */}
       <div>
         <h3 className="text-sm font-semibold text-gray-700 mb-3">Chi phí nhập khẩu ({currency})</h3>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1">
-            <Label>Giá mua hàng (goods_value) <span className="text-red-500">*</span></Label>
+            <Label>Giá mua hàng <span className="text-red-500">*</span></Label>
             <Input type="number" min="0" step="1"
               value={goodsValue} onChange={(e) => setGoodsValue(e.target.value)} required />
           </div>
           <div className="space-y-1">
-            <Label>Thuế nhập khẩu (import_duty)</Label>
+            <Label>Thuế nhập khẩu</Label>
             <Input type="number" min="0" step="1" value={importDuty} onChange={(e) => setImportDuty(e.target.value)} />
           </div>
           <div className="space-y-1">
-            <Label>
-              VAT khâu nhập khẩu
-              <span className="ml-1 text-xs text-brand-700 font-normal">(khấu trừ riêng — KHÔNG tính vào giá vốn)</span>
-            </Label>
+            <Label>VAT khâu nhập khẩu</Label>
             <Input type="number" min="0" step="1" value={vatImport} onChange={(e) => setVatImport(e.target.value)} />
+            <p className="text-xs text-brand-700">Khấu trừ riêng — KHÔNG tính vào giá vốn</p>
           </div>
           <div className="space-y-1">
-            <Label>
-              Phí khác (other_fees)
-              <span className="ml-1 text-xs text-gray-400 font-normal">HQ, lưu kho, vận chuyển, đại lý</span>
-            </Label>
+            <Label>Phí khác</Label>
             <Input type="number" min="0" step="1" value={otherFees} onChange={(e) => setOtherFees(e.target.value)} />
+            <p className="text-xs text-gray-400">HQ, lưu kho, vận chuyển, đại lý</p>
           </div>
         </div>
 
@@ -416,7 +412,7 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
 
       {/* ── Thông tin hóa đơn ────────────────────────────────────── */}
       <FormSection title="Thông tin hóa đơn" description="Cho bảng kê mua vào" variant="elevated">
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <div className="space-y-1">
             <Label className="text-xs">Ký hiệu mẫu HĐ</Label>
             <Input value={invoiceTemplate} onChange={(e) => setInvoiceTemplate(e.target.value)} placeholder="VD: 1/001" className="h-8 text-sm" />

@@ -2,6 +2,7 @@ import { listTasks }          from '@/features/tasks/queries'
 import { TaskList }            from '@/features/tasks/components/TaskList'
 import { createTask, generateAutoTasks } from '@/features/tasks/actions'
 import { listCompanies }       from '@/features/companies/queries'
+import { listUsers }           from '@/features/users/queries'
 import { TASK_STATUSES, TASK_STATUS_LABELS } from '@/features/tasks/schema'
 import { getCurrentUser, canApprove } from '@/lib/auth'
 import { Button }              from '@/components/ui/button'
@@ -25,7 +26,7 @@ export default async function CongViecPage({
   const companyId    = sp.company
   const statusFilter = sp.status as any || ''
 
-  const [companies, me] = await Promise.all([listCompanies(), getCurrentUser()])
+  const [companies, users, me] = await Promise.all([listCompanies(), listUsers(), getCurrentUser()])
   const canEdit = !!me && canApprove(me.role)
 
   const tasks = await listTasks({ status: statusFilter || undefined })
@@ -73,36 +74,63 @@ export default async function CongViecPage({
         <FilterSubmit />
       </FilterBar>
 
-      {/* Form tạo task thủ công */}
+      {/* Form tạo task thủ công — KTT F2: + người phụ trách + ghi chú */}
       <form
         action={async (fd: FormData) => {
           'use server'
           await createTask({
-            title:    fd.get('title')    as string,
-            due_date: fd.get('due_date') as string || undefined,
+            title:       fd.get('title')       as string,
+            due_date:    fd.get('due_date')    as string || undefined,
+            assigned_to: (fd.get('assigned_to') as string) || null,
+            note:        (fd.get('note')        as string) || undefined,
           })
         }}
-        className="flex gap-3 items-end bg-white rounded-xl border px-4 py-3 shadow-sm"
+        className="bg-white rounded-xl border px-4 py-3 shadow-sm space-y-3"
       >
-        <div className="flex-1 space-y-1">
-          <label className="text-xs text-gray-500">Tiêu đề công việc mới</label>
-          <input
-            name="title"
-            required
-            className="w-full h-8 rounded-md border text-sm px-2"
-            placeholder="Nhập tiêu đề..."
-          />
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+          <div className="md:col-span-5 space-y-1">
+            <label className="text-xs text-gray-500">Tiêu đề công việc <span className="text-red-500">*</span></label>
+            <input
+              name="title"
+              required
+              className="w-full h-9 rounded-md border border-gray-300 text-sm px-2 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
+              placeholder="Nhập tiêu đề..."
+            />
+          </div>
+          <div className="md:col-span-3 space-y-1">
+            <label className="text-xs text-gray-500">Người phụ trách</label>
+            <select
+              name="assigned_to"
+              defaultValue=""
+              className="w-full h-9 rounded-md border border-gray-300 bg-white text-sm px-2 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
+            >
+              <option value="">— Không gán —</option>
+              {users.map((u: any) => (
+                <option key={u.id} value={u.id}>{u.full_name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="md:col-span-2 space-y-1">
+            <label className="text-xs text-gray-500">Hạn</label>
+            <input type="date" name="due_date" className="w-full h-9 rounded-md border border-gray-300 text-sm px-2" />
+          </div>
+          <div className="md:col-span-2 flex justify-end">
+            <button
+              type="submit"
+              className="h-9 w-full md:w-auto px-4 bg-brand-800 text-white rounded-md text-sm hover:bg-brand-700"
+            >
+              + Tạo công việc
+            </button>
+          </div>
         </div>
         <div className="space-y-1">
-          <label className="text-xs text-gray-500">Hạn (tùy chọn)</label>
-          <input type="date" name="due_date" className="h-8 rounded-md border text-sm px-2" />
+          <label className="text-xs text-gray-500">Ghi chú (tùy chọn)</label>
+          <input
+            name="note"
+            className="w-full h-9 rounded-md border border-gray-300 text-sm px-2 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
+            placeholder="Mô tả thêm cho công việc..."
+          />
         </div>
-        <button
-          type="submit"
-          className="h-8 px-3 bg-brand-800 text-white rounded-md text-sm hover:bg-brand-700"
-        >
-          Tạo
-        </button>
       </form>
 
       <TaskList tasks={tasks} />

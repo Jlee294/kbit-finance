@@ -1,7 +1,8 @@
-import { markFiled, deleteCalendarItem } from '../actions'
-import type { CalendarItem }             from '../queries'
-import { Button }                        from '@/components/ui/button'
-import { todayLocal, formatLocalDate }   from '@/lib/format'
+import { deleteCalendarItem } from '../actions'
+import type { CalendarItem }    from '../queries'
+import { Button }                from '@/components/ui/button'
+import { todayLocal, formatLocalDate } from '@/lib/format'
+import { FiledDateCell }         from './FiledDateCell'
 
 function statusBadge(item: CalendarItem) {
   const today = todayLocal()
@@ -38,6 +39,7 @@ export function TaxCalendarTable({ items, canEdit, taxTypeLabels = {} }: Props) 
             <th className="px-4 py-3 text-left">Kỳ</th>
             <th className="px-4 py-3 text-left">Hạn nộp</th>
             <th className="px-4 py-3 text-center">Trạng thái</th>
+            <th className="px-4 py-3 text-left">Ngày nộp</th>
             <th className="px-4 py-3 text-left">Ghi chú</th>
             {canEdit && <th className="px-4 py-3" />}
           </tr>
@@ -53,25 +55,25 @@ export function TaxCalendarTable({ items, canEdit, taxTypeLabels = {} }: Props) 
                 {new Date(item.due_date).toLocaleDateString('vi-VN')}
               </td>
               <td className="px-4 py-2.5 text-center">{statusBadge(item)}</td>
+              <td className="px-4 py-2.5">
+                <FiledDateCell
+                  id={item.id}
+                  status={item.status}
+                  due_date={item.due_date}
+                  filed_date={item.filed_date}
+                  canEdit={canEdit}
+                />
+              </td>
               <td className="px-4 py-2.5 text-gray-400 text-xs max-w-[140px] truncate">
                 {item.note ?? '—'}
               </td>
               {canEdit && (
                 <td className="px-4 py-2.5 text-right">
-                  <div className="flex gap-2 justify-end">
-                    {item.status === 'pending' && (
-                      <form action={markFiled.bind(null, item.id)}>
-                        <Button size="sm" variant="outline" type="submit" className="text-xs">
-                          Đã nộp
-                        </Button>
-                      </form>
-                    )}
-                    <form action={deleteCalendarItem.bind(null, item.id)}>
-                      <Button size="sm" variant="ghost" type="submit" className="text-xs text-red-500">
-                        Xóa
-                      </Button>
-                    </form>
-                  </div>
+                  <form action={deleteCalendarItem.bind(null, item.id)}>
+                    <Button size="sm" variant="ghost" type="submit" className="text-xs text-red-500">
+                      Xóa
+                    </Button>
+                  </form>
                 </td>
               )}
             </tr>

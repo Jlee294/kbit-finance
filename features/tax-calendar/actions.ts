@@ -2,6 +2,7 @@
 
 import { revalidatePath }     from 'next/cache'
 import { createClient }       from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/auth'
 import { calendarItemSchema } from './schema'
 
 export async function upsertCalendarItem(raw: unknown) {
@@ -26,12 +27,53 @@ export async function upsertCalendarItem(raw: unknown) {
   revalidatePath('/lich-thue')
 }
 
-export async function markFiled(id: string) {
+/** KTT F1: Đánh dấu đã nộp, ghi luôn filed_date (mặc định hôm nay). */
+export async function markFiled(id: string, filedDate?: string) {
+  const supabase = await createClient()
+  const me = await getCurrentUser()
+  const date = filedDate || new Date().toISOString().slice(0, 10)
+  // Defensive: thử update với filed_date trước, fallback nếu mig 0044 chưa chạy
+  let { error } = await supabase
+    .from('tax_compliance_calendar')
+    .update({ status: 'filed', filed_date: date, filed_by: me?.id ?? null })
+    .eq('id', id)
+  if (error && /filed_date|filed_by/i.test(error.message)) {
+    const fb = await supabase
+      .from('tax_compliance_calendar')
+      .update({ status: 'filed' })
+      .eq('id', id)
+    error = fb.error
+  }
+  if (error) throw new Error(error.message)
+  revalidatePath('/lich-thue')
+}
+
+/** KTT F1: Sửa lại ngày nộp (đã nộp nhưng quên ghi lại đúng ngày). */
+export async function updateFiledDate(id: string, filedDate: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(filedDate)) throw new Error('Ngày không hợp lệ')
   const supabase = await createClient()
   const { error } = await supabase
     .from('tax_compliance_calendar')
-    .update({ status: 'filed' })
+    .update({ status: 'filed', filed_date: filedDate })
     .eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/lich-thue')
+}
+
+/** KTT F1: Bỏ đánh dấu nộp (lỡ tay) → quay về pending, xóa filed_date. */
+export async function markUnfiled(id: string) {
+  const supabase = await createClient()
+  let { error } = await supabase
+    .from('tax_compliance_calendar')
+    .update({ status: 'pending', filed_date: null, filed_by: null })
+    .eq('id', id)
+  if (error && /filed_date|filed_by/i.test(error.message)) {
+    const fb = await supabase
+      .from('tax_compliance_calendar')
+      .update({ status: 'pending' })
+      .eq('id', id)
+    error = fb.error
+  }
   if (error) throw new Error(error.message)
   revalidatePath('/lich-thue')
 }
