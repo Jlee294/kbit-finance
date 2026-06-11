@@ -43,12 +43,16 @@ export const CARD = 'rounded-xl border border-gray-200 bg-white shadow-sm'
  * 'w-[calc(100vw-2rem)]' đảm bảo dialog dùng gần hết viewport ở mọi
  * breakpoint trước khi max-w cap lại — không bị stuck ở 384px nữa.
  * ───────────────────────────────────────────────────────────── */
-// KTT H1: dùng ! modifier để force override mọi default + giữ class width consistent.
+// KTT H1+I1: dùng ! modifier để force override + full-width cho form lớn (LG/XL)
 // Bỏ luôn sm:max-w-sm trong dialog.tsx (mig kèm) → các token này là 1 nguồn sự thật.
+//
+// LG + XL: KTT yêu cầu 'to ngang hết màn hình mà không phải kéo sang ngang'
+//   → dùng calc(100vw - margin) cho cả w VÀ max-w để KHÔNG bị cap ở size cố định.
+//   → dialog luôn fill viewport, không có khoảng thừa bên phải.
 export const DIALOG_SM = '!w-[calc(100vw-2rem)] sm:!max-w-xl  max-h-[92vh] overflow-y-auto'
-export const DIALOG_MD = '!w-[calc(100vw-2rem)] sm:!max-w-4xl max-h-[92vh] overflow-y-auto'
-export const DIALOG_LG = '!w-[calc(100vw-2rem)] sm:!max-w-[95vw] lg:!max-w-7xl max-h-[92vh] overflow-y-auto'
-export const DIALOG_XL = '!w-[95vw] !max-w-[95vw] max-h-[95vh] overflow-y-auto'
+export const DIALOG_MD = '!w-[calc(100vw-2rem)] sm:!max-w-5xl max-h-[92vh] overflow-y-auto'
+export const DIALOG_LG = '!w-[calc(100vw-2rem)] !max-w-[calc(100vw-2rem)] max-h-[92vh] overflow-y-auto'
+export const DIALOG_XL = '!w-[calc(100vw-1rem)] !max-w-[calc(100vw-1rem)] max-h-[95vh] overflow-y-auto'
 
 /** Map cỡ → class, dùng cho prop dialogSize */
 export const DIALOG_SIZE = {

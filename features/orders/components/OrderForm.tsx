@@ -232,7 +232,7 @@ export function OrderForm({ companies, customers, projects, products, warehouses
     <form onSubmit={handleSubmit} className="space-y-6">
 
       {/* ─ Header fields ─────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
         <div className="space-y-1">
           <Label>Công ty <span className="text-red-500">*</span></Label>
@@ -343,7 +343,7 @@ export function OrderForm({ companies, customers, projects, products, warehouses
 
       {/* ─ Thông tin hóa đơn ─────────────────────────────────────────────── */}
       <FormSection title="Thông tin hóa đơn" description="Cho bảng kê bán ra — có thể bỏ trống nếu đơn nội bộ" variant="elevated">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
           <div className="space-y-1">
             <Label className="text-xs">Ký hiệu mẫu HĐ</Label>
             <Input value={invoiceTemplate} onChange={(e) => setInvoiceTemplate(e.target.value)} placeholder="VD: 1/001" className="h-8 text-sm" />

@@ -193,7 +193,8 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
     <form onSubmit={handleSubmit} className="space-y-6">
 
       {/* ── Header ────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* KTT I1: full-width dialog → có thể dùng 3 cột trên màn rộng */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="space-y-1">
           <Label>Công ty <span className="text-red-500">*</span></Label>
           <select value={companyId} onChange={(e) => { setCompanyId(e.target.value); setProjectId(''); setWarehouseId(pickDefaultWarehouse(warehouses, e.target.value)) }} required className={sel}>
@@ -304,7 +305,7 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
       {/* ── Chi phí nhập khẩu ─────────────────────────────────────── */}
       <div>
         <h3 className="text-sm font-semibold text-gray-700 mb-3">Chi phí nhập khẩu ({currency})</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="space-y-1">
             <Label>Giá mua hàng <span className="text-red-500">*</span></Label>
             <Input type="number" min="0" step="1"
@@ -443,7 +444,7 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
 
       {/* ── Thông tin hóa đơn ────────────────────────────────────── */}
       <FormSection title="Thông tin hóa đơn" description="Cho bảng kê mua vào" variant="elevated">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
           <div className="space-y-1">
             <Label className="text-xs">Ký hiệu mẫu HĐ</Label>
             <Input value={invoiceTemplate} onChange={(e) => setInvoiceTemplate(e.target.value)} placeholder="VD: 1/001" className="h-8 text-sm" />
