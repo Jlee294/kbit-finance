@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback } from 'react'
+import { useT } from '@/lib/i18n/client'
 
 interface Company  { id: string; name: string }
 interface Project  { id: string; name: string }
@@ -20,6 +21,7 @@ interface Props {
 export function ReportFilters({ projects, companyId, projectId, from, to, mode }: Props) {
   const router       = useRouter()
   const searchParams = useSearchParams()
+  const t            = useT()
 
   const push = useCallback(
     (key: string, value: string) => {
@@ -35,13 +37,13 @@ export function ReportFilters({ projects, companyId, projectId, from, to, mode }
     <div className="flex flex-wrap gap-3 items-end bg-white rounded-xl border px-4 py-3 shadow-sm">
       {mode === 'company' && projects.length > 0 && (
         <div className="space-y-1">
-          <p className="text-xs text-gray-500">Dự án</p>
+          <p className="text-xs text-gray-500">{t('Dự án')}</p>
           <select
             className="h-8 rounded-md border text-sm px-2 bg-white min-w-[140px]"
             value={projectId ?? ''}
             onChange={(e) => push('project', e.target.value)}
           >
-            <option value="">Tất cả</option>
+            <option value="">{t('Tất cả')}</option>
             {projects.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
@@ -50,7 +52,7 @@ export function ReportFilters({ projects, companyId, projectId, from, to, mode }
       )}
 
       <div className="space-y-1">
-        <p className="text-xs text-gray-500">Từ ngày</p>
+        <p className="text-xs text-gray-500">{t('Từ ngày')}</p>
         <input
           type="date"
           className="h-8 rounded-md border text-sm px-2 bg-white"
@@ -60,7 +62,7 @@ export function ReportFilters({ projects, companyId, projectId, from, to, mode }
       </div>
 
       <div className="space-y-1">
-        <p className="text-xs text-gray-500">Đến ngày</p>
+        <p className="text-xs text-gray-500">{t('Đến ngày')}</p>
         <input
           type="date"
           className="h-8 rounded-md border text-sm px-2 bg-white"
@@ -74,7 +76,7 @@ export function ReportFilters({ projects, companyId, projectId, from, to, mode }
           onClick={() => router.push('?')}
           className="text-xs text-gray-400 hover:text-gray-600 underline self-end mb-1"
         >
-          Xóa lọc
+          {t('Xóa lọc')}
         </button>
       )}
     </div>

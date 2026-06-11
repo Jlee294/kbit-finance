@@ -433,4 +433,28 @@ export const EN: Record<string, string> = {
     'Repository of invoices, minutes, contracts… linked to each order / receipt / payment for lookup and reconciliation',
   'tài liệu':              'documents',
   'Chấm điểm rủi ro 5 nhóm chỉ tiêu': 'Risk scoring across 5 indicator groups',
+
+  // ── /bao-cao/hop-nhat + shared KpiCards + CashFlowTable + ReportFilters ──
+  'Báo cáo hợp nhất Group': 'Group consolidated report',
+  'Tổng hợp toàn bộ pháp nhân, đã loại trừ giao dịch nội bộ, quy đổi về VND':
+    'All entities consolidated, intercompany eliminated, converted to VND',
+  '← Báo cáo từng pháp nhân': '← Per-entity reports',
+  'Cảnh báo:':              'Warning:',
+  'Một số giao dịch hoặc công nợ ngoại tệ thiếu tỷ giá tại ngày tương ứng. Các dòng đó chưa được tính vào tổng. Vui lòng bổ sung tỷ giá tại':
+    'Some FX transactions or receivables/payables are missing rates on their dates. Those rows are not included in totals. Please add rates at',
+  'Danh mục / Tỷ giá':       'Master Data / Exchange Rates',
+  'Tóm tắt dòng tiền (VND)': 'Cash flow summary (VND)',
+  'Tổng thu (toàn Group)':   'Total income (Group-wide)',
+  'Tổng chi (toàn Group)':   'Total expenses (Group-wide)',
+  'Dòng tiền thuần (toàn Group)': 'Net cash flow (Group-wide)',
+  'Công nợ KH (phải thu)':   'Receivables',
+  'Công nợ NCC (phải trả)':  'Payables',
+  'Quy về VND theo tỷ giá cuối kỳ; loại giao dịch nội bộ':
+    'Converted to VND at period-end rate; intercompany eliminated',
+  'Theo tỷ giá đóng băng lúc ghi nợ (supplier_orders.exchange_rate)':
+    'At rate booked when the debt was recorded (supplier_orders.exchange_rate)',
+  'Dòng tiền thuần':         'Net cash flow',
+  'Chỉ tiêu':                'Indicator',
+
+  'Xóa lọc': 'Clear filter',
 }

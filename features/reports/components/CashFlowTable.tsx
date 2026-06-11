@@ -1,3 +1,7 @@
+'use client'
+
+import { useT } from '@/lib/i18n/client'
+
 function fmt(value: number, currency: string) {
   return new Intl.NumberFormat('vi-VN', {
     style:           'currency',
@@ -20,13 +24,14 @@ interface Props {
 }
 
 export function CashFlowTable({ rows, currency }: Props) {
+  const t = useT()
   return (
     <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b bg-gray-50 text-xs text-gray-500 uppercase">
-            <th className="px-5 py-3 text-left">Chỉ tiêu</th>
-            <th className="px-5 py-3 text-right">Giá trị</th>
+            <th className="px-5 py-3 text-left">{t('Chỉ tiêu')}</th>
+            <th className="px-5 py-3 text-right">{t('Giá trị')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">

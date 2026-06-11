@@ -1,3 +1,7 @@
+'use client'
+
+import { useT } from '@/lib/i18n/client'
+
 interface KpiCardProps {
   label:    string
   value:    number
@@ -25,6 +29,7 @@ const ACCENT_BORDER: Record<string, string> = {
 }
 
 function KpiCard({ label, value, currency, positive, neutral, accent }: KpiCardProps) {
+  const t = useT()
   let colorClass = 'text-gray-900'
   if (!neutral) {
     if (positive !== undefined) {
@@ -34,7 +39,7 @@ function KpiCard({ label, value, currency, positive, neutral, accent }: KpiCardP
   const accentClass = accent ? `border-t-4 ${ACCENT_BORDER[accent]}` : ''
   return (
     <div className={`rounded-xl border border-gray-200 bg-white shadow-sm px-5 py-4 flex flex-col gap-1 ${accentClass}`}>
-      <p className="text-xs text-gray-500 font-medium tracking-wide">{label}</p>
+      <p className="text-xs text-gray-500 font-medium tracking-wide">{t(label)}</p>
       <p className={`text-xl font-semibold ${colorClass}`}>
         {fmt(value, currency)}
       </p>
