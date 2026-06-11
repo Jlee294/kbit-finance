@@ -2,6 +2,7 @@ import OpenAI from 'openai'
 import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUser, canEdit } from '@/lib/auth'
+import { SCHEMA_DOC } from './schema-doc'
 
 const NINE_API_KEY = process.env.NINE_ROUTER_API_KEY
 const NINE_BASE_URL = process.env.NINE_ROUTER_BASE_URL
@@ -175,6 +176,33 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
       },
     },
   },
+  // KTT Cách B: query toàn bộ DB bằng SELECT — lưới đỡ cho mọi câu hỏi chưa có tool riêng
+  {
+    type: 'function',
+    function: {
+      name: 'query_database',
+      description:
+        'Chạy 1 câu SQL SELECT read-only trên database để trả lời câu hỏi về dữ liệu hệ thống ' +
+        '(đơn hàng, tồn kho, công nợ, doanh thu, lịch thuế, hóa đơn, dòng tiền...). ' +
+        'CHỈ dùng khi KHÔNG có tool chuyên dụng phù hợp. Viết SQL theo đúng SCHEMA trong system prompt — ' +
+        'tuân thủ QUY ƯỚC NGHIỆP VỤ (lọc status, quy đổi tỷ giá). Max 200 dòng, timeout 5s. ' +
+        'Chỉ SELECT — mọi lệnh ghi sẽ bị từ chối.',
+      parameters: {
+        type: 'object',
+        properties: {
+          sql: {
+            type: 'string',
+            description: 'Câu SELECT duy nhất (không chấm phẩy, không comment). Luôn đặt LIMIT. Alias cột bằng tiếng Việt không dấu nếu giúp dễ đọc.',
+          },
+          purpose: {
+            type: 'string',
+            description: 'Mô tả ngắn 1 câu: query này trả lời ý gì của người dùng',
+          },
+        },
+        required: ['sql'],
+      },
+    },
+  },
 ]
 
 // ─── Tool execution ───────────────────────────────────────────────────────────
@@ -331,6 +359,24 @@ async function executeTool(
         return JSON.stringify({ count: rows.length, within_days, items: rows })
       }
 
+      // KTT Cách B: SQL read-only — lưới đỡ cho mọi câu hỏi
+      case 'query_database': {
+        const { sql } = args as { sql: string; purpose?: string }
+        if (!sql?.trim()) return 'Lỗi: SQL rỗng.'
+        const { data, error } = await supabase.rpc('kbit_run_readonly_query', { p_sql: sql })
+        if (error) {
+          // Trả lỗi DB nguyên văn để model tự sửa SQL và thử lại
+          return `Lỗi query: ${error.message}\nSQL đã chạy: ${sql}\nGợi ý: kiểm tra tên bảng/cột theo SCHEMA trong system prompt, rồi thử lại với SQL đã sửa.`
+        }
+        const rows = Array.isArray(data) ? data : []
+        return JSON.stringify({
+          sql,
+          row_count: rows.length,
+          truncated: rows.length >= 200,   // chạm trần 200 → có thể còn dữ liệu
+          rows,
+        })
+      }
+
       // KTT G: HSD hàng ĐÃ BÁN — customer_order_items
       case 'list_expiring_sold': {
         const { within_days = 365, limit = 50 } = args as { within_days?: number; limit?: number }
@@ -380,6 +426,20 @@ QUY TẮC QUAN TRỌNG — LUÔN TUÂN THỦ:
 6. Khi thêm dữ liệu: chỉ xác nhận 1 lần nếu thiếu thông tin bắt buộc, sau đó thực hiện ngay.
 7. Luôn dùng tool để lấy dữ liệu thực — không đoán số liệu.
 
+QUY TẮC DÙNG query_database (SQL):
+8. ƯU TIÊN tool chuyên dụng trước (get_summary_stats, list_expiring_stock, list_customers...) —
+   chúng tính đúng công thức nghiệp vụ. CHỈ dùng query_database khi không có tool phù hợp.
+9. Viết SQL theo đúng SCHEMA + QUY ƯỚC NGHIỆP VỤ bên dưới (lọc status, quy đổi KRW...).
+10. Câu hỏi mơ hồ về phạm vi (kỳ nào? công ty nào? đã duyệt hay cả nháp?) → hỏi lại NGẮN GỌN 1 lần
+    trước khi query. Nếu người dùng không nói rõ, mặc định: năm hiện tại, tất cả công ty, loại trừ void/draft.
+11. Nếu query lỗi → đọc thông báo lỗi, SỬA SQL rồi thử lại (tối đa 3 lần). Không trả lỗi thô cho người dùng.
+12. Sau câu trả lời dùng query_database, LUÔN thêm dòng cuối (để người dùng kiểm chứng):
+    📋 SQL: \`<câu SQL đã chạy>\`
+13. Với số liệu QUAN TRỌNG (công nợ chốt sổ, số thuế phải nộp, số liệu khóa kỳ) → thêm 1 dòng:
+    "⚠ Số tham khảo — đối chiếu màn hình báo cáo trước khi sử dụng chính thức."
+14. Kết quả có truncated=true nghĩa là bị cắt ở 200 dòng — nói rõ "hiển thị 200 dòng đầu" và
+    gợi ý thu hẹp điều kiện lọc.
+${SCHEMA_DOC}
 Hôm nay: ${new Date().toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}.`
 
 // ─── POST handler ─────────────────────────────────────────────────────────────
