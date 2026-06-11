@@ -145,6 +145,36 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
       },
     },
   },
+  // KTT G: query HSD — hàng tồn kho + hàng đã bán
+  {
+    type: 'function',
+    function: {
+      name: 'list_expiring_stock',
+      description: 'Liệt kê các lô hàng đang tồn kho có HSD (hạn sử dụng) sắp hết. Trả về sản phẩm + số lô + HSD + số lượng tồn + kho. Dùng cho câu hỏi "sản phẩm/lô nào sắp hết HSD trong N ngày/tháng/năm".',
+      parameters: {
+        type: 'object',
+        properties: {
+          within_days: { type: 'number', description: 'Số ngày tính từ hôm nay (mặc định 365 = 1 năm). VD: 90 = 3 tháng, 30 = 1 tháng.' },
+          include_expired: { type: 'boolean', description: 'true = bao gồm lô đã hết HSD (mặc định false — chỉ chưa hết)' },
+          limit: { type: 'number', description: 'Số dòng trả về tối đa (mặc định 50)' },
+        },
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'list_expiring_sold',
+      description: 'Liệt kê các dòng đã bán cho khách có HSD sắp hết (theo customer_order_items.expiry_date). Hữu ích khi tra cứu trách nhiệm bảo hành/đổi trả gần hết HSD.',
+      parameters: {
+        type: 'object',
+        properties: {
+          within_days: { type: 'number', description: 'Số ngày tính từ hôm nay (mặc định 365)' },
+          limit: { type: 'number', description: 'Số dòng trả về tối đa (mặc định 50)' },
+        },
+      },
+    },
+  },
 ]
 
 // ─── Tool execution ───────────────────────────────────────────────────────────
@@ -269,6 +299,64 @@ async function executeTool(
         const { error } = await supabase.from('tasks').insert({ title, due_date, note })
         if (error) return `Lỗi: ${error.message}`
         return `✅ Đã tạo công việc "${title}"${due_date ? ` (hạn: ${due_date})` : ''}.`
+      }
+
+      // KTT G: HSD lô đang tồn kho
+      case 'list_expiring_stock': {
+        const { within_days = 365, include_expired = false, limit = 50 } = args as {
+          within_days?: number; include_expired?: boolean; limit?: number
+        }
+        const today = new Date().toISOString().slice(0, 10)
+        const cutoff = new Date(Date.now() + within_days * 86_400_000).toISOString().slice(0, 10)
+        let q = supabase
+          .from('kbit_stock_by_lot')
+          .select('product_id, lot_no, expiry_date, warehouse_id, qty_on_hand, products!product_id(code, name, unit), warehouses!warehouse_id(name)')
+          .not('expiry_date', 'is', null)
+          .lte('expiry_date', cutoff)
+          .order('expiry_date', { ascending: true })
+          .limit(limit)
+        if (!include_expired) q = q.gte('expiry_date', today)
+        const { data, error } = await q
+        if (error) return `Lỗi: ${error.message}. (Cần đã chạy migration 0045 — có view kbit_stock_by_lot)`
+        if (!data?.length) return `Không có lô nào sắp hết HSD trong ${within_days} ngày tới.`
+        const rows = (data as any[]).map((r) => ({
+          product:    r.products ? `[${r.products.code}] ${r.products.name}` : r.product_id,
+          unit:       r.products?.unit ?? null,
+          lot_no:     r.lot_no,
+          expiry:     r.expiry_date,
+          days_left:  Math.round((new Date(r.expiry_date).getTime() - Date.now()) / 86_400_000),
+          qty:        Number(r.qty_on_hand),
+          warehouse:  r.warehouses?.name ?? r.warehouse_id,
+        }))
+        return JSON.stringify({ count: rows.length, within_days, items: rows })
+      }
+
+      // KTT G: HSD hàng ĐÃ BÁN — customer_order_items
+      case 'list_expiring_sold': {
+        const { within_days = 365, limit = 50 } = args as { within_days?: number; limit?: number }
+        const today  = new Date().toISOString().slice(0, 10)
+        const cutoff = new Date(Date.now() + within_days * 86_400_000).toISOString().slice(0, 10)
+        const { data, error } = await supabase
+          .from('customer_order_items')
+          .select('qty, lot_no, expiry_date, products!product_id(code, name), customer_orders!order_id(order_code, order_date, customers!customer_id(name))')
+          .not('expiry_date', 'is', null)
+          .gte('expiry_date', today)
+          .lte('expiry_date', cutoff)
+          .order('expiry_date', { ascending: true })
+          .limit(limit)
+        if (error) return `Lỗi: ${error.message}`
+        if (!data?.length) return `Không có dòng đã bán nào có HSD trong ${within_days} ngày tới.`
+        const rows = (data as any[]).map((r) => ({
+          product:     r.products ? `[${r.products.code}] ${r.products.name}` : '—',
+          lot_no:      r.lot_no,
+          expiry:      r.expiry_date,
+          days_left:   Math.round((new Date(r.expiry_date).getTime() - Date.now()) / 86_400_000),
+          qty:         Number(r.qty),
+          order:       r.customer_orders?.order_code,
+          order_date:  r.customer_orders?.order_date,
+          customer:    r.customer_orders?.customers?.name ?? '—',
+        }))
+        return JSON.stringify({ count: rows.length, within_days, items: rows })
       }
 
       default:

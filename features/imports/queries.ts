@@ -48,6 +48,8 @@ export type ImportItemRow = {
   unit_price: number
   line_total: number    // GENERATED: qty × unit_price
   unit_cost: number | null
+  lot_no:      string | null    // KTT G
+  expiry_date: string | null    // KTT G
   products: { code: string; name: string; unit: string | null } | null
 }
 
@@ -74,9 +76,8 @@ export async function listImportOrders(companyId?: string): Promise<ImportOrderR
 /** Chi tiết 1 đơn nhập khẩu kèm dòng hàng */
 export async function getImportOrder(id: string): Promise<ImportOrderDetail> {
   const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('supplier_orders')
-    .select(`
+  // KTT G: defensive — thử select với lot_no/expiry_date; fallback nếu mig 0045 chưa chạy
+  const baseSelect = `
       id, order_code, order_date, order_type, currency, exchange_rate,
       goods_value, import_duty, vat_import, other_fees,
       cost_total, amount_paid, outstanding, is_intercompany,
@@ -85,14 +86,31 @@ export async function getImportOrder(id: string): Promise<ImportOrderDetail> {
       supplier_tax_code, vat_amount, dinh_khoan_no, dinh_khoan_co,
       nhan_su_thuc_hien, warehouse_id, stock_added,
       suppliers!supplier_id(name, code),
-      companies!company_id(name),
+      companies!company_id(name)`
+  let data: any = null
+  let error: { message: string } | null = null
+  const r1 = await supabase
+    .from('supplier_orders')
+    .select(`${baseSelect},
       supplier_order_items(
-        id, product_id, description, qty, unit_price, line_total, unit_cost,
+        id, product_id, description, qty, unit_price, line_total, unit_cost, lot_no, expiry_date,
         products(code, name, unit)
-      )
-    `)
+      )`)
     .eq('id', id)
     .single()
+  data = r1.data; error = r1.error
+  if (error && /lot_no|expiry_date/i.test(error.message)) {
+    const fb = await supabase
+      .from('supplier_orders')
+      .select(`${baseSelect},
+        supplier_order_items(
+          id, product_id, description, qty, unit_price, line_total, unit_cost,
+          products(code, name, unit)
+        )`)
+      .eq('id', id)
+      .single()
+    data = fb.data; error = fb.error
+  }
   if (error) throw new Error(error.message)
   return data as unknown as ImportOrderDetail
 }

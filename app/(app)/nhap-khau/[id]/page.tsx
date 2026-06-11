@@ -166,6 +166,8 @@ export default async function ImportOrderDetailPage({ params, searchParams }: { 
               <th className="px-4 py-3 text-right">Số lượng</th>
               <th className="px-4 py-3 text-right">Đơn giá ({order.currency})</th>
               <th className="px-4 py-3 text-right">Thành tiền ({order.currency})</th>
+              <th className="px-4 py-3 text-left">Số lô</th>
+              <th className="px-4 py-3 text-left">HSD</th>
               <th className="px-4 py-3 text-right">
                 Giá vốn/đv (VNĐ)
                 <span className="block text-gray-400 font-normal">unit_cost</span>
@@ -175,6 +177,14 @@ export default async function ImportOrderDetailPage({ params, searchParams }: { 
           <tbody className="divide-y divide-gray-100">
             {order.supplier_order_items.map((item) => {
               const prod = item.products as { code: string; name: string; unit: string | null } | null
+              // KTT G: badge HSD theo số ngày còn
+              const exp = item.expiry_date ? new Date(item.expiry_date) : null
+              const daysLeft = exp ? Math.round((exp.getTime() - Date.now()) / 86_400_000) : null
+              const expBadge = daysLeft == null ? null :
+                daysLeft < 0   ? <span className="text-[10px] bg-red-50 text-red-700 px-1.5 py-0.5 rounded font-semibold">Đã hết HSD</span> :
+                daysLeft < 90  ? <span className="text-[10px] bg-red-50 text-red-700 px-1.5 py-0.5 rounded font-semibold">Còn {daysLeft}d</span> :
+                daysLeft < 365 ? <span className="text-[10px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded font-medium">Còn {Math.round(daysLeft/30)}m</span> :
+                                 <span className="text-[10px] bg-brand-50 text-brand-700 px-1.5 py-0.5 rounded">Còn {Math.round(daysLeft/30)}m</span>
               return (
                 <tr key={item.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 text-gray-700">
@@ -185,6 +195,17 @@ export default async function ImportOrderDetailPage({ params, searchParams }: { 
                   <td className="px-4 py-3 text-right">{item.qty.toLocaleString('vi-VN')}</td>
                   <td className="px-4 py-3 text-right">{fmtNative(item.unit_price)}</td>
                   <td className="px-4 py-3 text-right">{fmtNative(item.line_total)}</td>
+                  <td className="px-4 py-3 text-gray-700 font-mono text-xs">
+                    {item.lot_no ?? <span className="text-gray-300">—</span>}
+                  </td>
+                  <td className="px-4 py-3 text-gray-700 text-xs">
+                    {item.expiry_date ? (
+                      <div className="space-y-0.5">
+                        <div>{new Date(item.expiry_date).toLocaleDateString('vi-VN')}</div>
+                        {expBadge}
+                      </div>
+                    ) : <span className="text-gray-300">—</span>}
+                  </td>
                   <td className="px-4 py-3 text-right font-semibold text-brand-800">
                     {item.unit_cost != null ? formatVND(item.unit_cost) : <span className="text-gray-300">—</span>}
                   </td>

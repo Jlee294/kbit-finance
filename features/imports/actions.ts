@@ -80,7 +80,7 @@ export async function createImportOrder(input: unknown): Promise<string> {
     costTotalVnd,
   )
 
-  // (3) Chèn dòng hàng kèm unit_cost. KHÔNG gửi line_total (generated).
+  // (3) Chèn dòng hàng kèm unit_cost + KTT G: lot_no, expiry_date. KHÔNG gửi line_total (generated).
   const rows = items.map((it, i) => ({
     order_id:    order.id,
     product_id:  it.product_id  ?? null,
@@ -88,16 +88,23 @@ export async function createImportOrder(input: unknown): Promise<string> {
     qty:         it.qty,
     unit_price:  it.unit_price,
     unit_cost:   unitCosts[i],
+    lot_no:      it.lot_no      || null,
+    expiry_date: it.expiry_date || null,
   }))
   const { error: e2 } = await supabase.from('supplier_order_items').insert(rows)
   if (e2) throw new Error(e2.message)
 
-  // Tự động cộng tồn kho nếu có chọn kho nhập — dùng kbit_receive_stock_batch: ghi CẢ LÔ
-  // trong 1 giao dịch (nguyên tử). unitCosts đã phân bổ THẤM vào bình quân liên hoàn; RPC
-  // tự ghi sổ 'receipt'. Lỗi giữa chừng → toàn bộ rollback (kho sạch), chỉ cần xóa đơn.
+  // Tự động cộng tồn kho — dùng kbit_receive_stock_batch (nguyên tử).
+  // KTT G: pass lot_no + expiry_date xuống warehouse_transactions để query HSD sau.
   if (data.warehouse_id) {
     const stockItems = items
-      .map((it, i) => ({ product_id: it.product_id, qty: it.qty, unit_cost: unitCosts[i] }))
+      .map((it, i) => ({
+        product_id:  it.product_id,
+        qty:         it.qty,
+        unit_cost:   unitCosts[i],
+        lot_no:      it.lot_no      || null,
+        expiry_date: it.expiry_date || null,
+      }))
       .filter((it) => it.product_id)
     if (stockItems.length > 0) {
       const { error: rpcErr } = await supabase.rpc('kbit_receive_stock_batch', {

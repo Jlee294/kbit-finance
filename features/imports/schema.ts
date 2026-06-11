@@ -6,6 +6,9 @@ export const importItemSchema = z.object({
   description: z.string().optional().nullable(),
   qty:         z.coerce.number().positive('Số lượng phải > 0'),
   unit_price:  z.coerce.number().nonnegative('Đơn giá phải ≥ 0'),
+  // KTT G: số lô + HSD lưu vào supplier_order_items + warehouse_transactions
+  lot_no:      z.string().optional().nullable(),
+  expiry_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable().or(z.literal('')),
 })
 
 /** Header đơn NCC nhập khẩu HOẶC mua trong nước. KHÔNG chứa cost_total / outstanding (GENERATED ở DB). */

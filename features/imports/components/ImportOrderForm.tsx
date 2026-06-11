@@ -37,8 +37,15 @@ interface Props {
   onDone:      () => void
 }
 
-interface ItemRow { product_id: string; description: string; qty: string; unit_price: string }
-const newRow = (): ItemRow => ({ product_id: '', description: '', qty: '', unit_price: '' })
+interface ItemRow {
+  product_id:  string
+  description: string
+  qty:         string
+  unit_price:  string
+  lot_no:      string   // KTT G
+  expiry_date: string   // KTT G — YYYY-MM-DD hoặc ''
+}
+const newRow = (): ItemRow => ({ product_id: '', description: '', qty: '', unit_price: '', lot_no: '', expiry_date: '' })
 
 const sel = 'w-full h-9 rounded-lg border border-input bg-transparent px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50'
 
@@ -87,11 +94,13 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
 
   const [items, setItems] = useState<ItemRow[]>(
     editOrder?.supplier_order_items?.length
-      ? editOrder.supplier_order_items.map((it) => ({
+      ? editOrder.supplier_order_items.map((it: any) => ({
           product_id:  it.product_id ?? '',
           description: it.description ?? '',
           qty:         String(it.qty),
           unit_price:  String(it.unit_price),
+          lot_no:      it.lot_no ?? '',
+          expiry_date: it.expiry_date ?? '',
         }))
       : [newRow()],
   )
@@ -159,6 +168,8 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
           description: r.description || null,
           qty:         parseFloat(r.qty),
           unit_price:  parseFloat(r.unit_price) || 0,
+          lot_no:      r.lot_no || null,
+          expiry_date: r.expiry_date || null,
         })),
       }
       if (isEdit) {
@@ -347,16 +358,18 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
             <Button type="button" variant="outline" size="sm" onClick={addItem}>+ Thêm dòng</Button>
           </div>
         </div>
-        <div className="rounded-lg border overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="rounded-lg border overflow-x-auto">
+          <table className="w-full text-sm min-w-[1100px]">
             <thead>
               <tr className="bg-gray-50 text-gray-600 text-xs">
                 <th className="px-3 py-2 text-left">Sản phẩm</th>
-                <th className="px-3 py-2 text-left">Mô tả</th>
-                <th className="px-3 py-2 text-right w-24">Số lượng</th>
-                <th className="px-3 py-2 text-right w-32">Đơn giá ({currency})</th>
-                <th className="px-3 py-2 text-right w-32">Thành tiền</th>
-                <th className="px-3 py-2 text-right w-32">
+                <th className="px-3 py-2 text-left w-32">Mô tả</th>
+                <th className="px-3 py-2 text-right w-20">Số lượng</th>
+                <th className="px-3 py-2 text-right w-28">Đơn giá ({currency})</th>
+                <th className="px-3 py-2 text-right w-28">Thành tiền</th>
+                <th className="px-3 py-2 text-left w-24">Số lô</th>
+                <th className="px-3 py-2 text-left w-32">HSD (exp)</th>
+                <th className="px-3 py-2 text-right w-28">
                   Giá vốn/đv (VNĐ)
                   <span className="block text-gray-400 font-normal">unit_cost</span>
                 </th>
@@ -367,6 +380,13 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
               {items.map((row, i) => {
                 const lineTotal = (parseFloat(row.qty) || 0) * (parseFloat(row.unit_price) || 0)
                 const uc        = previewUnitCosts[i] ?? 0
+                // KTT G: highlight HSD nếu dưới 1 năm hoặc sắp hết
+                const exp = row.expiry_date ? new Date(row.expiry_date) : null
+                const daysLeft = exp ? Math.round((exp.getTime() - Date.now()) / 86_400_000) : null
+                const expClass = daysLeft == null ? '' :
+                  daysLeft < 0   ? 'border-red-400 text-red-700 font-medium' :
+                  daysLeft < 90  ? 'border-red-300' :
+                  daysLeft < 365 ? 'border-amber-300' : ''
                 return (
                   <tr key={i}>
                     <td className="px-3 py-2">
@@ -393,6 +413,14 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
                     <td className="px-3 py-2 text-right text-xs text-gray-700">
                       {lineTotal > 0 ? fmtCurrency(lineTotal) : '—'}
                     </td>
+                    <td className="px-3 py-2">
+                      <Input value={row.lot_no} onChange={(e) => updateItem(i, 'lot_no', e.target.value)}
+                        placeholder="VD: L2024-A" className="h-8 text-xs" />
+                    </td>
+                    <td className="px-3 py-2">
+                      <Input type="date" value={row.expiry_date} onChange={(e) => updateItem(i, 'expiry_date', e.target.value)}
+                        className={`h-8 text-xs ${expClass}`} />
+                    </td>
                     <td className="px-3 py-2 text-right text-xs font-medium text-brand-800">
                       {uc > 0 ? formatVND(uc) : '—'}
                     </td>
@@ -408,6 +436,9 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
             </tbody>
           </table>
         </div>
+        <p className="text-xs text-gray-500 mt-2">
+          💡 <strong>Số lô + HSD:</strong> để trống nếu mặt hàng không có lô/HSD. HSD &lt; 1 năm sẽ highlight cam, &lt; 3 tháng đỏ.
+        </p>
       </div>
 
       {/* ── Thông tin hóa đơn ────────────────────────────────────── */}
