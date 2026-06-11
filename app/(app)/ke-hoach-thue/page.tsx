@@ -6,11 +6,13 @@ import { PageHeader }            from '@/components/shared/PageHeader'
 import { EmptyState }            from '@/components/shared/EmptyState'
 import { Button }                from '@/components/ui/button'
 import { PAGE_WRAPPER, LIST_WRAP, LIST_THEAD, LIST_ROW } from '@/lib/ui-tokens'
+import { getT }                from '@/lib/i18n/server'
 
 export const dynamic = 'force-dynamic'
 
 export default async function KeHoachThuePage() {
   const { companyId } = await getGlobalFilter()
+  const t = await getT()
   const me = await getCurrentUser()
   const canEdit = !!me && canApprove(me.role)
 
@@ -19,11 +21,11 @@ export default async function KeHoachThuePage() {
   return (
     <div className={PAGE_WRAPPER}>
       <PageHeader
-        title="Kế hoạch thuế"
-        subtitle={`${plans.length} kế hoạch · mỗi công ty/dự án/năm có thể có 1 kế hoạch riêng`}
+        title={t('Kế hoạch thuế')}
+        subtitle={`${plans.length} ${t('kế hoạch · mỗi công ty/dự án/năm có thể có 1 kế hoạch riêng')}`}
         actions={canEdit ? (
           <Link href="/ke-hoach-thue/moi">
-            <Button>+ Tạo kế hoạch thuế</Button>
+            <Button>{t('+ Tạo kế hoạch thuế')}</Button>
           </Link>
         ) : undefined}
       />
@@ -31,11 +33,11 @@ export default async function KeHoachThuePage() {
       {plans.length === 0 ? (
         <EmptyState
           icon="📑"
-          title="Chưa có kế hoạch thuế nào"
-          description="Tạo kế hoạch thuế đầu năm cho công ty hoặc cho từng dự án lớn. Mẫu gồm 16 chỉ tiêu (doanh thu, chi phí, lợi nhuận, thuế TNDN) — formula tự tính."
+          title={t('Chưa có kế hoạch thuế nào')}
+          description={t('Tạo kế hoạch thuế đầu năm cho công ty hoặc cho từng dự án lớn. Mẫu gồm 16 chỉ tiêu (doanh thu, chi phí, lợi nhuận, thuế TNDN) — formula tự tính.')}
           action={canEdit ? (
             <Link href="/ke-hoach-thue/moi">
-              <Button>+ Tạo kế hoạch thuế</Button>
+              <Button>{t('+ Tạo kế hoạch thuế')}</Button>
             </Link>
           ) : undefined}
         />
@@ -44,11 +46,11 @@ export default async function KeHoachThuePage() {
           <table className="w-full text-sm">
             <thead className={LIST_THEAD}>
               <tr>
-                <th className="px-4 py-3 text-left">Năm</th>
-                <th className="px-4 py-3 text-left">Công ty</th>
-                <th className="px-4 py-3 text-left">Dự án</th>
-                <th className="px-4 py-3 text-center">Mẫu</th>
-                <th className="px-4 py-3 text-center">Mở</th>
+                <th className="px-4 py-3 text-left">{t('Năm')}</th>
+                <th className="px-4 py-3 text-left">{t('Công ty')}</th>
+                <th className="px-4 py-3 text-left">{t('Dự án')}</th>
+                <th className="px-4 py-3 text-center">{t('Mẫu')}</th>
+                <th className="px-4 py-3 text-center">{t('Mở')}</th>
               </tr>
             </thead>
             <tbody>
@@ -57,7 +59,7 @@ export default async function KeHoachThuePage() {
                   <td className="px-4 py-3 font-mono font-semibold text-brand-800">{p.year}</td>
                   <td className="px-4 py-3 text-gray-800">{p.company_name ?? '—'}</td>
                   <td className="px-4 py-3 text-gray-600">
-                    {p.project_name ?? <span className="text-gray-400 italic text-xs">Toàn công ty</span>}
+                    {p.project_name ?? <span className="text-gray-400 italic text-xs">{t('Toàn công ty')}</span>}
                   </td>
                   <td className="px-4 py-3 text-center">
                     {p.has_template
@@ -68,7 +70,7 @@ export default async function KeHoachThuePage() {
                     <Link
                       href={`/ke-hoach-thue/${p.id}`}
                       className="text-xs font-medium text-brand-700 hover:underline"
-                    >Mở →</Link>
+                    >{t('Mở')} →</Link>
                   </td>
                 </tr>
               ))}

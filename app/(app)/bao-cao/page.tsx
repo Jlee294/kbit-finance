@@ -10,6 +10,7 @@ import { createClient }                        from '@/lib/supabase/server'
 import { PageHeader }                          from '@/components/shared/PageHeader'
 import { EmptyState }                          from '@/components/shared/EmptyState'
 import { PAGE_WRAPPER }                        from '@/lib/ui-tokens'
+import { getT } from '@/lib/i18n/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,6 +30,7 @@ async function ReportContent({
   from?: string
   to?: string
 }) {
+  const t = await getT()
   const report = await getCompanyReport({ companyId, projectId, from, to })
   if (!report) return null
 
@@ -49,7 +51,7 @@ async function ReportContent({
         currency={report.currency}
       />
       <div>
-        <h2 className="text-sm font-medium text-gray-600 mb-2">Tóm tắt dòng tiền</h2>
+        <h2 className="text-sm font-medium text-gray-600 mb-2">{t('Tóm tắt dòng tiền')}</h2>
         <CashFlowTable rows={cashFlowRows} currency={report.currency} />
       </div>
       <div className="grid md:grid-cols-2 gap-4">
@@ -87,6 +89,7 @@ export default async function BaoCaoPage({
 }: {
   searchParams: Promise<SearchParams>
 }) {
+  const t = await getT()
   const sp        = await searchParams
   const { companyId } = await getGlobalFilter()
   const projectId = sp.project
@@ -102,8 +105,8 @@ export default async function BaoCaoPage({
   return (
     <div className={PAGE_WRAPPER}>
       <PageHeader
-        title="Báo cáo pháp nhân"
-        subtitle="Dòng tiền và công nợ theo từng công ty"
+        title={t('Báo cáo pháp nhân')}
+        subtitle={t('Dòng tiền và công nợ theo từng công ty')}
         actions={
           <Link href="/bao-cao/hop-nhat" className="text-sm text-brand-700 hover:underline font-medium">
             Xem báo cáo hợp nhất →
@@ -126,8 +129,8 @@ export default async function BaoCaoPage({
       {!companyId ? (
         <EmptyState
           icon="📊"
-          title="Chọn một công ty để xem báo cáo"
-          description="Sử dụng bộ lọc bên trên để chọn công ty + khoảng thời gian"
+          title={t('Chọn một công ty để xem báo cáo')}
+          description={t('Sử dụng bộ lọc bên trên để chọn công ty + khoảng thời gian')}
         />
       ) : (
         /* Stream report content — skeleton hiện trong lúc chờ */

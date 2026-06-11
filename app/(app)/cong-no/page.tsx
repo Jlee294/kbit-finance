@@ -11,6 +11,7 @@ import { StatsCard } from '@/components/shared/StatsCard'
 import { FilterBar, FilterField, FilterSubmit, FILTER_CONTROL } from '@/components/shared/FilterBar'
 import { getGlobalFilter } from '@/lib/global-filter'
 import { PAGE_WRAPPER } from '@/lib/ui-tokens'
+import { getT } from '@/lib/i18n/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,6 +23,7 @@ export default async function CongNoPage({
 }: {
   searchParams: Promise<{ type?: string }>
 }) {
+  const t = await getT()
   const sp = await searchParams
   const gf = await getGlobalFilter()
   const year = parseInt(gf.year, 10)
@@ -43,39 +45,39 @@ export default async function CongNoPage({
   return (
     <div className={PAGE_WRAPPER}>
       <PageHeader
-        title="Công nợ"
-        subtitle={`Bảng tổng hợp công nợ năm ${year} — phải thu (131) & phải trả (331). Bấm 1 dòng để xem chi tiết.`}
+        title={t('Công nợ')}
+        subtitle={`${t('Công nợ')} ${year} — ${t('phải thu (131) & phải trả (331). Bấm 1 dòng để xem chi tiết.')}`}
       />
 
       <FilterBar>
         <FilterField label="Loại công nợ">
           <select name="type" defaultValue={type} className={`${FILTER_CONTROL} min-w-[160px]`}>
-            <option value="ar">Phải thu khách hàng</option>
-            <option value="ap">Phải trả nhà cung cấp</option>
-            <option value="ir">Chi hộ nhân viên</option>
-            <option value="deposit">Thu cọc chưa gắn</option>
+            <option value="ar">{t('Phải thu khách hàng')}</option>
+            <option value="ap">{t('Phải trả nhà cung cấp')}</option>
+            <option value="ir">{t('Chi hộ nhân viên')}</option>
+            <option value="deposit">{t('Thu cọc chưa gắn')}</option>
           </select>
         </FilterField>
         <FilterSubmit />
       </FilterBar>
 
       <div className="grid grid-cols-4 gap-3">
-        <StatsCard label="Phải thu cuối kỳ"     value={fmtVND(totalArClose)} accent="warning" footer={`${ar.length} khách hàng`} />
-        <StatsCard label="Phải trả cuối kỳ"     value={fmtVND(totalApClose)} accent="danger"  footer={`${ap.length} nhà cung cấp`} />
-        <StatsCard label="Chi hộ chưa thu lại"  value={fmtVND(totalIr)}      accent="brand"   footer={`${ir.length} nhân viên`} />
-        <StatsCard label="Thu cọc chưa gắn đơn" value={fmtVND(totalDep)}     accent="info"    footer={`${deposits.length} phiếu`} />
+        <StatsCard label={t('Phải thu cuối kỳ')} value={fmtVND(totalArClose)} accent="warning" footer={`${ar.length} ${t('khách hàng')}`} />
+        <StatsCard label={t('Phải trả cuối kỳ')} value={fmtVND(totalApClose)} accent="danger"  footer={`${ap.length} ${t('nhà cung cấp')}`} />
+        <StatsCard label={t('Chi hộ chưa thu lại')} value={fmtVND(totalIr)} accent="brand" footer={`${ir.length} ${t('nhân viên')}`} />
+        <StatsCard label={t('Thu cọc chưa gắn đơn')} value={fmtVND(totalDep)} accent="info" footer={`${deposits.length} ${t('phiếu')}`} />
       </div>
 
       {type === 'ar' && (
-        <CongNoLedger title="Công nợ phải thu khách hàng (TK 131)" rows={ar} kind="AR" hrefBase="/don-hang" />
+        <CongNoLedger title={t('Công nợ phải thu khách hàng (TK 131)')} rows={ar} kind="AR" hrefBase="/don-hang" />
       )}
       {type === 'ap' && (
-        <CongNoLedger title="Công nợ phải trả nhà cung cấp (TK 331)" rows={ap} kind="AP" hrefBase="/nhap-khau" />
+        <CongNoLedger title={t('Công nợ phải trả nhà cung cấp (TK 331)')} rows={ap} kind="AP" hrefBase="/nhap-khau" />
       )}
 
       {/* IR — Chi hộ nhân viên */}
       {type === 'ir' && (
-      <Section title="Chi hộ chưa thu lại (nhân viên)" count={ir.length}>
+      <Section title={t('Chi hộ chưa thu lại (nhân viên)')} count={ir.length}>
         {ir.length === 0 ? (
           <Empty>Không có khoản chi hộ nào chưa thu</Empty>
         ) : (
@@ -115,7 +117,7 @@ export default async function CongNoPage({
 
       {/* Deposits — Thu cọc chưa gắn đơn */}
       {type === 'deposit' && (
-      <Section title="Phiếu thu cọc chưa gắn đơn" count={deposits.length}>
+      <Section title={t('Phiếu thu cọc chưa gắn đơn')} count={deposits.length}>
         {deposits.length === 0 ? (
           <Empty>Không có phiếu cọc nào chưa gắn đơn</Empty>
         ) : (

@@ -9,6 +9,7 @@ import { Button }              from '@/components/ui/button'
 import { PageHeader }          from '@/components/shared/PageHeader'
 import { FilterBar, FilterField, FilterSubmit, FILTER_CONTROL } from '@/components/shared/FilterBar'
 import { PAGE_WRAPPER }        from '@/lib/ui-tokens'
+import { getT }                from '@/lib/i18n/server'
 
 interface SearchParams {
   status?:  string
@@ -27,6 +28,7 @@ export default async function CongViecPage({
   const statusFilter = sp.status as any || ''
 
   const [companies, users, me] = await Promise.all([listCompanies(), listUsers(), getCurrentUser()])
+  const t = await getT()
   const canEdit = !!me && canApprove(me.role)
 
   const tasks = await listTasks({ status: statusFilter || undefined })
@@ -46,28 +48,28 @@ export default async function CongViecPage({
             )}
           </span>
         }
-        subtitle="Công việc thủ công + tự động"
+        subtitle={t('Công việc thủ công + tự động')}
         actions={canEdit && companyId ? (
           <form action={async () => { 'use server'; await generateAutoTasks(companyId) }}>
             <Button type="submit" variant="outline" size="sm">
-              Quét tạo công việc tự động
+              {t('Quét tạo công việc tự động')}
             </Button>
           </form>
         ) : undefined}
       />
 
       <FilterBar>
-        <FilterField label="Trạng thái">
+        <FilterField label={t('Trạng thái')}>
           <select name="status" defaultValue={statusFilter} className={FILTER_CONTROL}>
-            <option value="">Tất cả</option>
+            <option value="">{t('Tất cả')}</option>
             {TASK_STATUSES.map(s => (
               <option key={s} value={s}>{TASK_STATUS_LABELS[s]}</option>
             ))}
           </select>
         </FilterField>
-        <FilterField label="Công ty (quét auto-task)">
+        <FilterField label={t('Công ty (quét auto-task)')}>
           <select name="company" defaultValue={companyId ?? ''} className={`${FILTER_CONTROL} min-w-[160px]`}>
-            <option value="">— Tất cả —</option>
+            <option value="">{t('— Tất cả —')}</option>
             {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </FilterField>
@@ -89,29 +91,29 @@ export default async function CongViecPage({
       >
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
           <div className="md:col-span-5 space-y-1">
-            <label className="text-xs text-gray-500">Tiêu đề công việc <span className="text-red-500">*</span></label>
+            <label className="text-xs text-gray-500">{t('Tiêu đề công việc')} <span className="text-red-500">*</span></label>
             <input
               name="title"
               required
               className="w-full h-9 rounded-md border border-gray-300 text-sm px-2 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
-              placeholder="Nhập tiêu đề..."
+              
             />
           </div>
           <div className="md:col-span-3 space-y-1">
-            <label className="text-xs text-gray-500">Người phụ trách</label>
+            <label className="text-xs text-gray-500">{t('Người phụ trách')}</label>
             <select
               name="assigned_to"
               defaultValue=""
               className="w-full h-9 rounded-md border border-gray-300 bg-white text-sm px-2 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
             >
-              <option value="">— Không gán —</option>
+              <option value="">{t('— Không gán —')}</option>
               {users.map((u: any) => (
                 <option key={u.id} value={u.id}>{u.full_name}</option>
               ))}
             </select>
           </div>
           <div className="md:col-span-2 space-y-1">
-            <label className="text-xs text-gray-500">Hạn</label>
+            <label className="text-xs text-gray-500">{t('Hạn')}</label>
             <input type="date" name="due_date" className="w-full h-9 rounded-md border border-gray-300 text-sm px-2" />
           </div>
           <div className="md:col-span-2 flex justify-end">
@@ -119,16 +121,16 @@ export default async function CongViecPage({
               type="submit"
               className="h-9 w-full md:w-auto px-4 bg-brand-800 text-white rounded-md text-sm hover:bg-brand-700"
             >
-              + Tạo công việc
+              {t('+ Tạo công việc')}
             </button>
           </div>
         </div>
         <div className="space-y-1">
-          <label className="text-xs text-gray-500">Ghi chú (tùy chọn)</label>
+          <label className="text-xs text-gray-500">{t('Ghi chú (tùy chọn)')}</label>
           <input
             name="note"
             className="w-full h-9 rounded-md border border-gray-300 text-sm px-2 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
-            placeholder="Mô tả thêm cho công việc..."
+            placeholder={t('Mô tả thêm cho công việc...')}
           />
         </div>
       </form>

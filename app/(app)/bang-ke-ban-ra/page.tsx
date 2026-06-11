@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/shared/EmptyState'
 import { PAGE_WRAPPER } from '@/lib/ui-tokens'
 import { getGlobalFilter } from '@/lib/global-filter'
 import { resolveRange } from '@/lib/date-range'
+import { getT } from '@/lib/i18n/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,6 +20,7 @@ export default async function BangKeBanRaPage({
 }: {
   searchParams: Promise<{ month?: string; from?: string; to?: string }>
 }) {
+  const t = await getT()
   const sp = await searchParams
   const { companyId, year } = await getGlobalFilter()
   const range = resolveRange(year, sp.month, sp.from, sp.to)
@@ -36,8 +38,8 @@ export default async function BangKeBanRaPage({
   return (
     <div className={PAGE_WRAPPER}>
       <PageHeader
-        title="Bảng kê bán ra"
-        subtitle={`Kê theo ngày hóa đơn · lọc theo công ty & năm đang chọn — ${rows.length} hóa đơn (${range.from} → ${range.to})`}
+        title={t('Bảng kê bán ra')}
+        subtitle={`${t('Kê theo ngày hóa đơn · lọc theo công ty & năm đang chọn')} — ${rows.length} ${t('hóa đơn')} (${range.from} → ${range.to})`}
       />
 
       <div className="grid grid-cols-3 gap-3">
@@ -55,7 +57,7 @@ export default async function BangKeBanRaPage({
       {rows.length === 0 ? (
         <EmptyState
           icon="📋"
-          title="Không có hóa đơn bán ra trong kỳ"
+          title={t('Không có hóa đơn bán ra trong kỳ')}
           description="Đổi công ty/năm ở thanh trên, hoặc đổi tháng/khoảng ngày."
         />
       ) : (
@@ -63,19 +65,19 @@ export default async function BangKeBanRaPage({
           <table className="w-full text-xs min-w-[1300px]">
             <thead>
               <tr className="border-b border-brand-100 bg-brand-50/60 text-[10px] text-brand-800 font-semibold tracking-wide">
-                <th className="px-2 py-2 text-left">Mẫu HĐ</th>
-                <th className="px-2 py-2 text-left">Ký hiệu</th>
-                <th className="px-2 py-2 text-left">Số HĐ</th>
-                <th className="px-2 py-2 text-left">Ngày HĐ</th>
-                <th className="px-2 py-2 text-left">Ngày đơn</th>
-                <th className="px-2 py-2 text-left">Khách hàng</th>
-                <th className="px-2 py-2 text-left">MST</th>
-                <th className="px-2 py-2 text-left">Nội dung</th>
-                <th className="px-2 py-2 text-right">Thành tiền</th>
-                <th className="px-2 py-2 text-right">Thuế suất</th>
+                <th className="px-2 py-2 text-left">{t('Mẫu HĐ')}</th>
+                <th className="px-2 py-2 text-left">{t('Ký hiệu')}</th>
+                <th className="px-2 py-2 text-left">{t('Số HĐ')}</th>
+                <th className="px-2 py-2 text-left">{t('Ngày HĐ')}</th>
+                <th className="px-2 py-2 text-left">{t('Ngày đơn')}</th>
+                <th className="px-2 py-2 text-left">{t('Khách hàng')}</th>
+                <th className="px-2 py-2 text-left">{t('MST')}</th>
+                <th className="px-2 py-2 text-left">{t('Nội dung')}</th>
+                <th className="px-2 py-2 text-right">{t('Thành tiền')}</th>
+                <th className="px-2 py-2 text-right">{t('Thuế suất')}</th>
                 <th className="px-2 py-2 text-right">VAT</th>
-                <th className="px-2 py-2 text-right">Tổng HĐ</th>
-                <th className="px-2 py-2 text-left">Mã đơn</th>
+                <th className="px-2 py-2 text-right">{t('Tổng HĐ')}</th>
+                <th className="px-2 py-2 text-left">{t('Mã đơn')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">

@@ -10,11 +10,13 @@ import { formatVND } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { getGlobalFilter } from '@/lib/global-filter'
+import { getT }                from '@/lib/i18n/server'
 
 export const dynamic = 'force-dynamic'
 
 export default async function DuyetKhoaKyPage() {
   const { year } = await getGlobalFilter()
+  const t = await getT()
   const [me, pendingIncome, pendingExpense, periods, companies] = await Promise.all([
     getCurrentUser(),
     listPendingIncome(),
@@ -29,11 +31,11 @@ export default async function DuyetKhoaKyPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6 p-6">
       <PageHeader
-        title="Duyệt & Khóa kỳ"
-        subtitle="Kiểm soát luồng duyệt giao dịch và khóa kỳ kế toán"
+        title={t('Duyệt & Khóa kỳ')}
+        subtitle={t('Kiểm soát luồng duyệt giao dịch và khóa kỳ kế toán')}
         actions={
           <Link href="/duyet-khoa-ky/audit">
-            <Button variant="outline" size="sm">Lịch sử thao tác →</Button>
+            <Button variant="outline" size="sm">{t('Lịch sử thao tác →')}</Button>
           </Link>
         }
       />
@@ -41,7 +43,7 @@ export default async function DuyetKhoaKyPage() {
       {/* ── Hàng chờ duyệt ─────────────────────────────────────────────── */}
       <section className="space-y-4">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="font-semibold text-gray-800">Hàng chờ duyệt</h2>
+          <h2 className="font-semibold text-gray-800">{t('Hàng chờ duyệt')}</h2>
           {totalPending > 0 && (
             <span className="text-xs bg-amber-100 text-amber-700 font-semibold px-2 py-0.5 rounded-full">
               {totalPending}
@@ -53,7 +55,7 @@ export default async function DuyetKhoaKyPage() {
             if (missing === 0) return null
             return (
               <span className="text-xs bg-danger-50 text-danger-700 ring-1 ring-danger-500/30 font-semibold px-2.5 py-0.5 rounded-full">
-                ⚠ {missing} giao dịch chưa có chứng từ
+                ⚠ {missing} {t('giao dịch chưa có chứng từ')}
               </span>
             )
           })()}
@@ -63,25 +65,25 @@ export default async function DuyetKhoaKyPage() {
         <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
           <div className="px-5 py-3 border-b bg-gray-50">
             <p className="font-medium text-sm text-gray-700">
-              Thu tiền
+              {t('Thu tiền')}
               {pendingIncome.length > 0 && (
-                <span className="ml-2 text-xs text-amber-600">({pendingIncome.length} chờ)</span>
+                <span className="ml-2 text-xs text-amber-600">({pendingIncome.length} {t('chờ')})</span>
               )}
             </p>
           </div>
           {pendingIncome.length === 0 ? (
-            <div className="px-5 py-4 text-sm text-gray-400">Không có khoản thu nào chờ duyệt.</div>
+            <div className="px-5 py-4 text-sm text-gray-400">{t('Không có khoản thu nào chờ duyệt.')}</div>
           ) : (
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-xs text-gray-500 border-b bg-gray-50">
-                  <th className="px-4 py-2.5 text-left">Ngày</th>
-                  <th className="px-4 py-2.5 text-left">Công ty</th>
-                  <th className="px-4 py-2.5 text-left">Khách hàng</th>
-                  <th className="px-4 py-2.5 text-right">Số tiền</th>
-                  <th className="px-4 py-2.5 text-center">Chứng từ</th>
-                  <th className="px-4 py-2.5 text-left">Ghi chú</th>
-                  <th className="px-4 py-2.5 text-left">Thao tác</th>
+                  <th className="px-4 py-2.5 text-left">{t('Ngày')}</th>
+                  <th className="px-4 py-2.5 text-left">{t('Công ty')}</th>
+                  <th className="px-4 py-2.5 text-left">{t('Khách hàng')}</th>
+                  <th className="px-4 py-2.5 text-right">{t('Số tiền')}</th>
+                  <th className="px-4 py-2.5 text-center">{t('Chứng từ')}</th>
+                  <th className="px-4 py-2.5 text-left">{t('Ghi chú')}</th>
+                  <th className="px-4 py-2.5 text-left">{t('Thao tác')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -125,24 +127,24 @@ export default async function DuyetKhoaKyPage() {
         <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
           <div className="px-5 py-3 border-b bg-gray-50">
             <p className="font-medium text-sm text-gray-700">
-              Chi phí
+              {t('Chi phí')}
               {pendingExpense.length > 0 && (
-                <span className="ml-2 text-xs text-amber-600">({pendingExpense.length} chờ)</span>
+                <span className="ml-2 text-xs text-amber-600">({pendingExpense.length} {t('chờ')})</span>
               )}
             </p>
           </div>
           {pendingExpense.length === 0 ? (
-            <div className="px-5 py-4 text-sm text-gray-400">Không có khoản chi nào chờ duyệt.</div>
+            <div className="px-5 py-4 text-sm text-gray-400">{t('Không có khoản chi nào chờ duyệt.')}</div>
           ) : (
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-xs text-gray-500 border-b bg-gray-50">
-                  <th className="px-4 py-2.5 text-left">Ngày</th>
-                  <th className="px-4 py-2.5 text-left">Công ty</th>
-                  <th className="px-4 py-2.5 text-right">Số tiền</th>
-                  <th className="px-4 py-2.5 text-center">Chứng từ</th>
-                  <th className="px-4 py-2.5 text-left">Ghi chú</th>
-                  <th className="px-4 py-2.5 text-left">Thao tác</th>
+                  <th className="px-4 py-2.5 text-left">{t('Ngày')}</th>
+                  <th className="px-4 py-2.5 text-left">{t('Công ty')}</th>
+                  <th className="px-4 py-2.5 text-right">{t('Số tiền')}</th>
+                  <th className="px-4 py-2.5 text-center">{t('Chứng từ')}</th>
+                  <th className="px-4 py-2.5 text-left">{t('Ghi chú')}</th>
+                  <th className="px-4 py-2.5 text-left">{t('Thao tác')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -182,7 +184,7 @@ export default async function DuyetKhoaKyPage() {
 
       {/* ── Khóa kỳ ─────────────────────────────────────────────────────── */}
       <section className="space-y-4">
-        <h2 className="font-semibold text-gray-800">Kỳ kế toán</h2>
+        <h2 className="font-semibold text-gray-800">{t('Kỳ kế toán')}</h2>
 
         {/* B1 (KTT): Khóa nhanh theo quý/năm */}
         {approve && companies.length > 0 && (
@@ -201,11 +203,11 @@ export default async function DuyetKhoaKyPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-xs text-gray-500 border-b bg-gray-50">
-                  <th className="px-4 py-3 text-left">Kỳ</th>
-                  <th className="px-4 py-3 text-left">Công ty</th>
-                  <th className="px-4 py-3 text-center">Trạng thái</th>
-                  <th className="px-4 py-3 text-left">Khóa lúc</th>
-                  <th className="px-4 py-3 text-left">Người khóa</th>
+                  <th className="px-4 py-3 text-left">{t('Kỳ')}</th>
+                  <th className="px-4 py-3 text-left">{t('Công ty')}</th>
+                  <th className="px-4 py-3 text-center">{t('Trạng thái')}</th>
+                  <th className="px-4 py-3 text-left">{t('Khóa lúc')}</th>
+                  <th className="px-4 py-3 text-left">{t('Người khóa')}</th>
                   {approve && <th className="px-4 py-3" />}
                 </tr>
               </thead>
@@ -224,7 +226,7 @@ export default async function DuyetKhoaKyPage() {
                             ? 'bg-red-50 text-red-700'
                             : 'bg-brand-50 text-brand-700'
                         }`}>
-                          {isLocked ? '🔒 Đã khóa' : '🔓 Đang mở'}
+                          {isLocked ? t('🔒 Đã khóa') : t('🔓 Đang mở')}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-gray-400 text-xs">
@@ -245,7 +247,7 @@ export default async function DuyetKhoaKyPage() {
                               type="submit"
                               className="text-xs"
                             >
-                              {isLocked ? 'Mở kỳ' : 'Khóa kỳ'}
+                              {isLocked ? t('Mở kỳ') : t('Khóa kỳ')}
                             </Button>
                           </form>
                         </td>

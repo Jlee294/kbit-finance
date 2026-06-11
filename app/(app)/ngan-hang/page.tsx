@@ -16,6 +16,7 @@ import { MonthRangeFields } from '@/components/shared/MonthRangeFields'
 import { getGlobalFilter } from '@/lib/global-filter'
 import { resolveRange } from '@/lib/date-range'
 import { PAGE_WRAPPER } from '@/lib/ui-tokens'
+import { getT } from '@/lib/i18n/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,6 +27,7 @@ export default async function NganHangPage({
 }: {
   searchParams: Promise<{ bank?: string; type?: string; month?: string; from?: string; to?: string }>
 }) {
+  const t = await getT()
   const sp = await searchParams
   const supabase = await createClient()
   const { companyId, year } = await getGlobalFilter()
@@ -67,8 +69,8 @@ export default async function NganHangPage({
   return (
     <div className={PAGE_WRAPPER}>
       <PageHeader
-        title="Ngân hàng"
-        subtitle={`${rows.length} giao dịch · gộp tất cả thu / chi VN / chi KR`}
+        title={t('Ngân hàng')}
+        subtitle={`${rows.length} ${t('giao dịch')} · ${t('gộp tất cả thu / chi VN / chi KR')}`}
         actions={canWrite ? (
           <BankCreateButtons
             companies={companies.map((c: any) => ({ id: c.id, name: c.name }))}
@@ -84,29 +86,29 @@ export default async function NganHangPage({
       />
 
       <div className="grid grid-cols-3 gap-3">
-        <StatsCard label="Tổng thu (quy VND)" value={fmtVND(totalThu)} accent="success" />
-        <StatsCard label="Tổng chi (quy VND)" value={fmtVND(totalChi)} accent="danger" />
+        <StatsCard label={t('Tổng thu (quy VND)')} value={fmtVND(totalThu)} accent="success" />
+        <StatsCard label={t('Tổng chi (quy VND)')} value={fmtVND(totalChi)} accent="danger" />
         <StatsCard
-          label="Dòng tiền ròng"
+          label={t('Dòng tiền ròng')}
           value={fmtVND(totalThu - totalChi)}
           accent={totalThu - totalChi >= 0 ? 'brand' : 'danger'}
         />
       </div>
 
       <FilterBar>
-        <FilterField label="Tài khoản NH">
+        <FilterField label={t('Tài khoản NH')}>
           <select name="bank" defaultValue={sp.bank ?? ''} className={`${FILTER_CONTROL} min-w-[200px]`}>
-            <option value="">Tất cả</option>
+            <option value="">{t('Tất cả')}</option>
             {banks.map(b => (
               <option key={b.id} value={b.id}>{b.name} ({b.currency})</option>
             ))}
           </select>
         </FilterField>
-        <FilterField label="Loại">
+        <FilterField label={t('Loại')}>
           <select name="type" defaultValue={sp.type ?? ''} className={FILTER_CONTROL}>
-            <option value="">Tất cả</option>
-            <option value="thu">Thu</option>
-            <option value="chi">Chi</option>
+            <option value="">{t('Tất cả')}</option>
+            <option value="thu">{t('Thu tiền')}</option>
+            <option value="chi">{t('Chi phí')}</option>
           </select>
         </FilterField>
         <MonthRangeFields month={sp.month} from={sp.from} to={sp.to} />

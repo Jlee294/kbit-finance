@@ -9,6 +9,7 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { FilterBar, FilterField, FilterSubmit, FILTER_CONTROL } from '@/components/shared/FilterBar'
 import { PAGE_WRAPPER } from '@/lib/ui-tokens'
 import { todayLocal, formatLocalDate } from '@/lib/format'
+import { getT }                from '@/lib/i18n/server'
 
 interface SearchParams { company?: string }
 
@@ -21,6 +22,7 @@ export default async function LichThuePage({
 }) {
   const sp        = await searchParams
   const companyId = sp.company
+  const t = await getT()
 
   const [companies, me, taxTypes] = await Promise.all([listCompanies(), getCurrentUser(), listTaxTypes(false)])
   const canEdit = !!me && canApprove(me.role)
@@ -37,18 +39,18 @@ export default async function LichThuePage({
   return (
     <div className={PAGE_WRAPPER}>
       <PageHeader
-        title="Lịch tuân thủ thuế"
-        subtitle="Theo dõi nghĩa vụ thuế, nhắc hạn nộp"
+        title={t('Lịch tuân thủ thuế')}
+        subtitle={t('Theo dõi nghĩa vụ thuế, nhắc hạn nộp')}
         actions={companyId ? (
           <div className="flex flex-wrap gap-2 items-center">
             {overdueCount > 0 && (
               <span className="text-xs bg-danger-50 text-danger-700 ring-1 ring-danger-500/30 font-semibold px-2.5 py-1 rounded-full">
-                🔴 {overdueCount} quá hạn
+                🔴 {overdueCount} {t('quá hạn')}
               </span>
             )}
             {dueSoonCount > 0 && (
               <span className="text-xs bg-warning-50 text-warning-700 ring-1 ring-warning-500/30 font-semibold px-2.5 py-1 rounded-full">
-                ⚠ {dueSoonCount} đến hạn ≤7 ngày
+                ⚠ {dueSoonCount} {t('đến hạn ≤7 ngày')}
               </span>
             )}
             {canEdit && <GenerateYearlyButton companyId={companyId} />}
@@ -57,13 +59,13 @@ export default async function LichThuePage({
       />
 
       <FilterBar>
-        <FilterField label="Công ty">
+        <FilterField label={t('Công ty')}>
           <select name="company" defaultValue={companyId ?? ''} className={`${FILTER_CONTROL} min-w-[180px]`}>
-            <option value="">— Chọn công ty —</option>
+            <option value="">{t('— Chọn công ty —')}</option>
             {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </FilterField>
-        <FilterSubmit>Xem</FilterSubmit>
+        <FilterSubmit>{t('Xem')}</FilterSubmit>
       </FilterBar>
 
       {/* Form thêm nghĩa vụ */}
@@ -83,7 +85,7 @@ export default async function LichThuePage({
         >
           <input type="hidden" name="company_id" value={companyId} />
           <div className="space-y-1">
-            <label className="text-xs text-gray-500">Loại thuế</label>
+            <label className="text-xs text-gray-500">{t('Loại thuế')}</label>
             <select name="tax_type" className="w-full h-8 rounded-md border text-sm px-2 bg-white">
               {activeTaxTypes.map(t => (
                 <option key={t.id} value={t.code}>{t.name}</option>
@@ -91,7 +93,7 @@ export default async function LichThuePage({
             </select>
           </div>
           <div className="space-y-1">
-            <label className="text-xs text-gray-500">Kỳ</label>
+            <label className="text-xs text-gray-500">{t('Kỳ')}</label>
             <input
               name="period"
               className="w-full h-8 rounded-md border text-sm px-2"
@@ -99,7 +101,7 @@ export default async function LichThuePage({
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs text-gray-500">Hạn nộp</label>
+            <label className="text-xs text-gray-500">{t('Hạn nộp')}</label>
             <input
               type="date"
               name="due_date"
@@ -107,25 +109,25 @@ export default async function LichThuePage({
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs text-gray-500">Ghi chú</label>
+            <label className="text-xs text-gray-500">{t('Ghi chú')}</label>
             <input
               name="note"
               className="w-full h-8 rounded-md border text-sm px-2"
-              placeholder="Tùy chọn"
+              
             />
           </div>
           <button
             type="submit"
             className="h-8 px-3 bg-brand-800 text-white rounded-md text-sm hover:bg-brand-700"
           >
-            Thêm
+            {t('Thêm')}
           </button>
         </form>
       )}
 
       {!companyId ? (
         <div className="rounded-xl border bg-white shadow-sm px-6 py-10 text-center text-sm text-gray-400">
-          Chọn công ty để xem lịch thuế.
+          {t('Chọn công ty để xem lịch thuế.')}
         </div>
       ) : (
         <TaxCalendarTable items={items} canEdit={canEdit} taxTypeLabels={taxLabels} />
