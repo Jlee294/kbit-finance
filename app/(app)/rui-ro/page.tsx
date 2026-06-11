@@ -7,6 +7,7 @@ import { RuiRoFilters }           from '@/features/risk/components/RuiRoFilters'
 import { getCurrentUser, canApprove } from '@/lib/auth'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { PAGE_WRAPPER } from '@/lib/ui-tokens'
+import { getT } from '@/lib/i18n/server'
 
 interface SearchParams { period?: string }
 
@@ -17,6 +18,7 @@ export default async function RuiRoPage({
 }: {
   searchParams: Promise<SearchParams>
 }) {
+  const t = await getT()
   const sp        = await searchParams
   const { companyId } = await getGlobalFilter()
   const period    = sp.period
@@ -27,8 +29,8 @@ export default async function RuiRoPage({
   return (
     <div className={PAGE_WRAPPER}>
       <PageHeader
-        title="Sức khỏe tài chính"
-        subtitle="Chấm điểm rủi ro 5 nhóm chỉ tiêu"
+        title={t('Sức khỏe tài chính')}
+        subtitle={t('Chấm điểm rủi ro 5 nhóm chỉ tiêu')}
         actions={
           <Link href="/rui-ro/nguong" className="text-sm text-brand-700 hover:underline">
             Quản lý ngưỡng →

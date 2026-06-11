@@ -3,10 +3,12 @@ import { listAllDocuments } from '@/features/documents/queries'
 import { listDocumentTypes } from '@/features/document-types/queries'
 import { DocumentListClient } from './DocumentListClient'
 import { PageHeader } from '@/components/shared/PageHeader'
+import { getT } from '@/lib/i18n/server'
 
 export const dynamic = 'force-dynamic'
 
 export default async function ChungTuPage() {
+  const t = await getT()
   const [me, docs, docTypes] = await Promise.all([
     getCurrentUser(),
     listAllDocuments({ limit: 100 }),
@@ -19,8 +21,8 @@ export default async function ChungTuPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6 p-6">
       <PageHeader
-        title="Tài liệu đính kèm"
-        subtitle={`Kho lưu hóa đơn, biên bản, hợp đồng… gắn với từng đơn hàng / phiếu thu chi để tra cứu và đối chiếu khi cần (${docs.length} tài liệu).`}
+        title={t('Tài liệu đính kèm')}
+        subtitle={`${t('Kho lưu hóa đơn, biên bản, hợp đồng… gắn với từng đơn hàng / phiếu thu chi để tra cứu và đối chiếu khi cần')} (${docs.length} ${t('tài liệu')}).`}
       />
       <DocumentListClient docs={docs} docTypes={docTypes} canWrite={canWrite} canVerify={canVerify} />
     </div>

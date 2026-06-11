@@ -400,4 +400,37 @@ export const EN: Record<string, string> = {
   'Phiếu thu cọc chưa gắn đơn': 'Deposits not yet linked to orders',
   'phải thu (131) & phải trả (331). Bấm 1 dòng để xem chi tiết.': 'receivables (131) & payables (331). Click a row for details.',
   'hóa đơn — kê theo NGÀY HÓA ĐƠN (invoice_date). Đơn chưa xuất hóa đơn KHÔNG hiện trong bảng kê.': 'invoices — listed by INVOICE DATE. Orders without an invoice do not appear here.',
+
+
+  // ── CatalogPage (shared by 9 Danh mục pages) ──────────────────
+  'bản ghi':               'records',
+  '+ Thêm':                '+ Add',
+  'Bấm + Thêm ở góc phải để tạo mới': 'Click + Add at the top-right to create one',
+  'Liên hệ admin để được thêm dữ liệu': 'Contact admin to add data',
+  'công ty':               'company',
+  'dự án':                 'project',
+  'đối tác':               'partner',
+  'mã hàng':               'item',
+  'tài khoản ngân hàng':   'bank account',
+  'kho':                   'warehouse',
+  'tỷ giá':                'exchange rate',
+  'loại chứng từ':         'document type',
+  'thư viện nv':           'operation',
+  'Phiếu thu':             'Receipts',
+  'Phiếu chi (VN)':        'Payments (VN)',
+  'Phiếu chi (KR)':        'Payments (KR)',
+  '+ Thêm phiếu thu':      '+ New receipt',
+  '+ Thêm phiếu chi':      '+ New payment',
+  'Sức khỏe tài chính':    'Financial health',
+  'Báo cáo lãi gộp':       'Gross profit report',
+  'Chỉ số':                'Indicator',
+  'Giá trị':               'Value',
+  'Chưa có chứng từ nào':  'No vouchers yet',
+  'Hồ sơ nhập khẩu':       'Import documents',
+  'Quay lại':              'Back',
+
+  'Kho lưu hóa đơn, biên bản, hợp đồng… gắn với từng đơn hàng / phiếu thu chi để tra cứu và đối chiếu khi cần':
+    'Repository of invoices, minutes, contracts… linked to each order / receipt / payment for lookup and reconciliation',
+  'tài liệu':              'documents',
+  'Chấm điểm rủi ro 5 nhóm chỉ tiêu': 'Risk scoring across 5 indicator groups',
 }
