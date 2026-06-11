@@ -16,6 +16,7 @@ import { QuickProductForm } from '@/features/products/components/QuickProductFor
 import { QuickAddPartnerDialog } from '@/features/partners/components/QuickAddPartnerDialog'
 import { DIALOG_SM } from '@/lib/ui-tokens'
 import { toast } from 'sonner'
+import { useT } from '@/lib/i18n/client'
 
 // ── Prop types ────────────────────────────────────────────────────────────────
 
@@ -74,6 +75,7 @@ function pickDefaultWarehouse(warehouses: WarehouseOption[], companyId: string):
 
 export function OrderForm({ companies, customers, projects, products, warehouses, users = [], initial, onDone }: Props) {
   const router  = useRouter()
+  const t       = useT()
   const isEdit  = !!initial?.id
 
   // ── Header state ─────────────────────────────────────────────────────────
@@ -235,21 +237,21 @@ export function OrderForm({ companies, customers, projects, products, warehouses
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
         <div className="space-y-1">
-          <Label>Công ty <span className="text-red-500">*</span></Label>
+          <Label>{t('Công ty')} <span className="text-red-500">*</span></Label>
           <select value={companyId}
             onChange={(e) => { setCompanyId(e.target.value); setProjectId(''); setWarehouseId(pickDefaultWarehouse(warehouses, e.target.value)) }}
             required className={sel}>
-            <option value="">— Chọn công ty —</option>
+            <option value="">{t('— Chọn công ty —')}</option>
             {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
 
         <div className="space-y-1">
-          <Label>Khách hàng <span className="text-red-500">*</span></Label>
+          <Label>{t('Khách hàng')} <span className="text-red-500">*</span></Label>
           <div className="flex gap-2">
             <select value={customerId} onChange={(e) => setCustomerId(e.target.value)}
               required className={sel + ' flex-1'}>
-              <option value="">— Chọn khách hàng —</option>
+              <option value="">{t('— Chọn khách hàng —')}</option>
               {[...extraCustomers, ...customers].map((c) => <option key={c.id} value={c.id}>[{c.code}] {c.name}</option>)}
             </select>
             <button
@@ -271,38 +273,38 @@ export function OrderForm({ companies, customers, projects, products, warehouses
         />
 
         <div className="space-y-1">
-          <Label>Dự án</Label>
+          <Label>{t('Dự án')}</Label>
           <select value={projectId} onChange={(e) => setProjectId(e.target.value)} className={sel}>
-            <option value="">— Không có —</option>
+            <option value="">{t('— Không có —')}</option>
             {filteredProjects.map((p) => <option key={p.id} value={p.id}>[{p.code}] {p.name}</option>)}
           </select>
         </div>
 
         <div className="space-y-1">
-          <Label>Trạng thái giao hàng</Label>
+          <Label>{t('Trạng thái giao hàng')}</Label>
           <select value={fulfillment} onChange={(e) => setFulfillment(e.target.value)} className={sel}>
-            <option value="draft">Nháp</option>
-            <option value="confirmed">Đã xác nhận</option>
-            <option value="awaiting_goods">Đang chờ hàng</option>
-            <option value="delivered">Đã giao</option>
+            <option value="draft">{t('Nháp')}</option>
+            <option value="confirmed">{t('Đã xác nhận')}</option>
+            <option value="awaiting_goods">{t('Đang chờ hàng')}</option>
+            <option value="delivered">{t('Đã giao')}</option>
           </select>
         </div>
 
         <div className="space-y-1">
-          <Label>Ngày đặt hàng <span className="text-red-500">*</span></Label>
+          <Label>{t('Ngày đặt hàng')} <span className="text-red-500">*</span></Label>
           <Input type="date" value={orderDate}
             onChange={(e) => setOrderDate(e.target.value)} required />
         </div>
 
         <div className="space-y-1">
-          <Label>Ngày giao dự kiến</Label>
+          <Label>{t('Ngày giao dự kiến')}</Label>
           <Input type="date" value={deliveryDate}
             onChange={(e) => setDeliveryDate(e.target.value)} />
         </div>
 
         {users.length > 0 && (
           <div className="space-y-1 col-span-2">
-            <Label>Nhân sự thực hiện <span className="text-xs text-gray-400 font-normal">(người chốt đơn / giao hàng)</span></Label>
+            <Label>{t('Nhân sự thực hiện')} <span className="text-xs text-gray-400 font-normal">{t('(người chốt đơn / giao hàng)')}</span></Label>
             <select value={nhanSuId} onChange={(e) => setNhanSuId(e.target.value)} className={sel}>
               <option value="">— Không gán —</option>
               {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
@@ -311,13 +313,13 @@ export function OrderForm({ companies, customers, projects, products, warehouses
         )}
 
         <div className="space-y-1">
-          <Label>Số lô đơn hàng (Lot No.)</Label>
+          <Label>{t('Số lô đơn hàng (Lot No.)')}</Label>
           <Input value={lotNo} onChange={(e) => setLotNo(e.target.value)}
             placeholder="VD: LOT-001" />
         </div>
 
         <div className="space-y-1">
-          <Label>Ngày hết hạn đơn hàng</Label>
+          <Label>{t('Ngày hết hạn đơn hàng')}</Label>
           <Input type="date" value={expiryDate}
             onChange={(e) => setExpiryDate(e.target.value)} />
         </div>
@@ -328,7 +330,7 @@ export function OrderForm({ companies, customers, projects, products, warehouses
         <input id="intercompany" type="checkbox" checked={isIntercompany}
           onChange={(e) => setIsIntercompany(e.target.checked)}
           className="h-4 w-4 rounded border-input" />
-        <Label htmlFor="intercompany">Giao dịch nội bộ (intercompany)</Label>
+        <Label htmlFor="intercompany">{t('Giao dịch nội bộ (intercompany)')}</Label>
         {isIntercompany && (
           <select value={counterpartId} onChange={(e) => setCounterpartId(e.target.value)}
             required={isIntercompany}
@@ -345,35 +347,35 @@ export function OrderForm({ companies, customers, projects, products, warehouses
       <FormSection title="Thông tin hóa đơn" description="Cho bảng kê bán ra — có thể bỏ trống nếu đơn nội bộ" variant="elevated">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
           <div className="space-y-1">
-            <Label className="text-xs">Ký hiệu mẫu HĐ</Label>
+            <Label className="text-xs">{t('Ký hiệu mẫu HĐ')}</Label>
             <Input value={invoiceTemplate} onChange={(e) => setInvoiceTemplate(e.target.value)} placeholder="VD: 1/001" className="h-8 text-sm" />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Ký hiệu HĐ</Label>
+            <Label className="text-xs">{t('Ký hiệu HĐ')}</Label>
             <Input value={invoiceSymbol} onChange={(e) => setInvoiceSymbol(e.target.value)} placeholder="VD: AA/24E" className="h-8 text-sm" />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Số HĐ</Label>
+            <Label className="text-xs">{t('Số HĐ')}</Label>
             <Input value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} placeholder="VD: 0000123" className="h-8 text-sm" />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Ngày HĐ</Label>
+            <Label className="text-xs">{t('Ngày HĐ')}</Label>
             <Input type="date" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} className="h-8 text-sm" />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">MST khách hàng</Label>
+            <Label className="text-xs">{t('MST khách hàng')}</Label>
             <Input value={customerTaxCode} onChange={(e) => setCustomerTaxCode(e.target.value)} placeholder="VD: 0123456789" className="h-8 text-sm" />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Tiền VAT (nếu nhập tay)</Label>
+            <Label className="text-xs">{t('Tiền VAT (nếu nhập tay)')}</Label>
             <Input type="number" min="0" step="any" value={vatAmount} onChange={(e) => setVatAmount(e.target.value)} placeholder="auto theo VAT %" className="h-8 text-sm text-right" />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Định khoản Nợ</Label>
+            <Label className="text-xs">{t('Định khoản Nợ')}</Label>
             <Input value={dinhKhoanNo} onChange={(e) => setDinhKhoanNo(e.target.value)} placeholder="131" className="h-8 text-sm" />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Định khoản Có</Label>
+            <Label className="text-xs">{t('Định khoản Có')}</Label>
             <Input value={dinhKhoanCo} onChange={(e) => setDinhKhoanCo(e.target.value)} placeholder="511" className="h-8 text-sm" />
           </div>
         </div>
@@ -402,7 +404,7 @@ export function OrderForm({ companies, customers, projects, products, warehouses
             <p className="text-xs text-brand-700 font-medium shrink-0">✓ Đã trừ kho</p>
           )}
           {!stockDeducted && fulfillment === 'draft' && (
-            <p className="text-xs text-gray-500 shrink-0">Đơn Nháp chưa trừ; sẽ trừ khi xác nhận</p>
+            <p className="text-xs text-gray-500 shrink-0">{t('Đơn Nháp chưa trừ; sẽ trừ khi xác nhận')}</p>
           )}
         </div>
       )}
@@ -410,7 +412,7 @@ export function OrderForm({ companies, customers, projects, products, warehouses
       {/* ─ Items table ───────────────────────────────────────────────────── */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <h3 className="font-medium text-sm text-gray-700">Dòng hàng</h3>
+          <h3 className="font-medium text-sm text-gray-700">{t('Dòng hàng')}</h3>
           <div className="flex gap-2">
             <Button type="button" variant="outline" size="sm" onClick={() => setQuickOpen(true)}>+ Tạo mã hàng</Button>
             <Button type="button" variant="outline" size="sm" onClick={addRow}>+ Thêm dòng</Button>
@@ -421,11 +423,11 @@ export function OrderForm({ companies, customers, projects, products, warehouses
           <table className="w-full text-sm min-w-[900px]">
             <thead className="bg-gray-50 text-gray-600 text-xs">
               <tr>
-                <th className="px-2 py-2 text-left w-[22%]">Sản phẩm</th>
-                <th className="px-2 py-2 text-left w-[18%]">Mô tả</th>
-                <th className="px-2 py-2 text-right w-[7%]">SL</th>
-                <th className="px-2 py-2 text-right w-[13%]">Đơn giá</th>
-                <th className="px-2 py-2 text-right w-[11%]">Thành tiền</th>
+                <th className="px-2 py-2 text-left w-[22%]">{t('Sản phẩm')}</th>
+                <th className="px-2 py-2 text-left w-[18%]">{t('Mô tả')}</th>
+                <th className="px-2 py-2 text-right w-[7%]">{t('SL')}</th>
+                <th className="px-2 py-2 text-right w-[13%]">{t('Đơn giá')}</th>
+                <th className="px-2 py-2 text-right w-[11%]">{t('Thành tiền')}</th>
                 <th className="px-2 py-2 text-left w-[12%]">Lot No.</th>
                 <th className="px-2 py-2 text-left w-[13%]">Exp Date</th>
                 <th className="px-2 py-2 w-[4%]"></th>
@@ -440,7 +442,7 @@ export function OrderForm({ companies, customers, projects, products, warehouses
                       <select value={row.product_id}
                         onChange={(e) => handleProductChange(row.key, e.target.value)}
                         className="w-full h-8 rounded border border-input bg-transparent px-2 text-sm">
-                        <option value="">— Chọn SP —</option>
+                        <option value="">{t('— Chọn SP —')}</option>
                         {productList.map((p) =>
                           <option key={p.id} value={p.id}>[{p.code}] {p.name}</option>
                         )}
@@ -450,7 +452,7 @@ export function OrderForm({ companies, customers, projects, products, warehouses
                       <input type="text" value={row.description}
                         onChange={(e) => updateRow(row.key, { description: e.target.value })}
                         className="w-full h-8 rounded border border-input bg-transparent px-2 text-sm"
-                        placeholder="Mô tả..." />
+                        placeholder={t('Mô tả...')} />
                     </td>
                     <td className="px-2 py-1">
                       <input type="number" min="0.01" step="any" value={row.qty}
@@ -496,14 +498,14 @@ export function OrderForm({ companies, customers, projects, products, warehouses
 
           {/* Tiểu tổng */}
           <div className="flex justify-between text-gray-600 border-b pb-2">
-            <span>Tiểu tổng</span>
+            <span>{t('Tiểu tổng')}</span>
             <span className="font-medium text-gray-900">{formatVND(totals.subtotal)}</span>
           </div>
 
           {/* Chiết khấu */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 text-gray-600">
-              <span>Chiết khấu</span>
+              <span>{t('Chiết khấu')}</span>
               <div className="flex items-center gap-1">
                 <input type="number" min="0" max="100" step="0.01" value={discountPct}
                   onChange={(e) => setDiscountPct(e.target.value)}
@@ -534,7 +536,7 @@ export function OrderForm({ companies, customers, projects, products, warehouses
 
           {/* Phí vận chuyển */}
           <div className="flex items-center justify-between gap-2">
-            <span className="text-gray-600">Phí vận chuyển</span>
+            <span className="text-gray-600">{t('Phí vận chuyển')}</span>
             <input type="number" min="0" step="1" value={shippingFee}
               onChange={(e) => setShippingFee(e.target.value)}
               className="w-36 h-7 rounded border border-input bg-transparent px-2 text-right text-sm" />
@@ -542,7 +544,7 @@ export function OrderForm({ companies, customers, projects, products, warehouses
 
           {/* Grand total */}
           <div className="flex justify-between border-t pt-2 font-semibold text-base">
-            <span>Tổng thanh toán</span>
+            <span>{t('Tổng thanh toán')}</span>
             <span className="text-gray-900">{formatVND(totals.grandTotal)}</span>
           </div>
         </div>
@@ -555,10 +557,10 @@ export function OrderForm({ companies, customers, projects, products, warehouses
 
       <div className="flex justify-end gap-2">
         {onDone && (
-          <Button type="button" variant="outline" onClick={onDone} disabled={saving}>Hủy</Button>
+          <Button type="button" variant="outline" onClick={onDone} disabled={saving}>{t('Hủy')}</Button>
         )}
         <Button type="submit" disabled={saving}>
-          {saving ? 'Đang lưu...' : isEdit ? 'Cập nhật đơn' : 'Tạo đơn hàng'}
+          {saving ? t('Đang lưu...') : isEdit ? t('Cập nhật đơn') : t('+ Tạo đơn hàng')}
         </Button>
       </div>
     </form>
@@ -566,7 +568,7 @@ export function OrderForm({ companies, customers, projects, products, warehouses
     <Dialog open={quickOpen} onOpenChange={setQuickOpen}>
       <DialogContent showCloseButton={false} className={DIALOG_SM}>
         <DialogHeader>
-          <DialogTitle>Tạo mã hàng mới</DialogTitle>
+          <DialogTitle>{t('Tạo mã hàng mới')}</DialogTitle>
         </DialogHeader>
         <QuickProductForm
           onDone={() => setQuickOpen(false)}

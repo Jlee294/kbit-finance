@@ -15,6 +15,7 @@ import { QuickProductForm } from '@/features/products/components/QuickProductFor
 import { QuickAddPartnerDialog } from '@/features/partners/components/QuickAddPartnerDialog'
 import { DIALOG_SM } from '@/lib/ui-tokens'
 import { toast } from 'sonner'
+import { useT } from '@/lib/i18n/client'
 
 type SimpleOption  = { id: string; name: string }
 type SupplierOpt   = { id: string; code: string; name: string }
@@ -59,6 +60,7 @@ function pickDefaultWarehouse(warehouses: WarehouseOpt[], companyId: string): st
 
 export function ImportOrderForm({ companies, suppliers, products, projects, users = [], warehouses = [], operations = [], editOrder, onDone }: Props) {
   const router = useRouter()
+  const t = useT()
   const isEdit = !!editOrder
 
   const [companyId,       setCompanyId]       = useState(editOrder?.company_id ?? '')
@@ -196,17 +198,17 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
       {/* KTT I1: full-width dialog → có thể dùng 3 cột trên màn rộng */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="space-y-1">
-          <Label>Công ty <span className="text-red-500">*</span></Label>
+          <Label>{t('Công ty')} <span className="text-red-500">*</span></Label>
           <select value={companyId} onChange={(e) => { setCompanyId(e.target.value); setProjectId(''); setWarehouseId(pickDefaultWarehouse(warehouses, e.target.value)) }} required className={sel}>
-            <option value="">— Chọn công ty —</option>
+            <option value="">{t('— Chọn công ty —')}</option>
             {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
         <div className="space-y-1">
-          <Label>Nhà cung cấp <span className="text-red-500">*</span></Label>
+          <Label>{t('Nhà cung cấp')} <span className="text-red-500">*</span></Label>
           <div className="flex gap-2">
             <select value={supplierId} onChange={(e) => setSupplierId(e.target.value)} required className={sel + ' flex-1'}>
-              <option value="">— Chọn NCC —</option>
+              <option value="">{t('— Chọn NCC —')}</option>
               {[...extraSuppliers, ...suppliers].map((s) => <option key={s.id} value={s.id}>[{s.code}] {s.name}</option>)}
             </select>
             <button
@@ -214,7 +216,7 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
               onClick={() => setQuickSupOpen(true)}
               className="h-9 px-3 rounded-md border border-brand-200 bg-brand-50 hover:bg-brand-100 text-brand-700 text-sm font-medium whitespace-nowrap"
               title="Thêm nhanh NCC mới"
-            >+ Mới</button>
+            >{t('+ Mới')}</button>
           </div>
         </div>
         <QuickAddPartnerDialog
@@ -227,51 +229,51 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
           }}
         />
         <div className="space-y-1">
-          <Label>Mã đơn <span className="text-xs text-gray-400 font-normal">(để trống = tự sinh)</span></Label>
-          <Input value={orderCode} onChange={(e) => setOrderCode(e.target.value)} placeholder="Để trống để tự sinh" />
+          <Label>{t('Mã đơn')} <span className="text-xs text-gray-400 font-normal">{t('(để trống = tự sinh)')}</span></Label>
+          <Input value={orderCode} onChange={(e) => setOrderCode(e.target.value)} placeholder={t('Để trống để tự sinh')} />
         </div>
         <div className="space-y-1">
-          <Label>Ngày đặt hàng <span className="text-red-500">*</span></Label>
+          <Label>{t('Ngày đặt hàng')} <span className="text-red-500">*</span></Label>
           <Input type="date" value={orderDate} onChange={(e) => setOrderDate(e.target.value)} required />
         </div>
         <div className="space-y-1">
-          <Label>Dự án</Label>
+          <Label>{t('Dự án')}</Label>
           <select value={projectId} onChange={(e) => setProjectId(e.target.value)} className={sel}>
-            <option value="">— Không có —</option>
+            <option value="">{t('— Không có —')}</option>
             {filteredProjects.map((p) => <option key={p.id} value={p.id}>[{p.code}] {p.name}</option>)}
           </select>
         </div>
         {users.length > 0 && (
           <div className="space-y-1">
-            <Label>Nhân sự thực hiện</Label>
+            <Label>{t('Nhân sự thực hiện')}</Label>
             <select value={nhanSuId} onChange={(e) => setNhanSuId(e.target.value)} className={sel}>
-              <option value="">— Không gán —</option>
+              <option value="">{t('— Không gắn —')}</option>
               {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
             </select>
           </div>
         )}
         {companyId && filteredWarehouses.length > 0 && (
           <div className="space-y-1">
-            <Label>Kho nhập hàng <span className="text-xs text-gray-400 font-normal">(tự cộng tồn theo mã hàng)</span></Label>
+            <Label>{t('Kho nhập hàng')} <span className="text-xs text-gray-400 font-normal">{t('(tự cộng tồn theo mã hàng)')}</span></Label>
             <select value={warehouseId} onChange={(e) => setWarehouseId(e.target.value)} className={sel}>
               {filteredWarehouses.map((w) => <option key={w.id} value={w.id}>[{w.code}] {w.name}{w.is_default ? ' (kho chính)' : ''}</option>)}
             </select>
           </div>
         )}
         <div className="space-y-1">
-          <Label>Loại đơn <span className="text-red-500">*</span></Label>
+          <Label>{t('Loại đơn')} <span className="text-red-500">*</span></Label>
           <select value={orderType} onChange={(e) => setOrderType(e.target.value as 'import' | 'domestic')} className={sel}>
-            <option value="import">Nhập khẩu</option>
-            <option value="domestic">Mua trong nước</option>
+            <option value="import">{t('Nhập khẩu')}</option>
+            <option value="domestic">{t('Mua trong nước')}</option>
           </select>
         </div>
 
         {/* KTT D3: Nghiệp vụ → checklist hồ sơ */}
         {operations.length > 0 && (
           <div className="space-y-1">
-            <Label>Nghiệp vụ <span className="text-xs text-gray-400 font-normal">(checklist HS)</span></Label>
+            <Label>{t('Nghiệp vụ')} <span className="text-xs text-gray-400 font-normal">{t('(checklist HS)')}</span></Label>
             <select value={operationId} onChange={(e) => setOperationId(e.target.value)} className={sel}>
-              <option value="">— Không gắn —</option>
+              <option value="">{t('— Không gắn —')}</option>
               {operations.map((o) => (
                 <option key={o.id} value={o.id}>
                   [{o.code}] {o.name}{o.group_name ? ` · ${o.group_name}` : ''}
@@ -281,7 +283,7 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
           </div>
         )}
         <div className="space-y-1">
-          <Label>Đơn vị tiền <span className="text-red-500">*</span></Label>
+          <Label>{t('Đơn vị tiền')} <span className="text-red-500">*</span></Label>
           <select value={currency} onChange={(e) => { setCurrency(e.target.value as 'VND' | 'KRW'); setExchangeRate('') }} className={sel}>
             <option value="VND">VNĐ</option>
             <option value="KRW">KRW (Hàn Quốc)</option>
@@ -292,38 +294,38 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
         {currency === 'KRW' && (
           <div className="space-y-1 md:col-span-2">
             <Label>
-              Tỷ giá ghi nợ (KRW→VNĐ) <span className="text-red-500">*</span>
+              {t('Tỷ giá ghi nợ (KRW→VNĐ)')} <span className="text-red-500">*</span>
             </Label>
             <Input type="number" min="0.001" step="0.001"
               value={exchangeRate} onChange={(e) => setExchangeRate(e.target.value)}
               placeholder="VD: 18" required={currency === 'KRW'} />
-            <p className="text-xs text-gray-400">Phase 4 dùng để tính chênh lệch tỷ giá khi trả NCC</p>
+            <p className="text-xs text-gray-400">{t('Phase 4 dùng để tính chênh lệch tỷ giá khi trả NCC')}</p>
           </div>
         )}
       </div>
 
       {/* ── Chi phí nhập khẩu ─────────────────────────────────────── */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">Chi phí nhập khẩu ({currency})</h3>
+        <h3 className="text-sm font-semibold text-gray-700 mb-3">{t('Chi phí nhập khẩu')} ({currency})</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="space-y-1">
-            <Label>Giá mua hàng <span className="text-red-500">*</span></Label>
+            <Label>{t('Giá mua hàng')} <span className="text-red-500">*</span></Label>
             <Input type="number" min="0" step="1"
               value={goodsValue} onChange={(e) => setGoodsValue(e.target.value)} required />
           </div>
           <div className="space-y-1">
-            <Label>Thuế nhập khẩu</Label>
+            <Label>{t('Thuế nhập khẩu')}</Label>
             <Input type="number" min="0" step="1" value={importDuty} onChange={(e) => setImportDuty(e.target.value)} />
           </div>
           <div className="space-y-1">
-            <Label>VAT khâu nhập khẩu</Label>
+            <Label>{t('VAT khâu nhập khẩu')}</Label>
             <Input type="number" min="0" step="1" value={vatImport} onChange={(e) => setVatImport(e.target.value)} />
-            <p className="text-xs text-brand-700">Khấu trừ riêng — KHÔNG tính vào giá vốn</p>
+            <p className="text-xs text-brand-700">{t('Khấu trừ riêng — KHÔNG tính vào giá vốn')}</p>
           </div>
           <div className="space-y-1">
-            <Label>Phí khác</Label>
+            <Label>{t('Phí khác')}</Label>
             <Input type="number" min="0" step="1" value={otherFees} onChange={(e) => setOtherFees(e.target.value)} />
-            <p className="text-xs text-gray-400">HQ, lưu kho, vận chuyển, đại lý</p>
+            <p className="text-xs text-gray-400">{t('HQ, lưu kho, vận chuyển, đại lý')}</p>
           </div>
         </div>
 
@@ -331,18 +333,18 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
         {costTotalFc > 0 && (
           <div className="mt-3 rounded-lg bg-brand-50 border border-brand-100 px-4 py-3 text-sm space-y-1">
             <div className="flex justify-between font-semibold text-brand-900">
-              <span>Giá vốn lô (cost_total = mua + thuế NK + phí khác):</span>
+              <span>{t('Giá vốn lô (cost_total = mua + thuế NK + phí khác):')}</span>
               <span>{fmtCurrency(costTotalFc)}</span>
             </div>
             {currency === 'KRW' && rate > 0 && (
               <div className="flex justify-between text-brand-700">
-                <span>Quy VNĐ (×{rate}):</span>
+                <span>{t('Quy VNĐ')} (×{rate}):</span>
                 <span>{formatVND(costTotalVnd)}</span>
               </div>
             )}
             {vat > 0 && (
               <div className="flex justify-between text-gray-500 text-xs">
-                <span>VAT khâu NK (riêng, không vào giá vốn):</span>
+                <span>{t('VAT khâu NK (riêng, không vào giá vốn)')}:</span>
                 <span>{fmtCurrency(vat)}</span>
               </div>
             )}
@@ -353,25 +355,25 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
       {/* ── Dòng hàng ─────────────────────────────────────────────── */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-semibold text-gray-700">Dòng hàng</h3>
+          <h3 className="text-sm font-semibold text-gray-700">{t('Dòng hàng')}</h3>
           <div className="flex gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={() => setQuickOpen(true)}>+ Tạo mã hàng</Button>
-            <Button type="button" variant="outline" size="sm" onClick={addItem}>+ Thêm dòng</Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => setQuickOpen(true)}>{t('+ Tạo mã hàng')}</Button>
+            <Button type="button" variant="outline" size="sm" onClick={addItem}>{t('+ Thêm dòng')}</Button>
           </div>
         </div>
         <div className="rounded-lg border overflow-x-auto">
           <table className="w-full text-sm min-w-[1100px]">
             <thead>
               <tr className="bg-gray-50 text-gray-600 text-xs">
-                <th className="px-3 py-2 text-left">Sản phẩm</th>
-                <th className="px-3 py-2 text-left w-32">Mô tả</th>
-                <th className="px-3 py-2 text-right w-20">Số lượng</th>
-                <th className="px-3 py-2 text-right w-28">Đơn giá ({currency})</th>
-                <th className="px-3 py-2 text-right w-28">Thành tiền</th>
-                <th className="px-3 py-2 text-left w-24">Số lô</th>
-                <th className="px-3 py-2 text-left w-32">HSD (exp)</th>
+                <th className="px-3 py-2 text-left">{t('Sản phẩm')}</th>
+                <th className="px-3 py-2 text-left w-32">{t('Mô tả')}</th>
+                <th className="px-3 py-2 text-right w-20">{t('Số lượng')}</th>
+                <th className="px-3 py-2 text-right w-28">{t('Đơn giá')} ({currency})</th>
+                <th className="px-3 py-2 text-right w-28">{t('Thành tiền')}</th>
+                <th className="px-3 py-2 text-left w-24">{t('Số lô')}</th>
+                <th className="px-3 py-2 text-left w-32">{t('HSD (exp)')}</th>
                 <th className="px-3 py-2 text-right w-28">
-                  Giá vốn/đv (VNĐ)
+                  {t('Giá vốn/đv (VNĐ)')}
                   <span className="block text-gray-400 font-normal">unit_cost</span>
                 </th>
                 <th className="px-3 py-2 w-8"></th>
@@ -393,13 +395,13 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
                     <td className="px-3 py-2">
                       <select value={row.product_id} onChange={(e) => updateItem(i, 'product_id', e.target.value)}
                         className="w-full h-8 rounded border border-input bg-transparent px-2 text-xs focus:outline-none">
-                        <option value="">— Chọn SP —</option>
+                        <option value="">{t('— Chọn SP —')}</option>
                         {productList.map((p) => <option key={p.id} value={p.id}>[{p.code}] {p.name}</option>)}
                       </select>
                     </td>
                     <td className="px-3 py-2">
                       <Input value={row.description} onChange={(e) => updateItem(i, 'description', e.target.value)}
-                        placeholder="Mô tả..." className="h-8 text-xs" />
+                        placeholder={t('Mô tả...')} className="h-8 text-xs" />
                     </td>
                     <td className="px-3 py-2">
                       <Input type="number" min="0.001" step="0.001" value={row.qty}
@@ -443,38 +445,38 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
       </div>
 
       {/* ── Thông tin hóa đơn ────────────────────────────────────── */}
-      <FormSection title="Thông tin hóa đơn" description="Cho bảng kê mua vào" variant="elevated">
+      <FormSection title={t('Thông tin hóa đơn')} description={t('Cho bảng kê mua vào')} variant="elevated">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
           <div className="space-y-1">
-            <Label className="text-xs">Ký hiệu mẫu HĐ</Label>
+            <Label className="text-xs">{t('Ký hiệu mẫu HĐ')}</Label>
             <Input value={invoiceTemplate} onChange={(e) => setInvoiceTemplate(e.target.value)} placeholder="VD: 1/001" className="h-8 text-sm" />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Ký hiệu HĐ</Label>
+            <Label className="text-xs">{t('Ký hiệu HĐ')}</Label>
             <Input value={invoiceSymbol} onChange={(e) => setInvoiceSymbol(e.target.value)} placeholder="VD: AA/24E" className="h-8 text-sm" />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Số HĐ</Label>
+            <Label className="text-xs">{t('Số HĐ')}</Label>
             <Input value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} placeholder="VD: 0000123" className="h-8 text-sm" />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Ngày HĐ</Label>
+            <Label className="text-xs">{t('Ngày HĐ')}</Label>
             <Input type="date" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} className="h-8 text-sm" />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">MST NCC</Label>
+            <Label className="text-xs">{t('MST NCC')}</Label>
             <Input value={supplierTaxCode} onChange={(e) => setSupplierTaxCode(e.target.value)} placeholder="VD: 0123456789" className="h-8 text-sm" />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Tiền VAT</Label>
+            <Label className="text-xs">{t('Tiền VAT')}</Label>
             <Input type="number" min="0" step="any" value={vatAmount} onChange={(e) => setVatAmount(e.target.value)} placeholder="0" className="h-8 text-sm text-right" />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Định khoản Nợ</Label>
+            <Label className="text-xs">{t('Định khoản Nợ')}</Label>
             <Input value={dinhKhoanNo} onChange={(e) => setDinhKhoanNo(e.target.value)} placeholder="156 / 152..." className="h-8 text-sm" />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Định khoản Có</Label>
+            <Label className="text-xs">{t('Định khoản Có')}</Label>
             <Input value={dinhKhoanCo} onChange={(e) => setDinhKhoanCo(e.target.value)} placeholder="331" className="h-8 text-sm" />
           </div>
         </div>
@@ -495,7 +497,7 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
             <Label>Pháp nhân đối ứng <span className="text-red-500">*</span></Label>
             <select value={counterpartId} onChange={(e) => setCounterpartId(e.target.value)}
               required={isInterco} className={sel}>
-              <option value="">— Chọn công ty —</option>
+              <option value="">{t('— Chọn công ty —')}</option>
               {counterpartList.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
@@ -505,7 +507,7 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
       {error && <p className="rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>}
 
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onDone} disabled={saving}>Hủy</Button>
+        <Button type="button" variant="outline" onClick={onDone} disabled={saving}>{t('Hủy')}</Button>
         <Button type="submit" disabled={saving}>
           {saving ? 'Đang lưu...' : isEdit ? 'Cập nhật đơn' : (orderType === 'domestic' ? 'Tạo đơn mua trong nước' : 'Tạo đơn nhập khẩu')}
         </Button>

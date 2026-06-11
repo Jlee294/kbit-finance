@@ -6,6 +6,7 @@ import { setOpeningStock } from '@/features/inventory-cost/actions'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { PAGE_WRAPPER } from '@/lib/ui-tokens'
 import { formatVND } from '@/lib/format'
+import { useT } from '@/lib/i18n/client'
 
 interface Product { id: string; code: string; name: string }
 interface Warehouse { id: string; code: string; name: string }
@@ -15,6 +16,7 @@ export function OpeningBalanceClient({ period, canWrite, products, warehouses, o
   period: string; canWrite: boolean; products: Product[]; warehouses: Warehouse[]; openings: Opening[]
 }) {
   const router = useRouter()
+  const t = useT()
   const [productId, setProductId] = useState('')
   const [warehouseId, setWarehouseId] = useState('')
   const [qty, setQty] = useState('')
@@ -32,44 +34,44 @@ export function OpeningBalanceClient({ period, canWrite, products, warehouses, o
 
   return (
     <div className={PAGE_WRAPPER}>
-      <PageHeader title="Số dư đầu kỳ kho" subtitle="Khai SL tồn + đơn giá vốn đầu kỳ cho từng mã TẠI TỪNG KHO (làm 1 lần khi bắt đầu áp dụng giá vốn)" />
+      <PageHeader title={t('Số dư đầu kỳ kho')} subtitle={t('Khai SL tồn + đơn giá vốn đầu kỳ cho từng mã TẠI TỪNG KHO (làm 1 lần khi bắt đầu áp dụng giá vốn)')} />
 
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-500">Kỳ mốc</label>
+          <label className="text-sm text-gray-500">{t('Kỳ mốc')}</label>
           <input type="month" value={period} onChange={e => router.push(`/kho/so-du-dau-ky?period=${e.target.value}`)}
             className="h-9 rounded-md border border-gray-200 px-3 text-sm" />
         </div>
-        <span className="text-xs text-gray-400">Công ty chọn ở thanh trên cùng</span>
+        <span className="text-xs text-gray-400">{t('Công ty chọn ở thanh trên cùng')}</span>
       </div>
 
       {canWrite && (
         <div className="rounded-xl border bg-white p-4 grid grid-cols-5 gap-3 items-end">
           <div className="space-y-1 col-span-2">
-            <label className="text-xs text-gray-500">Mã hàng</label>
+            <label className="text-xs text-gray-500">{t('Mã hàng')}</label>
             <select value={productId} onChange={e => setProductId(e.target.value)} className="w-full h-9 rounded-md border border-gray-200 px-3 text-sm">
-              <option value="">— Chọn mã —</option>
+              <option value="">{t('— Chọn mã —')}</option>
               {products.map(p => <option key={p.id} value={p.id}>[{p.code}] {p.name}</option>)}
             </select>
           </div>
           <div className="space-y-1">
-            <label className="text-xs text-gray-500">Kho</label>
+            <label className="text-xs text-gray-500">{t('Kho')}</label>
             <select value={warehouseId} onChange={e => setWarehouseId(e.target.value)} className="w-full h-9 rounded-md border border-gray-200 px-3 text-sm">
-              <option value="">— Chọn kho —</option>
+              <option value="">{t('— Chọn kho —')}</option>
               {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
             </select>
           </div>
           <div className="space-y-1">
-            <label className="text-xs text-gray-500">SL tồn đầu</label>
+            <label className="text-xs text-gray-500">{t('SL tồn đầu')}</label>
             <input type="number" min="0" step="any" value={qty} onChange={e => setQty(e.target.value)} className="w-full h-9 rounded-md border border-gray-200 px-3 text-sm" />
           </div>
           <div className="space-y-1">
-            <label className="text-xs text-gray-500">Đơn giá vốn</label>
+            <label className="text-xs text-gray-500">{t('Đơn giá vốn')}</label>
             <input type="number" min="0" step="any" value={unitCost} onChange={e => setUnitCost(e.target.value)} className="w-full h-9 rounded-md border border-gray-200 px-3 text-sm" />
           </div>
           <div className="col-span-5 flex items-center gap-3">
             <button onClick={save} disabled={saving || !productId || !warehouseId} className="h-9 px-4 bg-brand-800 text-white text-sm rounded-md hover:bg-brand-700 disabled:opacity-50">
-              {saving ? 'Đang lưu...' : 'Lưu số dư đầu kỳ'}
+              {saving ? t('Đang lưu...') : t('Lưu số dư đầu kỳ')}
             </button>
             {error && <span className="text-sm text-red-600">{error}</span>}
           </div>

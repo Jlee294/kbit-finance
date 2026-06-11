@@ -6,6 +6,7 @@ import { receiveStock, issueStock, transferStock } from '../actions'
 import { ISSUE_REASONS, ISSUE_REASON_LABELS } from '../schema'
 import type { Warehouse } from '../queries'
 import { todayLocal } from '@/lib/format'
+import { useT } from '@/lib/i18n/client'
 
 interface Product { id: string; code: string; name: string; unit: string | null }
 
@@ -26,6 +27,7 @@ const MODE_LABELS: Record<Mode, string> = {
 export function StockMutationForm({ initialMode = 'receipt', warehouses, products }: Props) {
   const router = useRouter()
   const today = todayLocal()
+  const t = useT()
 
   const [mode, setMode] = useState<Mode>(initialMode)
   const [warehouseId, setWarehouseId] = useState('')
@@ -61,7 +63,7 @@ export function StockMutationForm({ initialMode = 'receipt', warehouses, product
     if (result.error) {
       setError(result.error)
     } else {
-      setSuccess(`✅ ${MODE_LABELS[mode]} thành công!`)
+      setSuccess(`✅ ${t(MODE_LABELS[mode])} ${t('thành công!')}`)
       setProductId('')
       setQty('')
       setUnitCost('')
@@ -77,21 +79,21 @@ export function StockMutationForm({ initialMode = 'receipt', warehouses, product
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Loại phiếu — chọn ngay trong popup (gộp Nhập/Xuất/Luân chuyển) */}
       <div className="space-y-1">
-        <label className="text-xs text-gray-500">Loại phiếu</label>
+        <label className="text-xs text-gray-500">{t('Loại phiếu')}</label>
         <select value={mode} onChange={e => setMode(e.target.value as Mode)} className={fieldCls}>
-          <option value="receipt">+ Nhập kho</option>
-          <option value="issue">− Xuất kho</option>
-          <option value="transfer">⇄ Luân chuyển</option>
+          <option value="receipt">{t('+ Nhập kho')}</option>
+          <option value="issue">{t('− Xuất kho')}</option>
+          <option value="transfer">{t('⇄ Luân chuyển')}</option>
         </select>
       </div>
 
       {/* Kho nguồn */}
       <div className="space-y-1">
         <label className="text-xs text-gray-500">
-          {mode === 'transfer' ? 'Kho nguồn' : 'Kho'}
+          {mode === 'transfer' ? t('Kho nguồn') : t('Kho')}
         </label>
         <select value={warehouseId} onChange={e => setWarehouseId(e.target.value)} required className={fieldCls}>
-          <option value="">— Chọn kho —</option>
+          <option value="">{t('— Chọn kho —')}</option>
           {warehouses.map(w => (
             <option key={w.id} value={w.id}>{w.name}</option>
           ))}
@@ -101,9 +103,9 @@ export function StockMutationForm({ initialMode = 'receipt', warehouses, product
       {/* Kho đích (chỉ cho transfer) */}
       {mode === 'transfer' && (
         <div className="space-y-1">
-          <label className="text-xs text-gray-500">Kho đích</label>
+          <label className="text-xs text-gray-500">{t('Kho đích')}</label>
           <select value={toWarehouseId} onChange={e => setToWarehouseId(e.target.value)} required className={fieldCls}>
-            <option value="">— Chọn kho đích —</option>
+            <option value="">{t('— Chọn kho đích —')}</option>
             {warehouses.filter(w => w.id !== warehouseId).map(w => (
               <option key={w.id} value={w.id}>{w.name}</option>
             ))}
@@ -113,9 +115,9 @@ export function StockMutationForm({ initialMode = 'receipt', warehouses, product
 
       {/* Sản phẩm */}
       <div className="space-y-1">
-        <label className="text-xs text-gray-500">Sản phẩm</label>
+        <label className="text-xs text-gray-500">{t('Sản phẩm')}</label>
         <select value={productId} onChange={e => setProductId(e.target.value)} required className={fieldCls}>
-          <option value="">— Chọn sản phẩm —</option>
+          <option value="">{t('— Chọn sản phẩm —')}</option>
           {products.map(p => (
             <option key={p.id} value={p.id}>{p.name} ({p.code})</option>
           ))}
@@ -125,7 +127,7 @@ export function StockMutationForm({ initialMode = 'receipt', warehouses, product
       <div className="grid grid-cols-2 gap-3">
         {/* Số lượng */}
         <div className="space-y-1">
-          <label className="text-xs text-gray-500">Số lượng</label>
+          <label className="text-xs text-gray-500">{t('Số lượng')}</label>
           <input
             type="number" min="0.001" step="any"
             value={qty} onChange={e => setQty(e.target.value)}
@@ -136,7 +138,7 @@ export function StockMutationForm({ initialMode = 'receipt', warehouses, product
 
         {/* Ngày */}
         <div className="space-y-1">
-          <label className="text-xs text-gray-500">Ngày</label>
+          <label className="text-xs text-gray-500">{t('Ngày')}</label>
           <input type="date" value={txnDate} onChange={e => setTxnDate(e.target.value)} required className={fieldCls} />
         </div>
       </div>
@@ -144,11 +146,11 @@ export function StockMutationForm({ initialMode = 'receipt', warehouses, product
       {/* Đơn giá vốn (chỉ cho nhập kho) */}
       {mode === 'receipt' && (
         <div className="space-y-1">
-          <label className="text-xs text-gray-500">Đơn giá vốn (₫/đơn vị)</label>
+          <label className="text-xs text-gray-500">{t('Đơn giá vốn (₫/đơn vị)')}</label>
           <input
             type="number" min="0" step="any"
             value={unitCost} onChange={e => setUnitCost(e.target.value)}
-            placeholder="Giá vốn nhập / đơn vị"
+            placeholder={t('Giá vốn nhập / đơn vị')}
             className={fieldCls}
           />
         </div>
@@ -157,7 +159,7 @@ export function StockMutationForm({ initialMode = 'receipt', warehouses, product
       {/* Lý do (chỉ cho issue) */}
       {mode === 'issue' && (
         <div className="space-y-1">
-          <label className="text-xs text-gray-500">Lý do xuất</label>
+          <label className="text-xs text-gray-500">{t('Lý do xuất')}</label>
           <select value={reason} onChange={e => setReason(e.target.value)} required className={fieldCls}>
             {ISSUE_REASONS.map(r => (
               <option key={r} value={r}>{ISSUE_REASON_LABELS[r]}</option>
@@ -168,10 +170,10 @@ export function StockMutationForm({ initialMode = 'receipt', warehouses, product
 
       {/* Ghi chú */}
       <div className="space-y-1">
-        <label className="text-xs text-gray-500">Ghi chú (tùy chọn)</label>
+        <label className="text-xs text-gray-500">{t('Ghi chú (tùy chọn)')}</label>
         <input
           value={note} onChange={e => setNote(e.target.value)}
-          placeholder="Ghi chú..."
+          placeholder={t('Ghi chú...')}
           className={fieldCls}
         />
       </div>
@@ -185,7 +187,7 @@ export function StockMutationForm({ initialMode = 'receipt', warehouses, product
             onChange={(e) => setNoInvoice(e.target.checked)}
             className="rounded border-gray-300 text-brand-700 focus:ring-brand-500"
           />
-          <span>Chưa có hóa đơn <span className="text-xs text-gray-400">(sẽ bổ sung sau)</span></span>
+          <span>{t('Chưa có hóa đơn')} <span className="text-xs text-gray-400">{t('(sẽ bổ sung sau)')}</span></span>
         </label>
       )}
 
@@ -196,7 +198,7 @@ export function StockMutationForm({ initialMode = 'receipt', warehouses, product
         type="submit" disabled={saving}
         className="w-full h-9 bg-brand-800 text-white text-sm font-medium rounded-md hover:bg-brand-700 disabled:opacity-50"
       >
-        {saving ? 'Đang xử lý...' : MODE_LABELS[mode]}
+        {saving ? t('Đang xử lý...') : t(MODE_LABELS[mode])}
       </button>
     </form>
   )
