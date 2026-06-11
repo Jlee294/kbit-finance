@@ -8,8 +8,11 @@ import { Button } from '@/components/ui/button'
 import { Sidebar } from './Sidebar'
 import { GlobalFilterBar } from '@/components/shared/GlobalFilterBar'
 import { ChatWidgetLazy } from '@/components/chat/ChatWidgetLazy'
+import { I18nProvider } from '@/lib/i18n/client'
+import { getLocale, getT } from '@/lib/i18n/server'
 
 async function SignOutButton() {
+  const t = await getT()
   async function signOut() {
     'use server'
     const supabase = await createClient()
@@ -19,7 +22,7 @@ async function SignOutButton() {
   return (
     <form action={signOut}>
       <Button variant="outline" size="sm" type="submit" className="w-full">
-        Đăng xuất
+        {t('Đăng xuất')}
       </Button>
     </form>
   )
@@ -29,11 +32,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const me = await getCurrentUser()
   if (!me) redirect('/login')
 
-  const [gf, companies] = await Promise.all([getGlobalFilter(), listCompanies()])
+  const [gf, companies, locale] = await Promise.all([getGlobalFilter(), listCompanies(), getLocale()])
   const curY = Number(todayLocal().slice(0, 4))
   const years = [curY - 2, curY - 1, curY, curY + 1].map(String)
 
   return (
+    <I18nProvider locale={locale}>
     <div className="flex min-h-screen bg-gray-50">
       {/* ── Sidebar ─────────────────────────────────────── */}
       <aside className="w-56 shrink-0 flex flex-col bg-white border-r border-gray-200 min-h-screen sticky top-0 h-screen shadow-sm">
@@ -75,5 +79,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       {/* ── AI Chatbot ──────────────────────────────────── */}
       <ChatWidgetLazy />
     </div>
+    </I18nProvider>
   )
 }

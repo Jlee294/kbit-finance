@@ -1,6 +1,7 @@
 'use client'
 
 import { FULFILLMENT_LABEL, PAYMENT_LABEL } from '@/lib/orders-labels'
+import { useT } from '@/lib/i18n/client'
 
 type FulfillmentStatus = keyof typeof FULFILLMENT_LABEL
 type PaymentStatus = keyof typeof PAYMENT_LABEL
@@ -19,19 +20,21 @@ const PAYMENT_COLOR: Record<PaymentStatus, string> = {
 }
 
 export function FulfillmentBadge({ status }: { status: string }) {
+  const t = useT()
   const s = status as FulfillmentStatus
   return (
     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${FULFILLMENT_COLOR[s] ?? 'bg-gray-100 text-gray-700'}`}>
-      {FULFILLMENT_LABEL[s] ?? status}
+      {t(FULFILLMENT_LABEL[s] ?? status)}
     </span>
   )
 }
 
 export function PaymentBadge({ status }: { status: string }) {
+  const t = useT()
   const s = status as PaymentStatus
   return (
     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${PAYMENT_COLOR[s] ?? 'bg-gray-100 text-gray-700'}`}>
-      {PAYMENT_LABEL[s] ?? status}
+      {t(PAYMENT_LABEL[s] ?? status)}
     </span>
   )
 }

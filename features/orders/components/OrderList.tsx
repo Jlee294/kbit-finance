@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/shared/EmptyState'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { OrderForm } from './OrderForm'
 import { PAGE_WRAPPER, DIALOG_LG, LIST_WRAP, LIST_THEAD, LIST_ROW } from '@/lib/ui-tokens'
+import { useT } from '@/lib/i18n/client'
 import type { OrderListRow } from '../queries'
 
 type SimpleOption    = { id: string; name: string }
@@ -34,6 +35,7 @@ interface Props {
 
 export function OrderList({ initialRows, total, canWrite, companies, customers, projects, products, warehouses, users }: Props) {
   const router = useRouter()
+  const t = useT()
   const [rows] = useState<OrderListRow[]>(initialRows)
   const [addOpen, setAddOpen] = useState(false)
 
@@ -50,8 +52,8 @@ export function OrderList({ initialRows, total, canWrite, companies, customers, 
   return (
     <div className={PAGE_WRAPPER}>
       <PageHeader
-        title="Nhật ký bán ra"
-        subtitle={`${total.toLocaleString('vi-VN')} đơn / hóa đơn bán ra`}
+        title={t('Nhật ký bán ra')}
+        subtitle={`${total.toLocaleString('vi-VN')} ${t('đơn / hóa đơn bán ra')}`}
         actions={canWrite ? (
           <>
             <a href="/don-hang/import-xml"
@@ -59,7 +61,7 @@ export function OrderList({ initialRows, total, canWrite, companies, customers, 
               ↥ Import XML
             </a>
             <Button onClick={() => setAddOpen(true)}>
-              + Tạo đơn hàng
+              {t('+ Tạo đơn hàng')}
             </Button>
           </>
         ) : undefined}
@@ -68,7 +70,7 @@ export function OrderList({ initialRows, total, canWrite, companies, customers, 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent showCloseButton={false} className={DIALOG_LG}>
           <DialogHeader>
-            <DialogTitle>Tạo đơn hàng bán ra</DialogTitle>
+            <DialogTitle>{t('Tạo đơn hàng bán ra')}</DialogTitle>
           </DialogHeader>
           <OrderForm
             companies={companies}
@@ -85,10 +87,10 @@ export function OrderList({ initialRows, total, canWrite, companies, customers, 
       {rows.length === 0 ? (
         <EmptyState
           icon="📄"
-          title="Chưa có đơn hàng nào"
-          description="Bấm + Tạo đơn hàng để thêm đơn đầu tiên, hoặc import từ XML"
+          title={t('Chưa có đơn hàng nào')}
+          description={t('Bấm + Tạo đơn hàng để thêm đơn đầu tiên, hoặc import từ XML')}
           action={canWrite ? (
-            <Button onClick={() => setAddOpen(true)}>+ Tạo đơn hàng</Button>
+            <Button onClick={() => setAddOpen(true)}>{t('+ Tạo đơn hàng')}</Button>
           ) : undefined}
         />
       ) : (
@@ -96,22 +98,22 @@ export function OrderList({ initialRows, total, canWrite, companies, customers, 
           <table className="w-full text-sm">
             <thead className={LIST_THEAD}>
               <tr>
-                <th className="px-4 py-3 text-left">Mã đơn</th>
-                <th className="px-4 py-3 text-left">Khách hàng</th>
-                <th className="px-4 py-3 text-left">Công ty</th>
-                <th className="px-4 py-3 text-left">Ngày</th>
-                <th className="px-4 py-3 text-right">Tổng tiền</th>
-                <th className="px-4 py-3 text-right">Còn lại</th>
-                <th className="px-4 py-3 text-center">Giao hàng</th>
-                <th className="px-4 py-3 text-center">Thanh toán</th>
-                {canWrite && <th className="px-4 py-3 text-center">Sửa</th>}
+                <th className="px-4 py-3 text-left">{t('Mã đơn')}</th>
+                <th className="px-4 py-3 text-left">{t('Khách hàng')}</th>
+                <th className="px-4 py-3 text-left">{t('Công ty')}</th>
+                <th className="px-4 py-3 text-left">{t('Ngày')}</th>
+                <th className="px-4 py-3 text-right">{t('Tổng tiền')}</th>
+                <th className="px-4 py-3 text-right">{t('Còn lại')}</th>
+                <th className="px-4 py-3 text-center">{t('Giao hàng')}</th>
+                <th className="px-4 py-3 text-center">{t('Thanh toán')}</th>
+                {canWrite && <th className="px-4 py-3 text-center">{t('Sửa')}</th>}
               </tr>
             </thead>
             <tbody>
               {/* Dòng TỔNG CỘNG — so với Bảng kê bán ra */}
               <tr className="bg-brand-50/60 font-semibold text-brand-800 border-b-2 border-brand-200">
                 <td className="px-4 py-2.5" colSpan={4}>
-                  TỔNG CỘNG <span className="text-xs font-normal text-brand-700">({rows.length} đơn)</span>
+                  {t('TỔNG CỘNG')} <span className="text-xs font-normal text-brand-700">({rows.length} {t('đơn')})</span>
                 </td>
                 <td className="px-4 py-2.5 text-right">{formatVND(totals.grand)}</td>
                 <td className="px-4 py-2.5 text-right">
@@ -163,7 +165,7 @@ export function OrderList({ initialRows, total, canWrite, companies, customers, 
                           href={`/don-hang/${row.id}?edit=1`}
                           className="text-xs font-medium text-brand-700 hover:underline"
                         >
-                          Sửa
+                          {t('Sửa')}
                         </Link>
                       ) : (
                         <span className="text-xs text-gray-300">—</span>

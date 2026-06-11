@@ -9,11 +9,13 @@ import {
   navGroups, isActive, filterItemsByRole, activeGroupLabel,
   resolveOpenGroups, parseSaved,
 } from '@/lib/nav'
+import { useT } from '@/lib/i18n/client'
 
 const STORAGE_KEY = 'kbit:nav:openGroups'
 
 export function Sidebar({ role }: { role: UserRole }) {
   const pathname = usePathname()
+  const t = useT()
   const activeLabel = activeGroupLabel(navGroups, pathname)
 
   // Khởi tạo KHÔNG đọc localStorage → server & client render đầu giống nhau (tránh hydration mismatch).
@@ -50,7 +52,7 @@ export function Sidebar({ role }: { role: UserRole }) {
               className={`w-full flex items-center justify-between px-3 mt-3 mb-1 text-[11px] font-bold uppercase tracking-widest transition-colors
                 ${isOpen ? 'text-brand-600' : 'text-gray-400 hover:text-brand-600'}`}
             >
-              <span>{group.label}</span>
+              <span>{t(group.label)}</span>
               <ChevronDown
                 className={`h-3.5 w-3.5 transition-transform duration-200 ${isOpen ? '' : '-rotate-90'}`}
                 strokeWidth={2.2}
@@ -78,7 +80,7 @@ export function Sidebar({ role }: { role: UserRole }) {
                           className={`h-4 w-4 shrink-0 ${active ? 'text-brand-600' : 'text-gray-400 group-hover:text-brand-600'}`}
                           strokeWidth={1.75}
                         />
-                        <span>{label}</span>
+                        <span>{t(label)}</span>
                       </Link>
                     </li>
                   )
