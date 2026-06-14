@@ -3,6 +3,7 @@
 import { CatalogPage } from '@/components/catalog/CatalogPage'
 import { WarehouseForm } from './WarehouseForm'
 import { Badge } from '@/components/ui/badge'
+import { useT } from '@/lib/i18n/client'
 
 type Warehouse = {
   id: string
@@ -16,6 +17,7 @@ type Warehouse = {
 }
 
 export function WarehouseCatalog({ rows, canWrite }: { rows: Warehouse[]; canWrite: boolean }) {
+  const t = useT()
   return (
     <CatalogPage
       title="Kho"
@@ -27,8 +29,8 @@ export function WarehouseCatalog({ rows, canWrite }: { rows: Warehouse[]; canWri
         { key: 'code', label: 'Mã kho' },
         { key: 'name', label: 'Tên kho' },
         { key: 'note', label: 'Ghi chú', render: (r) => r.note ?? '—' },
-        { key: 'is_default', label: 'Kho chính', render: (r) => r.is_default ? <Badge variant="default">★ Kho chính</Badge> : <span className="text-gray-300">—</span> },
-        { key: 'is_active', label: 'Trạng thái', render: (r) => <Badge variant={r.is_active ? 'default' : 'secondary'}>{r.is_active ? 'Hoạt động' : 'Dừng'}</Badge> },
+        { key: 'is_default', label: 'Kho chính', render: (r) => r.is_default ? <Badge variant="default">{t('★ Kho chính')}</Badge> : <span className="text-gray-300">—</span> },
+        { key: 'is_active', label: 'Trạng thái', render: (r) => <Badge variant={r.is_active ? 'default' : 'secondary'}>{r.is_active ? t('Hoạt động') : t('Dừng')}</Badge> },
       ]}
     />
   )

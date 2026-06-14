@@ -1,7 +1,7 @@
 import OpenAI from 'openai'
 import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getCurrentUser, canEdit } from '@/lib/auth'
+import { getCurrentUser, canEdit, canViewCosts } from '@/lib/auth'
 import { SCHEMA_DOC } from './schema-doc'
 
 const NINE_API_KEY = process.env.NINE_ROUTER_API_KEY
@@ -476,8 +476,18 @@ export async function POST(req: NextRequest) {
 
       try {
         // ── Agentic loop ─────────────────────────────────────────────────────
+        // C1 (security 0048): nếu user KHÔNG được xem giá vốn → thêm chỉ thị cấm
+        // tiết lộ cột giá vốn. Đây là lớp mềm; lớp cứng là RPC kbit_run_readonly_query
+        // tự raise khi SQL chạm cột giá vốn (không phụ thuộc LLM tự giác).
+        const costGuard = canViewCosts(me.role)
+          ? ''
+          : '\n\nQUAN TRỌNG — QUYỀN HẠN: Người dùng này KHÔNG được xem GIÁ VỐN. ' +
+            'TUYỆT ĐỐI không truy vấn / hiển thị các cột: unit_cost, cost_price, avg_cost, ' +
+            'avg_unit_cost, value_open/in/out/close, cost_total, hay bảng product_moving_cost, ' +
+            'inventory_cost_periods. Nếu được hỏi về giá vốn / biên lợi nhuận, trả lời: ' +
+            '"Bạn không có quyền xem dữ liệu giá vốn."'
         let history: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-          { role: 'system', content: SYSTEM },
+          { role: 'system', content: SYSTEM + costGuard },
           ...messages,
         ]
 

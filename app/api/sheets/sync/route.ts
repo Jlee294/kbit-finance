@@ -28,13 +28,15 @@ import { dispatchAlert } from '@/features/integrations/alerts'
 const BATCH = 500
 
 export async function POST(req: NextRequest) {
-  // ── Auth: CRON_SECRET ────────────────────────────────────────────────────
+  // ── Auth: CRON_SECRET (fail-closed — security 0048/H2) ───────────────────
+  // Trước đây check bọc trong if(cronSecret) → nếu env rỗng thì endpoint MỞ TOANG.
+  // Nay: thiếu secret = từ chối; sai secret = từ chối.
   const cronSecret = process.env.CRON_SECRET
-  if (cronSecret) {
-    const header = req.headers.get('x-cron-secret')
-    if (header !== cronSecret) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+  if (!cronSecret) {
+    return NextResponse.json({ error: 'CRON_SECRET chưa cấu hình — endpoint bị khóa' }, { status: 503 })
+  }
+  if (req.headers.get('x-cron-secret') !== cronSecret) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   const sheetId = process.env.GOOGLE_SHEET_ID

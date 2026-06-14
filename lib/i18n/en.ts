@@ -457,4 +457,71 @@ export const EN: Record<string, string> = {
   'Chỉ tiêu':                'Indicator',
 
   'Xóa lọc': 'Clear filter',
+
+  // ── Catalog column headers ─────────────────────────────────────
+  'Mã':                'Code',
+  'Tên':               'Name',
+  'Tên công ty':       'Company name',
+  'Tên khách hàng':    'Customer name',
+  'Tên NCC':           'Supplier name',
+  'Tên dự án':         'Project name',
+  'Tên hàng':          'Item name',
+  'Tên kho':           'Warehouse name',
+  'Mã kho':            'Warehouse code',
+  'Tên tài khoản':     'Account name',
+  'Số tài khoản':      'Account no.',
+  'Tiền tệ':           'Currency',
+  'Quốc gia':          'Country',
+  'Điện thoại':        'Phone',
+  'Hoạt động':         'Active',
+  'Dừng':              'Inactive',
+  'Bắt đầu':           'Start',
+  'Kết thúc':          'End',
+  'Từ':                'From',
+  'Sang':              'To',
+  'Nguồn':             'Source',
+  'ĐVT':               'UoM',
+  'Số dư trả trước':   'Prepaid balance',
+  'Thời điểm khóa':    'Locked at',
+
+  // ── Công nợ table headers ──────────────────────────────────────
+  'Loại công nợ':      'Debt type',
+  'Nhân viên':         'Employee',
+  'Ngày chi':          'Payment date',
+  'Tiền chi hộ':       'Reimbursement',
+  'Đã thu lại':        'Collected back',
+  'Còn phải thu':      'Still outstanding',
+  'Ngày thu':          'Collection date',
+  'Tổng:':             'Total:',
+  'Không có khoản chi hộ nào chưa thu':      'No outstanding reimbursements',
+  'Không có phiếu cọc nào chưa gắn đơn':    'No unlinked deposits',
+  '⚠ Khách đang có đơn nợ — nên gắn tiền vào đơn': '⚠ Customer has outstanding orders — consider linking this deposit',
+
+  // ── Risk thresholds ────────────────────────────────────────────
+  'Ngưỡng vàng':       'Warning threshold',
+  'Ngưỡng đỏ':         'Critical threshold',
+  'Chênh lệch':        'Difference',
+
+  // ── Misc missing ──────────────────────────────────────────────
+  'Giá vốn':           'Cost of goods',
+  'Hồ sơ bắt buộc':    'Required documents',
+  'Hồ sơ khuyến nghị (không bắt buộc)': 'Recommended documents (optional)',
+  'Thuế GTGT':         'VAT',
+  'Nhóm':              'Group',
+  'Thứ tự':            'Sequence',
+  'Loại CT':           'Doc. type',
+  'Tên file':          'Filename',
+  'Ngày đính kèm':     'Attached on',
+  'Xóa file':          'Delete file',
+  'Việt Nam':          'Vietnam',
+  'Hàn Quốc':          'South Korea',
+  'Giá trị đầu':       'Opening value',
+
+  // ── Catalog page titles ────────────────────────────────────────
+  'Công ty / Pháp nhân':  'Companies / Legal entities',
+  'Sửa brand':            'Edit brand',
+  'Kho chính':            'Default warehouse',
+  '★ Kho chính':          '★ Default',
+  'Quản lý kỳ kế toán theo tháng (mỗi công ty). Khóa kỳ để CHẶN thêm/sửa mọi giao dịch có ngày thuộc kỳ đó — bảo vệ số liệu đã chốt khỏi bị thay đổi.':
+    'Manage accounting periods by month (per company). Lock a period to BLOCK adding/editing any transaction dated within it — protect finalized figures from changes.',
 }

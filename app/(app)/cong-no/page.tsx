@@ -50,7 +50,7 @@ export default async function CongNoPage({
       />
 
       <FilterBar>
-        <FilterField label="Loại công nợ">
+        <FilterField label={t('Loại công nợ')}>
           <select name="type" defaultValue={type} className={`${FILTER_CONTROL} min-w-[160px]`}>
             <option value="ar">{t('Phải thu khách hàng')}</option>
             <option value="ap">{t('Phải trả nhà cung cấp')}</option>
@@ -79,17 +79,17 @@ export default async function CongNoPage({
       {type === 'ir' && (
       <Section title={t('Chi hộ chưa thu lại (nhân viên)')} count={ir.length}>
         {ir.length === 0 ? (
-          <Empty>Không có khoản chi hộ nào chưa thu</Empty>
+          <Empty>{t('Không có khoản chi hộ nào chưa thu')}</Empty>
         ) : (
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-[10px] text-gray-500 uppercase">
               <tr>
-                <th className="px-3 py-2 text-left">Nhân viên</th>
-                <th className="px-3 py-2 text-left">Ngày chi</th>
-                <th className="px-3 py-2 text-left">Nội dung</th>
-                <th className="px-3 py-2 text-right">Tiền chi hộ</th>
-                <th className="px-3 py-2 text-right">Đã thu lại</th>
-                <th className="px-3 py-2 text-right">Còn phải thu</th>
+                <th className="px-3 py-2 text-left">{t('Nhân viên')}</th>
+                <th className="px-3 py-2 text-left">{t('Ngày chi')}</th>
+                <th className="px-3 py-2 text-left">{t('Nội dung')}</th>
+                <th className="px-3 py-2 text-right">{t('Tiền chi hộ')}</th>
+                <th className="px-3 py-2 text-right">{t('Đã thu lại')}</th>
+                <th className="px-3 py-2 text-right">{t('Còn phải thu')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -106,7 +106,7 @@ export default async function CongNoPage({
             </tbody>
             <tfoot>
               <tr className="bg-gray-50 font-semibold">
-                <td colSpan={5} className="px-3 py-2 text-right text-xs">Tổng:</td>
+                <td colSpan={5} className="px-3 py-2 text-right text-xs">{t('Tổng:')}</td>
                 <td className="px-3 py-2 text-right text-sm text-purple-700">{fmtVND(totalIr)}</td>
               </tr>
             </tfoot>
@@ -119,15 +119,15 @@ export default async function CongNoPage({
       {type === 'deposit' && (
       <Section title={t('Phiếu thu cọc chưa gắn đơn')} count={deposits.length}>
         {deposits.length === 0 ? (
-          <Empty>Không có phiếu cọc nào chưa gắn đơn</Empty>
+          <Empty>{t('Không có phiếu cọc nào chưa gắn đơn')}</Empty>
         ) : (
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-[10px] text-gray-500 uppercase">
               <tr>
-                <th className="px-3 py-2 text-left">Khách hàng</th>
-                <th className="px-3 py-2 text-left">Ngày thu</th>
-                <th className="px-3 py-2 text-right">Số tiền</th>
-                <th className="px-3 py-2 text-left">Ghi chú</th>
+                <th className="px-3 py-2 text-left">{t('Khách hàng')}</th>
+                <th className="px-3 py-2 text-left">{t('Ngày thu')}</th>
+                <th className="px-3 py-2 text-right">{t('Số tiền')}</th>
+                <th className="px-3 py-2 text-left">{t('Ghi chú')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -135,7 +135,7 @@ export default async function CongNoPage({
                 <tr key={r.id} className="hover:bg-gray-50">
                   <td className="px-3 py-2 text-gray-800 text-xs">
                     {r.customer_name || <span className="text-gray-400">—</span>}
-                    {depositNeedsAllocation(r, ar) ? <span className="block text-[10px] text-amber-700 font-medium">⚠ Khách đang có đơn nợ — nên gắn tiền vào đơn</span> : null}
+                    {depositNeedsAllocation(r, ar) ? <span className="block text-[10px] text-amber-700 font-medium">{t('⚠ Khách đang có đơn nợ — nên gắn tiền vào đơn')}</span> : null}
                   </td>
                   <td className="px-3 py-2 text-xs text-gray-500">{fmtDate(r.txn_date)}</td>
                   <td className="px-3 py-2 text-right text-xs text-brand-800 font-medium">

@@ -6,7 +6,8 @@
  *
  * Bảo mật:
  *   1. Bắt buộc đăng nhập (Supabase auth)
- *   2. RLS check user có quyền xem document đó không
+ *   2. RLS documents_sel (mig 0048) — chỉ admin/ceo/chief_accountant đọc được
+ *      dòng documents → .eq('id') tự fail cho user thấp quyền (404)
  *   3. Service Account fetch file từ Drive (private folder)
  *   4. Stream bytes về user
  *   5. Audit log mọi truy cập
