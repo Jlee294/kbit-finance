@@ -53,7 +53,7 @@ export const navGroups: NavGroup[] = [
     { href: '/danh-muc/san-pham',            label: 'Sản phẩm',     icon: Box },
     { href: '/danh-muc/kho',                 label: 'Kho',          icon: Warehouse },
     { href: '/danh-muc/ty-gia',              label: 'Tỷ giá',       icon: ArrowRightLeft },
-    { href: '/danh-muc/phan-quyen-cong-ty',  label: 'Phân quyền công ty', icon: ShieldCheck },
+    { href: '/danh-muc/phan-quyen-cong-ty',  label: 'Người dùng & Phân quyền', icon: ShieldCheck },
   ]},
 ]
 

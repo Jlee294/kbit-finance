@@ -535,4 +535,20 @@ export const EN: Record<string, string> = {
   'theo vai trò':          'by role',
   'Chưa có công ty':       'No companies yet',
   'đã khóa':               'disabled',
+
+  'Người dùng & Phân quyền': 'Users & Access',
+  'Thêm tài khoản, đổi vai trò, gán công ty — admin/giám đốc/kế toán trưởng thấy tất cả; còn lại chỉ thấy công ty được gán':
+    'Add accounts, change roles, assign companies — admin/CEO/chief accountant see all; others see only assigned companies',
+  '+ Thêm người dùng':     '+ Add user',
+  'Thêm người dùng mới':   'Add new user',
+  'Họ tên':                'Full name',
+  'Mật khẩu':              'Password',
+  'Tối thiểu 6 ký tự':     'Min 6 characters',
+  'Tạo người dùng':        'Create user',
+  'Đang tạo…':             'Creating…',
+  'Đặt lại mật khẩu':      'Reset password',
+  'Khóa':                  'Disable',
+  'Mở khóa':               'Enable',
+  'Vai trò này thấy tất cả công ty — không cần gán.':
+    'This role sees all companies — no assignment needed.',
 }

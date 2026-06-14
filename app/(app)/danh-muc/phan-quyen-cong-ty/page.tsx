@@ -19,8 +19,8 @@ export default async function PhanQuyenCongTyPage() {
   return (
     <div className={PAGE_WRAPPER}>
       <PageHeader
-        title={t('Phân quyền công ty')}
-        subtitle={t('Gán công ty cho từng nhân viên — admin/giám đốc/kế toán trưởng thấy tất cả; còn lại chỉ thấy công ty được gán')}
+        title={t('Người dùng & Phân quyền')}
+        subtitle={t('Thêm tài khoản, đổi vai trò, gán công ty — admin/giám đốc/kế toán trưởng thấy tất cả; còn lại chỉ thấy công ty được gán')}
       />
       <CompanyAccessClient
         users={users}
