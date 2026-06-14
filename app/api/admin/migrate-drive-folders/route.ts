@@ -68,6 +68,36 @@ export async function POST(req: NextRequest) {
     if (typeof body.limit === 'number') limit = Math.min(body.limit, 5000)
   } catch { /* no body → defaults */ }
 
+  // ── M1: Lock chống chạy song song (chỉ với run thật, dry_run không cần) ──
+  const LOCK_KEY = 'migrate-drive-folders'
+  if (!dryRun) {
+    const { data: gotLock, error: lockErr } = await supabase.rpc('kbit_try_lock', {
+      p_key: LOCK_KEY, p_ttl_seconds: 600,
+    })
+    if (lockErr) return NextResponse.json({ error: 'Lỗi lock: ' + lockErr.message }, { status: 500 })
+    if (!gotLock) {
+      return NextResponse.json(
+        { error: 'Migration đang chạy (bởi admin khác hoặc lần chạy trước chưa xong). Thử lại sau ít phút.' },
+        { status: 409 },
+      )
+    }
+  }
+
+  try {
+    return await runMigration(supabase, dryRun, limit)
+  } finally {
+    if (!dryRun) {
+      await supabase.rpc('kbit_release_lock', { p_key: LOCK_KEY }).then(() => {}, () => {})
+    }
+  }
+}
+
+async function runMigration(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  dryRun: boolean,
+  limit: number,
+): Promise<NextResponse> {
+
   // ── Lấy danh sách documents cần migrate ──────────────────────────────────
   const { data: docs, error } = await supabase
     .from('documents')

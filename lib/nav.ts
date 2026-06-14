@@ -5,7 +5,7 @@ import {
   Package, History,
   Lock, Paperclip, ListTodo, FileType, BookOpen,
   Calculator, CalendarClock,
-  Building2, FolderKanban, Users, Barcode, CreditCard, Box, ArrowRightLeft,
+  Building2, FolderKanban, Users, Barcode, CreditCard, Box, ArrowRightLeft, ShieldCheck,
   Boxes, TrendingUp, Warehouse,
 } from 'lucide-react'
 import type { UserRole } from '@/lib/auth'
@@ -53,11 +53,15 @@ export const navGroups: NavGroup[] = [
     { href: '/danh-muc/san-pham',            label: 'Sản phẩm',     icon: Box },
     { href: '/danh-muc/kho',                 label: 'Kho',          icon: Warehouse },
     { href: '/danh-muc/ty-gia',              label: 'Tỷ giá',       icon: ArrowRightLeft },
+    { href: '/danh-muc/phan-quyen-cong-ty',  label: 'Phân quyền công ty', icon: ShieldCheck },
   ]},
 ]
 
 /** Route nhạy cảm giá vốn — chỉ admin/ceo thấy trong menu. */
 export const COST_ROUTES = new Set<string>(['/danh-muc/san-pham'])
+
+/** Route chỉ admin thấy trong menu. */
+export const ADMIN_ROUTES = new Set<string>(['/danh-muc/phan-quyen-cong-ty'])
 
 export function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(href + '/')
@@ -69,6 +73,7 @@ export function canSeeItem(href: string, role: UserRole): boolean {
   // KHÔNG import canViewCosts ở đây: lib/auth kéo theo next/headers (server-only),
   // sẽ vỡ build khi Sidebar (client component) nạp file này.
   if (COST_ROUTES.has(href)) return role === 'admin' || role === 'ceo'
+  if (ADMIN_ROUTES.has(href)) return role === 'admin'
   return true
 }
 

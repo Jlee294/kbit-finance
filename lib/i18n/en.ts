@@ -524,4 +524,15 @@ export const EN: Record<string, string> = {
   '★ Kho chính':          '★ Default',
   'Quản lý kỳ kế toán theo tháng (mỗi công ty). Khóa kỳ để CHẶN thêm/sửa mọi giao dịch có ngày thuộc kỳ đó — bảo vệ số liệu đã chốt khỏi bị thay đổi.':
     'Manage accounting periods by month (per company). Lock a period to BLOCK adding/editing any transaction dated within it — protect finalized figures from changes.',
+
+  'Phân quyền công ty':    'Company Access',
+  'Gán công ty cho từng nhân viên — admin/giám đốc/kế toán trưởng thấy tất cả; còn lại chỉ thấy công ty được gán':
+    'Assign companies to each staff — admin/CEO/chief accountant see all; others see only assigned companies',
+  'Người dùng':            'User',
+  'Vai trò':               'Role',
+  'Công ty được xem':      'Companies visible',
+  'Tất cả công ty':        'All companies',
+  'theo vai trò':          'by role',
+  'Chưa có công ty':       'No companies yet',
+  'đã khóa':               'disabled',
 }
