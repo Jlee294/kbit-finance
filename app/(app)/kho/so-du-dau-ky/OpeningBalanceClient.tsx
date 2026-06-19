@@ -11,9 +11,10 @@ import { useT } from '@/lib/i18n/client'
 interface Product { id: string; code: string; name: string }
 interface Warehouse { id: string; code: string; name: string }
 interface Opening { product_id: string; warehouse_id: string; qty: number; unit_cost: number; value: number; product: string; warehouse: string }
+interface StockItem { warehouse_id: string; warehouse_name: string; product_id: string; product_code: string; product_name: string; qty_on_hand: number }
 
-export function OpeningBalanceClient({ period, canWrite, products, warehouses, openings }: {
-  period: string; canWrite: boolean; products: Product[]; warehouses: Warehouse[]; openings: Opening[]
+export function OpeningBalanceClient({ period, canWrite, products, warehouses, openings, currentStock }: {
+  period: string; canWrite: boolean; products: Product[]; warehouses: Warehouse[]; openings: Opening[]; currentStock: StockItem[]
 }) {
   const router = useRouter()
   const t = useT()
@@ -23,6 +24,10 @@ export function OpeningBalanceClient({ period, canWrite, products, warehouses, o
   const [unitCost, setUnitCost] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  function prefill(s: StockItem) {
+    setProductId(s.product_id); setWarehouseId(s.warehouse_id); setQty(String(s.qty_on_hand))
+  }
 
   async function save() {
     setSaving(true); setError('')
@@ -78,6 +83,41 @@ export function OpeningBalanceClient({ period, canWrite, products, warehouses, o
         </div>
       )}
 
+      {/* Tồn kho hiện có — tham chiếu khi khai số dư đầu (KTT) */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">
+          {t('Tồn kho hiện có (theo từng kho)')}
+          {canWrite && <span className="ml-2 text-xs font-normal text-gray-400">{t('— bấm 1 dòng để điền nhanh SL vào ô khai bên trên')}</span>}
+        </h3>
+        <div className="rounded-xl border bg-white overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="border-b border-brand-100 bg-brand-50/60 text-brand-800 text-xs font-semibold tracking-wide">
+              <tr>
+                <th className="px-4 py-3 text-left">{t('Kho')}</th>
+                <th className="px-4 py-3 text-left">{t('Mã hàng')}</th>
+                <th className="px-4 py-3 text-left">{t('Tên hàng')}</th>
+                <th className="px-4 py-3 text-right">{t('SL tồn hiện có')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentStock.length === 0 ? (
+                <tr><td colSpan={4} className="px-4 py-8 text-center text-gray-400">{t('Chưa có tồn kho')}</td></tr>
+              ) : currentStock.map((s, i) => (
+                <tr key={`${s.warehouse_id}-${s.product_id}-${i}`}
+                  className={`border-t ${canWrite ? 'cursor-pointer hover:bg-brand-50/40' : ''}`}
+                  onClick={canWrite ? () => prefill(s) : undefined}>
+                  <td className="px-4 py-3 text-gray-600">{s.warehouse_name}</td>
+                  <td className="px-4 py-3 font-mono text-gray-800">{s.product_code}</td>
+                  <td className="px-4 py-3 text-gray-700">{s.product_name}</td>
+                  <td className="px-4 py-3 text-right font-medium">{s.qty_on_hand.toLocaleString('vi-VN')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <h3 className="text-sm font-semibold text-gray-700 mb-2">{t('Số dư đầu kỳ đã khai')}</h3>
       <div className="rounded-xl border bg-white overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="border-b border-brand-100 bg-brand-50/60 text-brand-800 text-xs font-semibold tracking-wide">

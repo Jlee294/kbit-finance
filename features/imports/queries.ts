@@ -15,6 +15,9 @@ export type ImportOrderRow = {
   cost_total: number       // GENERATED: goods_value + import_duty + other_fees
   amount_paid: number
   outstanding: number      // GENERATED: total - amount_paid
+  vat_amount: number | null
+  invoice_no: string | null
+  invoice_symbol: string | null
   is_intercompany: boolean
   company_id: string
   supplier_id: string
@@ -62,6 +65,7 @@ export async function listImportOrders(companyId?: string): Promise<ImportOrderR
       id, order_code, order_date, order_type, currency, exchange_rate,
       goods_value, import_duty, vat_import, other_fees,
       cost_total, amount_paid, outstanding, is_intercompany,
+      vat_amount, invoice_no, invoice_symbol,
       company_id, supplier_id,
       suppliers!supplier_id(name, code)
     `)

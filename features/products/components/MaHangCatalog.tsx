@@ -2,6 +2,7 @@
 
 import { CatalogPage, type Column } from '@/components/catalog/CatalogPage'
 import { QuickProductForm } from './QuickProductForm'
+import { formatVND } from '@/lib/format'
 
 export interface MaHangRow {
   id:          string
@@ -9,9 +10,10 @@ export interface MaHangRow {
   name:        string
   unit:        string
   qty_on_hand: number
+  stock_value: number | null   // thành tiền tồn (null nếu không có quyền xem giá vốn)
 }
 
-const columns: Column<MaHangRow>[] = [
+const baseColumns: Column<MaHangRow>[] = [
   { key: 'code', label: 'Mã hàng' },
   { key: 'name', label: 'Tên hàng' },
   { key: 'unit', label: 'ĐVT' },
@@ -26,7 +28,14 @@ const columns: Column<MaHangRow>[] = [
   },
 ]
 
-export function MaHangCatalog({ rows, canWrite }: { rows: MaHangRow[]; canWrite: boolean }) {
+const costColumn: Column<MaHangRow> = {
+  key: 'stock_value',
+  label: 'Thành tiền tồn',
+  render: (r) => <span className="text-gray-700">{r.stock_value != null ? formatVND(r.stock_value) : '—'}</span>,
+}
+
+export function MaHangCatalog({ rows, canWrite, showCost }: { rows: MaHangRow[]; canWrite: boolean; showCost?: boolean }) {
+  const columns = showCost ? [...baseColumns, costColumn] : baseColumns
   return (
     <CatalogPage
       title="Mã hàng"

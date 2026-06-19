@@ -205,6 +205,54 @@ export async function listInventoryNxt(period: string, warehouseId?: string, com
   }))
 }
 
+/** Liệt kê các kỳ YYYY-MM từ `from` đến `to` (bao gồm cả 2 đầu). Tối đa 24 kỳ. */
+export function listPeriodsBetween(from: string, to: string): string[] {
+  if (!/^\d{4}-\d{2}$/.test(from) || !/^\d{4}-\d{2}$/.test(to)) return [from]
+  let [y, m] = from.split('-').map(Number)
+  const [ey, em] = to.split('-').map(Number)
+  const out: string[] = []
+  for (let i = 0; i < 24; i++) {
+    const p = `${y}-${String(m).padStart(2, '0')}`
+    out.push(p)
+    if (y > ey || (y === ey && m >= em)) break
+    m++; if (m > 12) { m = 1; y++ }
+  }
+  return out
+}
+
+/**
+ * NXT theo KHOẢNG tháng [from..to]. KTT: cho lọc T01–T05.
+ * Tồn đầu = tồn đầu kỳ ĐẦU; Nhập/Xuất = cộng dồn các kỳ; Tồn cuối = tồn cuối kỳ CUỐI.
+ */
+export async function listInventoryNxtRange(
+  fromPeriod: string, toPeriod: string, warehouseId?: string, companyId?: string,
+): Promise<NxtRow[]> {
+  const periods = listPeriodsBetween(fromPeriod, toPeriod)
+  if (periods.length <= 1) return listInventoryNxt(fromPeriod, warehouseId, companyId)
+
+  const snapshots = await Promise.all(periods.map(p => listInventoryNxt(p, warehouseId, companyId)))
+  const merged = new Map<string, NxtRow>()
+  snapshots.forEach((rows, idx) => {
+    const isFirst = idx === 0
+    const isLast  = idx === snapshots.length - 1
+    for (const r of rows) {
+      const cur = merged.get(r.product_id) ?? {
+        product_id: r.product_id, code: r.code, name: r.name, unit: r.unit,
+        qty_open: 0, value_open: 0, qty_in: 0, value_in: 0,
+        qty_out: 0, value_out: 0, qty_close: 0, value_close: 0, avg_cost: 0,
+      }
+      cur.code = r.code; cur.name = r.name; cur.unit = r.unit
+      if (isFirst) { cur.qty_open = r.qty_open; cur.value_open = r.value_open }
+      cur.qty_in += r.qty_in; cur.value_in += r.value_in
+      cur.qty_out += r.qty_out; cur.value_out += r.value_out
+      if (isLast) { cur.qty_close = r.qty_close; cur.value_close = r.value_close; cur.avg_cost = r.avg_cost }
+      merged.set(r.product_id, cur)
+    }
+  })
+  // Sản phẩm chỉ có ở kỳ đầu mà mất ở kỳ cuối: tồn cuối = 0 (đã đúng do default)
+  return [...merged.values()]
+}
+
 // ── Quản lý kho (danh mục) ────────────────────────────────────────────────────
 
 export interface WarehouseAdminRow {

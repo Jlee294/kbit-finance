@@ -29,9 +29,13 @@ export function computePeriodCost(i: PeriodCostInput): PeriodCostResult {
 // ── Tổng hợp lãi gộp (hàm THUẦN) ─────────────────────────────────────────────
 export interface GrossRow {
   product_id: string; qty: number; unit_price: number; cost_price: number | null
-  product_code?: string; product_name?: string; order_code?: string
+  product_code?: string; product_name?: string; order_code?: string; invoice_no?: string
 }
-export interface GrossLine { key: string; label: string; revenue: number; cogs: number; profit: number; margin: number }
+export interface GrossLine {
+  key: string; label: string; revenue: number; cogs: number; profit: number; margin: number
+  code?: string   // mã hàng (byProduct) — cột riêng
+  sub?: string    // số hóa đơn (byOrder) — cột riêng
+}
 export interface GrossSummary {
   total: { revenue: number; cogs: number; profit: number; margin: number }
   byProduct: GrossLine[]; byOrder: GrossLine[]
@@ -55,8 +59,8 @@ export function summarizeGrossProfit(rows: GrossRow[]): GrossSummary {
   let tRev = 0, tCogs = 0
   const prodMap = new Map<string, GrossLine>()
   const orderMap = new Map<string, GrossLine>()
-  const bump = (m: Map<string, GrossLine>, key: string, label: string, revenue: number, cogs: number, profit: number) => {
-    const p = m.get(key) ?? { key, label, revenue: 0, cogs: 0, profit: 0, margin: 0 }
+  const bump = (m: Map<string, GrossLine>, key: string, label: string, revenue: number, cogs: number, profit: number, extra?: { code?: string; sub?: string }) => {
+    const p = m.get(key) ?? { key, label, revenue: 0, cogs: 0, profit: 0, margin: 0, ...extra }
     p.revenue = round2(p.revenue + revenue); p.cogs = round2(p.cogs + cogs); p.profit = round2(p.profit + profit)
     p.margin = pct(p.profit, p.revenue); m.set(key, p)
   }
@@ -65,8 +69,10 @@ export function summarizeGrossProfit(rows: GrossRow[]): GrossSummary {
     const cogs = round2(r.qty * (r.cost_price ?? 0))
     const profit = round2(revenue - cogs)
     tRev = round2(tRev + revenue); tCogs = round2(tCogs + cogs)
-    bump(prodMap, r.product_id, r.product_code ? `[${r.product_code}] ${r.product_name ?? ''}` : r.product_id, revenue, cogs, profit)
-    bump(orderMap, r.order_code ?? '—', r.order_code ?? '—', revenue, cogs, profit)
+    // byProduct: mã hàng là cột riêng (code), label = tên hàng
+    bump(prodMap, r.product_id, r.product_name ?? r.product_id, revenue, cogs, profit, { code: r.product_code ?? '' })
+    // byOrder: label = mã đơn, sub = số hóa đơn
+    bump(orderMap, r.order_code ?? '—', r.order_code ?? '—', revenue, cogs, profit, { sub: r.invoice_no ?? '' })
   }
   const tProfit = round2(tRev - tCogs)
   return {

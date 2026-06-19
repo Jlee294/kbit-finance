@@ -39,8 +39,8 @@ export function GrossProfitClient({ summary, year, month, companyName }: {
         <Stat label="Tỷ suất lãi gộp" value={`${t.margin}%`} />
       </div>
 
-      <Section title="Theo mã hàng" firstCol="Mã hàng" lines={summary.byProduct} />
-      <Section title="Theo đơn bán" firstCol="Đơn" lines={summary.byOrder} />
+      <Section title="Theo mã hàng" leadCols={['Mã hàng', 'Tên hàng']} lines={summary.byProduct} variant="product" />
+      <Section title="Theo đơn bán" leadCols={['Mã đơn', 'Số hóa đơn']} lines={summary.byOrder} variant="order" />
     </div>
   )
 }
@@ -54,7 +54,10 @@ function Stat({ label, value, accent }: { label: string; value: string; accent?:
   )
 }
 
-function Section({ title, firstCol, lines }: { title: string; firstCol: string; lines: GrossLine[] }) {
+function Section({ title, leadCols, lines, variant }: {
+  title: string; leadCols: [string, string]; lines: GrossLine[]; variant: 'product' | 'order'
+}) {
+  const colSpan = 2 + 4
   return (
     <div>
       <h3 className="text-sm font-semibold text-gray-700 mb-2">{title}</h3>
@@ -62,7 +65,8 @@ function Section({ title, firstCol, lines }: { title: string; firstCol: string; 
         <table className="w-full text-sm">
           <thead className="border-b border-brand-100 bg-brand-50/60 text-brand-800 text-xs font-semibold tracking-wide">
             <tr>
-              <th className="px-4 py-3 text-left">{firstCol}</th>
+              <th className="px-4 py-3 text-left">{leadCols[0]}</th>
+              <th className="px-4 py-3 text-left">{leadCols[1]}</th>
               <th className="px-4 py-3 text-right">Doanh thu</th>
               <th className="px-4 py-3 text-right">Giá vốn</th>
               <th className="px-4 py-3 text-right">Lãi gộp</th>
@@ -71,16 +75,22 @@ function Section({ title, firstCol, lines }: { title: string; firstCol: string; 
           </thead>
           <tbody>
             {lines.length === 0 ? (
-              <tr><td colSpan={5} className="px-4 py-6 text-center text-gray-400">—</td></tr>
-            ) : lines.map(l => (
+              <tr><td colSpan={colSpan} className="px-4 py-6 text-center text-gray-400">—</td></tr>
+            ) : lines.map(l => {
+              // product: [mã hàng, tên hàng]; order: [mã đơn, số hóa đơn]
+              const c1 = variant === 'product' ? (l.code || '—') : l.label
+              const c2 = variant === 'product' ? l.label : (l.sub || '—')
+              return (
               <tr key={l.key} className="border-t">
-                <td className="px-4 py-3">{l.label}</td>
+                <td className="px-4 py-3 font-mono text-gray-800">{c1}</td>
+                <td className="px-4 py-3 text-gray-700">{c2}</td>
                 <td className="px-4 py-3 text-right">{formatVND(l.revenue)}</td>
                 <td className="px-4 py-3 text-right">{formatVND(l.cogs)}</td>
                 <td className={`px-4 py-3 text-right font-medium ${l.profit >= 0 ? 'text-brand-700' : 'text-red-600'}`}>{formatVND(l.profit)}</td>
                 <td className="px-4 py-3 text-right">{l.margin}%</td>
               </tr>
-            ))}
+              )
+            })}
           </tbody>
         </table>
       </div>

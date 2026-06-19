@@ -18,7 +18,7 @@ export async function grossProfit(from: string, to: string, companyId?: string) 
   const supabase = await createClient()
   let q = supabase
     .from('customer_order_items')
-    .select('product_id, qty, unit_price, cost_price, products(code,name), customer_orders!inner(order_code, order_date, company_id)')
+    .select('product_id, qty, unit_price, cost_price, products(code,name), customer_orders!inner(order_code, invoice_no, order_date, company_id)')
     .not('cost_price', 'is', null)
     .limit(10000)
   if (companyId) q = q.eq('customer_orders.company_id', companyId)
@@ -36,6 +36,7 @@ export async function grossProfit(from: string, to: string, companyId?: string) 
       product_code: r.products?.code,
       product_name: r.products?.name,
       order_code:   r.customer_orders?.order_code,
+      invoice_no:   r.customer_orders?.invoice_no,
     }))
   return summarizeGrossProfit(rows)
 }
@@ -53,6 +54,26 @@ export async function latestGrossPeriod(companyId?: string): Promise<string | nu
   const { data } = await q
   const dates = (data ?? []).map((r: any) => r.customer_orders?.order_date ?? '')
   return pickLatestPeriod(dates)
+}
+
+/** Giá vốn BQ hiện hành theo mã (cache product_moving_cost). Map product_id → { qty, avg, value }. */
+export async function listMovingCostByProduct(): Promise<Map<string, { qty: number; avg: number; value: number }>> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('product_moving_cost')
+    .select('product_id, qty_on_hand, avg_cost')
+  const m = new Map<string, { qty: number; avg: number; value: number }>()
+  if (error) { console.error('[listMovingCostByProduct]', error.message); return m }
+  for (const r of (data ?? []) as any[]) {
+    const qty = Number(r.qty_on_hand) || 0
+    const avg = Number(r.avg_cost) || 0
+    const cur = m.get(r.product_id) ?? { qty: 0, avg: 0, value: 0 }
+    cur.qty   += qty
+    cur.value += qty * avg
+    cur.avg    = cur.qty !== 0 ? cur.value / cur.qty : avg   // BQ gộp nhiều công ty
+    m.set(r.product_id, cur)
+  }
+  return m
 }
 
 /** Danh sách số dư đầu kỳ đã khai (txn_type='opening') trong 1 kỳ, kèm mã + kho. */

@@ -16,6 +16,9 @@ export type OrderListRow = {
   lot_no: string | null
   discount_pct: number
   vat_pct: number
+  vat_amount: number | null
+  invoice_no: string | null
+  invoice_symbol: string | null
   shipping_fee: number
   created_at: string
   customer: { id: string; code: string; name: string }
@@ -95,7 +98,7 @@ export async function listOrders({
       `id, order_code, order_date, delivery_date,
        grand_total, amount_paid, outstanding,
        fulfillment_status, payment_status,
-       lot_no, discount_pct, vat_pct, shipping_fee, created_at,
+       lot_no, discount_pct, vat_pct, vat_amount, invoice_no, invoice_symbol, shipping_fee, created_at,
        customer:customers!customer_id(id, code, name),
        company:companies!company_id(id, name),
        project:projects!project_id(id, name)`,

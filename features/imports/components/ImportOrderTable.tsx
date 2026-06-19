@@ -39,19 +39,24 @@ export function ImportOrderTable({ rows, canWrite, companies, suppliers, product
   const fmtAmt = (row: ImportOrderRow, val: number) =>
     row.currency === 'KRW' ? formatKRW(val) : formatVND(val)
 
+  // Tách Tiền hàng / VAT / Thành tiền (theo nguyên tệ của đơn)
+  function splitAmounts(r: ImportOrderRow) {
+    const net   = Number(r.goods_value) || 0
+    const vat   = r.vat_amount != null ? Number(r.vat_amount) : (Number(r.vat_import) || 0)
+    return { net, vat, total: net + vat }
+  }
+
   // Tổng cộng để so với Bảng kê mua vào (tách VND/KRW vì hỗn hợp tiền tệ)
   const totals = rows.reduce(
     (acc, r) => {
-      if (r.currency === 'KRW') {
-        acc.krw += Number(r.cost_total) || 0
-        acc.krwOutstanding += Number(r.outstanding) || 0
-      } else {
-        acc.vnd += Number(r.cost_total) || 0
-        acc.vndOutstanding += Number(r.outstanding) || 0
-      }
+      const { net, vat, total } = splitAmounts(r)
+      const bucket = r.currency === 'KRW' ? 'krw' : 'vnd'
+      acc[bucket].net   += net
+      acc[bucket].vat   += vat
+      acc[bucket].total += total
       return acc
     },
-    { vnd: 0, krw: 0, vndOutstanding: 0, krwOutstanding: 0 },
+    { vnd: { net: 0, vat: 0, total: 0 }, krw: { net: 0, vat: 0, total: 0 } },
   )
 
   return (
@@ -95,12 +100,14 @@ export function ImportOrderTable({ rows, canWrite, companies, suppliers, product
             <thead className={LIST_THEAD}>
               <tr>
                 <th className="px-4 py-3 text-left">{t('Mã đơn')}</th>
+                <th className="px-4 py-3 text-left">{t('Số HĐ')}</th>
                 <th className="px-4 py-3 text-left">{t('Ngày')}</th>
                 <th className="px-4 py-3 text-left">{t('NCC')}</th>
                 <th className="px-4 py-3 text-center">{t('Loại')}</th>
-                <th className="px-4 py-3 text-center">{t('Tiền')}</th>
-                <th className="px-4 py-3 text-right">{t('Giá vốn lô')}</th>
-                <th className="px-4 py-3 text-right">{t('Còn nợ NCC')}</th>
+                <th className="px-4 py-3 text-center">{t('Tiền tệ')}</th>
+                <th className="px-4 py-3 text-right">{t('Tiền hàng')}</th>
+                <th className="px-4 py-3 text-right">{t('VAT')}</th>
+                <th className="px-4 py-3 text-right">{t('Thành tiền')}</th>
                 <th className="px-4 py-3 text-center">{t('Nội bộ')}</th>
                 {canWrite && <th className="px-4 py-3 text-center">{t('Sửa')}</th>}
               </tr>
@@ -108,28 +115,35 @@ export function ImportOrderTable({ rows, canWrite, companies, suppliers, product
             <tbody>
               {/* Dòng TỔNG CỘNG — so với Bảng kê mua vào */}
               <tr className="bg-brand-50/60 font-semibold text-brand-800 border-b-2 border-brand-200">
-                <td className="px-4 py-2.5" colSpan={5}>
+                <td className="px-4 py-2.5" colSpan={6}>
                   {t('TỔNG CỘNG')} <span className="text-xs font-normal text-brand-700">({rows.length} {t('hóa đơn')})</span>
                 </td>
                 <td className="px-4 py-2.5 text-right">
-                  <div>{formatVND(totals.vnd)}</div>
-                  {totals.krw > 0 && (
-                    <div className="text-xs font-normal text-orange-700">{formatKRW(totals.krw)}</div>
-                  )}
+                  <div>{formatVND(totals.vnd.net)}</div>
+                  {totals.krw.net > 0 && <div className="text-xs font-normal text-orange-700">{formatKRW(totals.krw.net)}</div>}
                 </td>
                 <td className="px-4 py-2.5 text-right">
-                  <div>{totals.vndOutstanding > 0 ? formatVND(totals.vndOutstanding) : '—'}</div>
-                  {totals.krwOutstanding > 0 && (
-                    <div className="text-xs font-normal text-orange-700">{formatKRW(totals.krwOutstanding)}</div>
-                  )}
+                  <div>{formatVND(totals.vnd.vat)}</div>
+                  {totals.krw.vat > 0 && <div className="text-xs font-normal text-orange-700">{formatKRW(totals.krw.vat)}</div>}
+                </td>
+                <td className="px-4 py-2.5 text-right">
+                  <div>{formatVND(totals.vnd.total)}</div>
+                  {totals.krw.total > 0 && <div className="text-xs font-normal text-orange-700">{formatKRW(totals.krw.total)}</div>}
                 </td>
                 <td className="px-4 py-2.5" colSpan={canWrite ? 2 : 1}></td>
               </tr>
-              {rows.map((row) => (
+              {rows.map((row) => {
+                const { net, vat, total } = splitAmounts(row)
+                return (
                 <tr key={row.id}
                   className={LIST_ROW}
                   onClick={() => router.push(`/nhap-khau/${row.id}`)}>
                   <td className="px-4 py-3 font-mono text-gray-800">{row.order_code}</td>
+                  <td className="px-4 py-3 font-mono text-gray-700 whitespace-nowrap">
+                    {row.invoice_no
+                      ? <>{row.invoice_symbol && <span className="text-gray-400">{row.invoice_symbol} </span>}{row.invoice_no}</>
+                      : <span className="text-gray-300">—</span>}
+                  </td>
                   <td className="px-4 py-3 text-gray-600">{row.order_date}</td>
                   <td className="px-4 py-3 text-gray-600">
                     {(row.suppliers as { name: string } | null)?.name ?? '—'}
@@ -149,14 +163,9 @@ export function ImportOrderTable({ rows, canWrite, companies, suppliers, product
                       )}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right font-semibold text-gray-800">
-                    {fmtAmt(row, row.cost_total)}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <span className={row.outstanding > 0 ? 'font-semibold text-amber-700' : 'text-brand-700'}>
-                      {row.outstanding > 0 ? fmtAmt(row, row.outstanding) : t('✓ Đã thanh toán')}
-                    </span>
-                  </td>
+                  <td className="px-4 py-3 text-right text-gray-700">{fmtAmt(row, net)}</td>
+                  <td className="px-4 py-3 text-right text-gray-500">{vat > 0 ? fmtAmt(row, vat) : '—'}</td>
+                  <td className="px-4 py-3 text-right font-semibold text-gray-800">{fmtAmt(row, total)}</td>
                   <td className="px-4 py-3 text-center">
                     {row.is_intercompany
                       ? <span className="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full">{t('Nội bộ')}</span>
@@ -173,7 +182,8 @@ export function ImportOrderTable({ rows, canWrite, companies, suppliers, product
                     </td>
                   )}
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         </div>

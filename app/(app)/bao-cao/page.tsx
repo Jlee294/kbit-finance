@@ -1,9 +1,8 @@
 import { Suspense }                          from 'react'
 import { getGlobalFilter }                     from '@/lib/global-filter'
-import { getCompanyReport }                    from '@/features/reports/queries'
+import { getCompanyReport, getSalesPurchaseSummary } from '@/features/reports/queries'
 import { CompanyKpiCards }                     from '@/features/reports/components/KpiCards'
 import { CashFlowTable }                       from '@/features/reports/components/CashFlowTable'
-import { ArDebtTable, ApDebtTable }            from '@/features/reports/components/DebtTables'
 import { ReportFilters }                       from '@/features/reports/components/ReportFilters'
 import Link                                    from 'next/link'
 import { createClient }                        from '@/lib/supabase/server'
@@ -31,36 +30,51 @@ async function ReportContent({
   to?: string
 }) {
   const t = await getT()
-  const report = await getCompanyReport({ companyId, projectId, from, to })
+  const [report, sp] = await Promise.all([
+    getCompanyReport({ companyId, projectId, from, to }),
+    getSalesPurchaseSummary({ companyId, from, to }),
+  ])
   if (!report) return null
+  const cur = report.currency
 
   const cashFlowRows = [
-    { label: 'Tổng thu',        value: report.total_income  },
-    { label: 'Tổng chi',        value: report.total_expense },
+    { label: 'Tiền đã thu',     value: report.total_income  },
+    { label: 'Tiền đã chi',     value: report.total_expense },
     { label: 'Dòng tiền thuần', value: report.net_cash_flow, bold: true, positive: true },
+  ]
+
+  // Bán ra / mua vào theo hóa đơn — tách tiền hàng & VAT
+  const vatPayable = sp.revenueVat - sp.purchaseVat   // VAT phải nộp (đầu ra − đầu vào)
+  const salesPurchaseRows = [
+    { label: `Doanh thu bán ra (${sp.salesCount} đơn)`,    value: sp.revenue,   bold: true },
+    { label: '— trong đó tiền hàng (chưa VAT)',            value: sp.revenueNet },
+    { label: '— VAT đầu ra',                               value: sp.revenueVat },
+    { label: `Chi phí mua vào (${sp.purchaseCount} đơn)`,  value: sp.purchase,  bold: true },
+    { label: '— trong đó tiền hàng (chưa VAT)',            value: sp.purchaseNet },
+    { label: '— VAT đầu vào',                              value: sp.purchaseVat },
+    { label: 'Chênh lệch tiền hàng (bán − mua)',           value: sp.revenueNet - sp.purchaseNet, bold: true, positive: true },
+    { label: 'VAT phải nộp (đầu ra − đầu vào)',            value: vatPayable, positive: true },
   ]
 
   return (
     <>
       <CompanyKpiCards
+        revenue={sp.revenue}
+        purchase={sp.purchase}
         totalIncome={report.total_income}
         totalExpense={report.total_expense}
         netCashFlow={report.net_cash_flow}
-        arOutstanding={report.ar_outstanding}
-        apOutstanding={report.ap_outstanding}
-        currency={report.currency}
+        currency={cur}
       />
-      <div>
-        <h2 className="text-sm font-medium text-gray-600 mb-2">{t('Tóm tắt dòng tiền')}</h2>
-        <CashFlowTable rows={cashFlowRows} currency={report.currency} />
-      </div>
-      <div className="grid md:grid-cols-2 gap-4">
-        <Suspense fallback={<div className="h-32 bg-gray-50 rounded-xl animate-pulse" />}>
-          <ArDebtTable companyId={companyId} projectId={projectId} to={to} currency={report.currency} />
-        </Suspense>
-        <Suspense fallback={<div className="h-32 bg-gray-50 rounded-xl animate-pulse" />}>
-          <ApDebtTable companyId={companyId} projectId={projectId} to={to} />
-        </Suspense>
+      <div className="grid lg:grid-cols-2 gap-4">
+        <div>
+          <h2 className="text-sm font-medium text-gray-600 mb-2">{t('Bán ra & mua vào (theo hóa đơn)')}</h2>
+          <CashFlowTable rows={salesPurchaseRows} currency={cur} />
+        </div>
+        <div>
+          <h2 className="text-sm font-medium text-gray-600 mb-2">{t('Tóm tắt dòng tiền (thực thu/chi)')}</h2>
+          <CashFlowTable rows={cashFlowRows} currency={cur} />
+        </div>
       </div>
     </>
   )
@@ -106,7 +120,7 @@ export default async function BaoCaoPage({
     <div className={PAGE_WRAPPER}>
       <PageHeader
         title={t('Báo cáo pháp nhân')}
-        subtitle={t('Dòng tiền và công nợ theo từng công ty')}
+        subtitle={t('Doanh thu, chi phí và dòng tiền theo từng công ty (công nợ xem ở menu Công nợ)')}
         actions={
           <Link href="/bao-cao/hop-nhat" className="text-sm text-brand-700 hover:underline font-medium">
             Xem báo cáo hợp nhất →

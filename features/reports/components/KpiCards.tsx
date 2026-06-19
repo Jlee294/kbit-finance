@@ -49,24 +49,24 @@ function KpiCard({ label, value, currency, positive, neutral, accent }: KpiCardP
 
 /* ── Company KPIs ── */
 interface CompanyKpiProps {
-  totalIncome:   number
-  totalExpense:  number
-  netCashFlow:   number
-  arOutstanding: number
-  apOutstanding: number
-  currency:      string
+  revenue:      number   // doanh thu (bán ra)
+  purchase:     number   // chi phí mua vào
+  totalIncome:  number   // tiền đã thu (dòng tiền vào)
+  totalExpense: number   // tiền đã chi (dòng tiền ra)
+  netCashFlow:  number
+  currency:     string
 }
 
 export function CompanyKpiCards({
-  totalIncome, totalExpense, netCashFlow, arOutstanding, apOutstanding, currency,
+  revenue, purchase, totalIncome, totalExpense, netCashFlow, currency,
 }: CompanyKpiProps) {
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-      <KpiCard label="Tổng thu"               value={totalIncome}   currency={currency} accent="success" neutral />
-      <KpiCard label="Tổng chi"               value={totalExpense}  currency={currency} accent="danger"  neutral />
-      <KpiCard label="Dòng tiền thuần"        value={netCashFlow}   currency={currency} accent="brand"   positive />
-      <KpiCard label="Công nợ KH (phải thu)"  value={arOutstanding} currency={currency} accent="warning" neutral />
-      <KpiCard label="Công nợ NCC (phải trả)" value={apOutstanding} currency={currency} accent="info"    neutral />
+      <KpiCard label="Doanh thu (bán ra)"   value={revenue}      currency={currency} accent="success" neutral />
+      <KpiCard label="Chi phí (mua vào)"    value={purchase}     currency={currency} accent="danger"  neutral />
+      <KpiCard label="Tiền đã thu"          value={totalIncome}  currency={currency} accent="info"    neutral />
+      <KpiCard label="Tiền đã chi"          value={totalExpense} currency={currency} accent="warning" neutral />
+      <KpiCard label="Dòng tiền thuần"      value={netCashFlow}  currency={currency} accent="brand"   positive />
     </div>
   )
 }
