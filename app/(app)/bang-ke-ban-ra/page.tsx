@@ -2,8 +2,9 @@ import Link from 'next/link'
 import { listSalesInvoices } from '@/features/invoices/queries'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { StatsCard } from '@/components/shared/StatsCard'
-import { FilterBar, FilterSubmit, FilterReset } from '@/components/shared/FilterBar'
-import { MonthRangeFields } from '@/components/shared/MonthRangeFields'
+import { FilterBar, FilterReset } from '@/components/shared/FilterBar'
+import { PeriodFields } from '@/components/shared/PeriodFields'
+import { AutoSubmit } from '@/components/shared/AutoSubmit'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { PAGE_WRAPPER } from '@/lib/ui-tokens'
 import { getGlobalFilter } from '@/lib/global-filter'
@@ -18,12 +19,12 @@ function fmtDate(s: string | null) { return s ? new Date(s).toLocaleDateString('
 export default async function BangKeBanRaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string; from?: string; to?: string }>
+  searchParams: Promise<{ period?: string; from?: string; to?: string }>
 }) {
   const t = await getT()
   const sp = await searchParams
   const { companyId, year } = await getGlobalFilter()
-  const range = resolveRange(year, sp.month, sp.from, sp.to)
+  const range = resolveRange(year, sp.period, sp.from, sp.to)
   const rows = await listSalesInvoices({
     companyId: companyId || undefined,
     from:      range.from,
@@ -49,8 +50,8 @@ export default async function BangKeBanRaPage({
       </div>
 
       <FilterBar>
-        <MonthRangeFields month={sp.month} from={sp.from} to={sp.to} />
-        <FilterSubmit>Xem</FilterSubmit>
+        <AutoSubmit />
+        <PeriodFields period={sp.period} from={sp.from} to={sp.to} />
         <FilterReset href="/bang-ke-ban-ra" />
       </FilterBar>
 

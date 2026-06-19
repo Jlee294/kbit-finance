@@ -6,6 +6,7 @@ import { listCompanies } from '@/features/companies/queries'
 import { todayLocal } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Sidebar } from './Sidebar'
+import { ResizableSidebar } from './ResizableSidebar'
 import { GlobalFilterBar } from '@/components/shared/GlobalFilterBar'
 import { ChatWidgetLazy } from '@/components/chat/ChatWidgetLazy'
 import { I18nProvider } from '@/lib/i18n/client'
@@ -39,8 +40,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <I18nProvider locale={locale}>
     <div className="flex min-h-screen bg-gray-50">
-      {/* ── Sidebar ─────────────────────────────────────── */}
-      <aside className="w-56 shrink-0 flex flex-col bg-white border-r border-gray-200 min-h-screen sticky top-0 h-screen shadow-sm">
+      {/* ── Sidebar (co giãn được — kéo cạnh phải) ──────── */}
+      <ResizableSidebar>
         {/* Logo — brand color block */}
         <div className="px-5 py-4 border-b border-gray-100 bg-gradient-to-br from-brand-600 to-brand-500 flex items-center gap-2">
           <div className="h-7 w-7 rounded-lg bg-white/15 flex items-center justify-center font-bold text-white text-xs">
@@ -63,7 +64,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
           <SignOutButton />
         </div>
-      </aside>
+      </ResizableSidebar>
 
       {/* ── Main content ────────────────────────────────── */}
       <main className="flex-1 overflow-auto flex flex-col">

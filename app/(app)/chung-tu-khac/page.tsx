@@ -6,8 +6,9 @@ import { listCustomers } from '@/features/customers/queries'
 import { listSuppliers } from '@/features/suppliers/queries'
 import { CashBookTable } from '@/features/cash-book/components/CashBookTable'
 import { PageHeader } from '@/components/shared/PageHeader'
-import { FilterBar, FilterField, FilterSubmit, FilterReset, FILTER_CONTROL } from '@/components/shared/FilterBar'
-import { MonthRangeFields } from '@/components/shared/MonthRangeFields'
+import { FilterBar, FilterField, FilterReset, FILTER_CONTROL } from '@/components/shared/FilterBar'
+import { PeriodFields } from '@/components/shared/PeriodFields'
+import { AutoSubmit } from '@/components/shared/AutoSubmit'
 import { getGlobalFilter } from '@/lib/global-filter'
 import { resolveRange } from '@/lib/date-range'
 import { PAGE_WRAPPER } from '@/lib/ui-tokens'
@@ -17,11 +18,11 @@ export const dynamic = 'force-dynamic'
 export default async function ChungTuKhacPage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string; month?: string; from?: string; to?: string }>
+  searchParams: Promise<{ type?: string; period?: string; from?: string; to?: string }>
 }) {
   const sp = await searchParams
   const { companyId, year } = await getGlobalFilter()
-  const range = resolveRange(year, sp.month, sp.from, sp.to)
+  const range = resolveRange(year, sp.period, sp.from, sp.to)
   const [me, rows, companies, users, customersRaw, suppliersRaw] = await Promise.all([
     getCurrentUser(),
     listCashBook({
@@ -47,6 +48,7 @@ export default async function ChungTuKhacPage({
       />
 
       <FilterBar>
+        <AutoSubmit />
         <FilterField label="Loại">
           <select name="type" defaultValue={sp.type ?? ''} className={FILTER_CONTROL}>
             <option value="">Tất cả</option>
@@ -54,8 +56,7 @@ export default async function ChungTuKhacPage({
             <option value="chi">Chi</option>
           </select>
         </FilterField>
-        <MonthRangeFields month={sp.month} from={sp.from} to={sp.to} />
-        <FilterSubmit>Xem</FilterSubmit>
+        <PeriodFields period={sp.period} from={sp.from} to={sp.to} />
         <FilterReset href="/chung-tu-khac" />
       </FilterBar>
 

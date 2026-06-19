@@ -26,10 +26,10 @@ interface Props {
 export function CashFlowTable({ rows, currency }: Props) {
   const t = useT()
   return (
-    <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
+    <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b bg-gray-50 text-xs text-gray-500 uppercase">
+          <tr className="border-b border-brand-100 bg-brand-50/60 text-xs font-semibold tracking-wide text-brand-800">
             <th className="px-5 py-3 text-left">{t('Chỉ tiêu')}</th>
             <th className="px-5 py-3 text-right">{t('Giá trị')}</th>
           </tr>

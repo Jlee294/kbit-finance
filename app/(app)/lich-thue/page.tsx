@@ -6,7 +6,8 @@ import { upsertCalendarItem }   from '@/features/tax-calendar/actions'
 import { getCurrentUser, canApprove } from '@/lib/auth'
 import { listTaxTypes, taxTypeLabelMap } from '@/features/tax-types/queries'
 import { PageHeader } from '@/components/shared/PageHeader'
-import { FilterBar, FilterField, FilterSubmit, FILTER_CONTROL } from '@/components/shared/FilterBar'
+import { FilterBar, FilterField, FILTER_CONTROL } from '@/components/shared/FilterBar'
+import { AutoSubmit } from '@/components/shared/AutoSubmit'
 import { PAGE_WRAPPER } from '@/lib/ui-tokens'
 import { todayLocal, formatLocalDate } from '@/lib/format'
 import { getT }                from '@/lib/i18n/server'
@@ -59,13 +60,13 @@ export default async function LichThuePage({
       />
 
       <FilterBar>
+        <AutoSubmit />
         <FilterField label={t('Công ty')}>
           <select name="company" defaultValue={companyId ?? ''} className={`${FILTER_CONTROL} min-w-[180px]`}>
             <option value="">{t('— Chọn công ty —')}</option>
             {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </FilterField>
-        <FilterSubmit>{t('Xem')}</FilterSubmit>
       </FilterBar>
 
       {/* Form thêm nghĩa vụ */}

@@ -1,7 +1,8 @@
 import { listWarehouses, listTransactions } from '@/features/warehouse/queries'
 import { TransactionHistory } from '@/features/warehouse/components/TransactionHistory'
 import { PageHeader } from '@/components/shared/PageHeader'
-import { FilterBar, FilterField, FilterSubmit, FILTER_CONTROL } from '@/components/shared/FilterBar'
+import { FilterBar, FilterField, FILTER_CONTROL } from '@/components/shared/FilterBar'
+import { AutoSubmit } from '@/components/shared/AutoSubmit'
 import { getGlobalFilter } from '@/lib/global-filter'
 import { PAGE_WRAPPER } from '@/lib/ui-tokens'
 
@@ -35,6 +36,7 @@ export default async function LichSuKhoPage({
       />
 
       <FilterBar>
+        <AutoSubmit />
         <FilterField label="Kho">
           <select name="warehouse" defaultValue={sp.warehouse ?? ''} className={`${FILTER_CONTROL} min-w-[160px]`}>
             <option value="">Tất cả kho</option>
@@ -57,7 +59,6 @@ export default async function LichSuKhoPage({
             <option value="missing">⚠ Chưa có HĐ</option>
           </select>
         </FilterField>
-        <FilterSubmit />
       </FilterBar>
 
       <TransactionHistory rows={transactions} />

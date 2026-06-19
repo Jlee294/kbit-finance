@@ -7,7 +7,8 @@ import { TASK_STATUSES, TASK_STATUS_LABELS } from '@/features/tasks/schema'
 import { getCurrentUser, canApprove } from '@/lib/auth'
 import { Button }              from '@/components/ui/button'
 import { PageHeader }          from '@/components/shared/PageHeader'
-import { FilterBar, FilterField, FilterSubmit, FILTER_CONTROL } from '@/components/shared/FilterBar'
+import { FilterBar, FilterField, FILTER_CONTROL } from '@/components/shared/FilterBar'
+import { AutoSubmit } from '@/components/shared/AutoSubmit'
 import { PAGE_WRAPPER }        from '@/lib/ui-tokens'
 import { getT }                from '@/lib/i18n/server'
 
@@ -59,6 +60,7 @@ export default async function CongViecPage({
       />
 
       <FilterBar>
+        <AutoSubmit />
         <FilterField label={t('Trạng thái')}>
           <select name="status" defaultValue={statusFilter} className={FILTER_CONTROL}>
             <option value="">{t('Tất cả')}</option>
@@ -73,7 +75,6 @@ export default async function CongViecPage({
             {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </FilterField>
-        <FilterSubmit />
       </FilterBar>
 
       {/* Form tạo task thủ công — KTT F2: + người phụ trách + ghi chú */}

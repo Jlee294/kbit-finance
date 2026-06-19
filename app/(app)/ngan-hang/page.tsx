@@ -11,8 +11,9 @@ import { BankLedgerTable } from '@/features/bank/components/BankLedgerTable'
 import { BankCreateButtons } from '@/features/bank/components/BankCreateButtons'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { StatsCard } from '@/components/shared/StatsCard'
-import { FilterBar, FilterField, FilterSubmit, FilterReset, FILTER_CONTROL } from '@/components/shared/FilterBar'
-import { MonthRangeFields } from '@/components/shared/MonthRangeFields'
+import { FilterBar, FilterField, FilterReset, FILTER_CONTROL } from '@/components/shared/FilterBar'
+import { PeriodFields } from '@/components/shared/PeriodFields'
+import { AutoSubmit } from '@/components/shared/AutoSubmit'
 import { getGlobalFilter } from '@/lib/global-filter'
 import { resolveRange } from '@/lib/date-range'
 import { PAGE_WRAPPER } from '@/lib/ui-tokens'
@@ -25,13 +26,13 @@ function fmtVND(v: number) { return v.toLocaleString('vi-VN') + ' đ' }
 export default async function NganHangPage({
   searchParams,
 }: {
-  searchParams: Promise<{ bank?: string; type?: string; month?: string; from?: string; to?: string }>
+  searchParams: Promise<{ bank?: string; type?: string; period?: string; from?: string; to?: string }>
 }) {
   const t = await getT()
   const sp = await searchParams
   const supabase = await createClient()
   const { companyId, year } = await getGlobalFilter()
-  const range = resolveRange(year, sp.month, sp.from, sp.to)
+  const range = resolveRange(year, sp.period, sp.from, sp.to)
 
   const [me, rows, companies, banks, customers, suppliers, krSuppliers, krwBanks, projects, bankRes, importOrders] = await Promise.all([
     getCurrentUser(),
@@ -96,6 +97,7 @@ export default async function NganHangPage({
       </div>
 
       <FilterBar>
+        <AutoSubmit />
         <FilterField label={t('Tài khoản NH')}>
           <select name="bank" defaultValue={sp.bank ?? ''} className={`${FILTER_CONTROL} min-w-[200px]`}>
             <option value="">{t('Tất cả')}</option>
@@ -111,8 +113,7 @@ export default async function NganHangPage({
             <option value="chi">{t('Chi phí')}</option>
           </select>
         </FilterField>
-        <MonthRangeFields month={sp.month} from={sp.from} to={sp.to} />
-        <FilterSubmit>Xem</FilterSubmit>
+        <PeriodFields period={sp.period} from={sp.from} to={sp.to} />
         <FilterReset href="/ngan-hang" />
       </FilterBar>
 

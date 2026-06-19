@@ -89,7 +89,7 @@ export function OpeningBalanceClient({ period, canWrite, products, warehouses, o
           {t('Tồn kho hiện có (theo từng kho)')}
           {canWrite && <span className="ml-2 text-xs font-normal text-gray-400">{t('— bấm 1 dòng để điền nhanh SL vào ô khai bên trên')}</span>}
         </h3>
-        <div className="rounded-xl border bg-white overflow-x-auto">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="border-b border-brand-100 bg-brand-50/60 text-brand-800 text-xs font-semibold tracking-wide">
               <tr>
@@ -118,7 +118,7 @@ export function OpeningBalanceClient({ period, canWrite, products, warehouses, o
       </div>
 
       <h3 className="text-sm font-semibold text-gray-700 mb-2">{t('Số dư đầu kỳ đã khai')}</h3>
-      <div className="rounded-xl border bg-white overflow-x-auto">
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="border-b border-brand-100 bg-brand-50/60 text-brand-800 text-xs font-semibold tracking-wide">
             <tr>

@@ -8,7 +8,8 @@ import { CongNoLedger } from '@/features/debts/components/CongNoLedger'
 import { depositNeedsAllocation } from '@/features/debts/warnings'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { StatsCard } from '@/components/shared/StatsCard'
-import { FilterBar, FilterField, FilterSubmit, FILTER_CONTROL } from '@/components/shared/FilterBar'
+import { FilterBar, FilterField, FILTER_CONTROL } from '@/components/shared/FilterBar'
+import { AutoSubmit } from '@/components/shared/AutoSubmit'
 import { getGlobalFilter } from '@/lib/global-filter'
 import { PAGE_WRAPPER } from '@/lib/ui-tokens'
 import { getT } from '@/lib/i18n/server'
@@ -50,6 +51,7 @@ export default async function CongNoPage({
       />
 
       <FilterBar>
+        <AutoSubmit />
         <FilterField label={t('Loại công nợ')}>
           <select name="type" defaultValue={type} className={`${FILTER_CONTROL} min-w-[160px]`}>
             <option value="ar">{t('Phải thu khách hàng')}</option>
@@ -58,7 +60,6 @@ export default async function CongNoPage({
             <option value="deposit">{t('Thu cọc chưa gắn')}</option>
           </select>
         </FilterField>
-        <FilterSubmit />
       </FilterBar>
 
       <div className="grid grid-cols-4 gap-3">
