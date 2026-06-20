@@ -6,7 +6,7 @@ import {
   Lock, Paperclip, ListTodo, FileType, BookOpen,
   Calculator, CalendarClock,
   Building2, FolderKanban, Users, Barcode, CreditCard, Box, ArrowRightLeft, ShieldCheck,
-  Boxes, TrendingUp, Warehouse,
+  Boxes, TrendingUp, Warehouse, LayoutDashboard,
 } from 'lucide-react'
 import type { UserRole } from '@/lib/auth'
 
@@ -15,6 +15,7 @@ export interface NavGroup { label: string; items: NavItem[] }
 
 export const navGroups: NavGroup[] = [
   { label: 'Tổng quan', items: [
+    { href: '/dashboard',       label: 'Dashboard',       icon: LayoutDashboard },
     { href: '/bao-cao',         label: 'Báo cáo',         icon: BarChart3 },
     { href: '/cong-no',         label: 'Công nợ',         icon: Wallet },
     { href: '/bang-ke-ban-ra',  label: 'Bảng kê bán ra',  icon: ClipboardList },
