@@ -23,13 +23,29 @@
   --color-brand-900: #0D1019;
   --color-brand-950: #060810;
 
-  /* Secondary alias (đồng bộ tên với @kbit/ui) */
+  /* Primary scale (cho component @kbit/ui — bg-primary-700, text-primary-50, ...) */
+  --color-primary-50:  #EFF1F5;
+  --color-primary-100: #DADEE8;
+  --color-primary-200: #B5BCCE;
+  --color-primary-300: #8E99B4;
+  --color-primary-400: #4F5D80;
+  --color-primary-500: #2E3A5A;
+  --color-primary-600: #202940;
+  --color-primary-700: #1A2135;
+  --color-primary-800: #141926;
+  --color-primary-900: #0D1019;
+
+  /* Secondary scale (đồng bộ tên với @kbit/ui) */
   --color-secondary-50:  #EFF1F5;
   --color-secondary-100: #DADEE8;
   --color-secondary-200: #B5BCCE;
-  --color-secondary-500: #2E3A5A;
-  --color-secondary-600: #202940;
-  --color-secondary-700: #1A2135;
+  --color-secondary-300: #8E99B4;
+  --color-secondary-400: #6B7796;
+  --color-secondary-500: #4F5D80;
+  --color-secondary-600: #3D4A6B;
+  --color-secondary-700: #2E3A5A;
+  --color-secondary-800: #1A2135;
+  --color-secondary-900: #141926;
 
   /* Semantic accents — đồng bộ @kbit/ui */
   --color-success-50:  #ecfdf5;
@@ -178,4 +194,10 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-montserrat), var(--font-roboto), sans-serif;
   }
+}
+
+/* Utility font cho component @kbit/ui */
+@layer utilities {
+  .font-montserrat { font-family: var(--font-montserrat), sans-serif; }
+  .font-roboto { font-family: var(--font-roboto), sans-serif; }
 }
