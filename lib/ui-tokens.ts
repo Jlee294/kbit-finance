@@ -24,8 +24,8 @@ export const TABLE_CELL = 'px-3 py-2.5'
 /** Cell padding compact (cho bảng dày như bảng kê) */
 export const TABLE_CELL_COMPACT = 'px-2 py-1.5'
 
-/** Card wrapper standard */
-export const CARD = 'rounded-xl border border-gray-200 bg-white shadow-sm'
+/** Card wrapper standard (đồng bộ @kbit/ui) */
+export const CARD = 'rounded-2xl border border-slate-200 bg-white shadow-sm'
 
 /* ─────────────────────────────────────────────────────────────
  * DIALOG (form nhập liệu) — 4 cỡ chuẩn, đã kèm sẵn thanh cuộn.
