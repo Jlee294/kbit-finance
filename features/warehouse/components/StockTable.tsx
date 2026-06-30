@@ -23,7 +23,7 @@ export function StockTable({ warehouses, stock }: Props) {
           onClick={() => setActiveWh('all')}
           className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors ${
             activeWh === 'all'
-              ? 'bg-brand-800 text-white shadow-sm'
+              ? 'bg-primary text-white shadow-sm'
               : 'bg-white border border-gray-200 text-gray-600 hover:bg-brand-50/40 hover:text-brand-800 hover:border-brand-200'
           }`}
         >
@@ -37,7 +37,7 @@ export function StockTable({ warehouses, stock }: Props) {
               onClick={() => setActiveWh(wh.id)}
               className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 activeWh === wh.id
-                  ? 'bg-brand-800 text-white shadow-sm'
+                  ? 'bg-primary text-white shadow-sm'
                   : 'bg-white border border-gray-200 text-gray-600 hover:bg-brand-50/40 hover:text-brand-800 hover:border-brand-200'
               }`}
             >

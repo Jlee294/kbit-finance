@@ -75,7 +75,7 @@ export function OpeningBalanceClient({ period, canWrite, products, warehouses, o
             <input type="number" min="0" step="any" value={unitCost} onChange={e => setUnitCost(e.target.value)} className="w-full h-9 rounded-md border border-gray-200 px-3 text-sm" />
           </div>
           <div className="col-span-5 flex items-center gap-3">
-            <button onClick={save} disabled={saving || !productId || !warehouseId} className="h-9 px-4 bg-brand-800 text-white text-sm rounded-md hover:bg-brand-700 disabled:opacity-50">
+            <button onClick={save} disabled={saving || !productId || !warehouseId} className="h-9 px-4 bg-primary text-white text-sm rounded-md hover:bg-primary-700 disabled:opacity-50">
               {saving ? t('Đang lưu...') : t('Lưu số dư đầu kỳ')}
             </button>
             {error && <span className="text-sm text-red-600">{error}</span>}

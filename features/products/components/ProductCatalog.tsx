@@ -143,7 +143,7 @@ export function ProductCatalog({ brands, products, rates, canWrite }: Props) {
           onClick={() => setActiveBrandId('all')}
           className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${
             activeBrandId === 'all'
-              ? 'bg-brand-800 text-white border-brand-800'
+              ? 'bg-primary text-white border-brand-800'
               : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
           }`}
         >
@@ -156,7 +156,7 @@ export function ProductCatalog({ brands, products, rates, canWrite }: Props) {
             onClick={() => setActiveBrandId(b.id)}
             className={`group px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${
               activeBrandId === b.id
-                ? 'bg-brand-800 text-white border-brand-800'
+                ? 'bg-primary text-white border-brand-800'
                 : 'bg-white text-gray-700 border-gray-200 hover:border-brand-400 hover:text-brand-800'
             }`}
           >

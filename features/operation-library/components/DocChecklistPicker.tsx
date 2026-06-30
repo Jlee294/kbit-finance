@@ -81,7 +81,7 @@ export function DocChecklistPicker({ label, docTypes, selected, onChange, onDocT
               type="button"
               onClick={add}
               disabled={pending}
-              className="h-7 px-3 text-xs font-medium bg-brand-800 text-white rounded-md hover:bg-brand-700 disabled:opacity-50"
+              className="h-7 px-3 text-xs font-medium bg-primary text-white rounded-md hover:bg-primary-700 disabled:opacity-50"
             >
               {pending ? 'Đang tạo…' : '✓ Tạo & gắn'}
             </button>

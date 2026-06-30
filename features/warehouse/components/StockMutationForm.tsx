@@ -196,7 +196,7 @@ export function StockMutationForm({ initialMode = 'receipt', warehouses, product
 
       <button
         type="submit" disabled={saving}
-        className="w-full h-9 bg-brand-800 text-white text-sm font-medium rounded-md hover:bg-brand-700 disabled:opacity-50"
+        className="w-full h-9 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary-700 disabled:opacity-50"
       >
         {saving ? t('Đang xử lý...') : t(MODE_LABELS[mode])}
       </button>

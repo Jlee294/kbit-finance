@@ -119,7 +119,7 @@ export default async function LichThuePage({
           </div>
           <button
             type="submit"
-            className="h-8 px-3 bg-brand-800 text-white rounded-md text-sm hover:bg-brand-700"
+            className="h-8 px-3 bg-primary text-white rounded-md text-sm hover:bg-primary-700"
           >
             {t('Thêm')}
           </button>

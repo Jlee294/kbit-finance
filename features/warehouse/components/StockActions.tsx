@@ -49,7 +49,7 @@ export function StockActions({ warehouses, products, period, canWrite, companyId
         Lịch sử
       </Link>
       {canWrite && (
-        <button onClick={khoaSo} disabled={closing} className={`${BTN} bg-brand-800 text-white hover:bg-brand-700 disabled:opacity-50`}>
+        <button onClick={khoaSo} disabled={closing} className={`${BTN} bg-primary text-white hover:bg-primary-700 disabled:opacity-50`}>
           {closing ? 'Đang khóa...' : 'Khóa sổ kỳ'}
         </button>
       )}

@@ -120,7 +120,7 @@ export default async function CongViecPage({
           <div className="md:col-span-2 flex justify-end">
             <button
               type="submit"
-              className="h-9 w-full md:w-auto px-4 bg-brand-800 text-white rounded-md text-sm hover:bg-brand-700"
+              className="h-9 w-full md:w-auto px-4 bg-primary text-white rounded-md text-sm hover:bg-primary-700"
             >
               {t('+ Tạo công việc')}
             </button>

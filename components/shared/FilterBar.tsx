@@ -53,7 +53,7 @@ export function FilterSubmit({ children = 'Lọc' }: { children?: ReactNode }) {
   return (
     <button
       type="submit"
-      className="h-8 px-3.5 bg-brand-800 text-white rounded-md text-sm font-medium hover:bg-brand-700 transition-colors"
+      className="h-8 px-3.5 bg-primary text-white rounded-md text-sm font-medium hover:bg-primary-700 transition-colors"
     >
       {children}
     </button>

@@ -27,7 +27,7 @@ export function LanguageSwitcher() {
       disabled={pending}
       className={`px-2 py-0.5 text-xs font-semibold rounded transition-colors ${
         locale === l
-          ? 'bg-brand-800 text-white'
+          ? 'bg-primary text-white'
           : 'text-gray-500 hover:text-brand-800 hover:bg-brand-50'
       }`}
       aria-pressed={locale === l}
