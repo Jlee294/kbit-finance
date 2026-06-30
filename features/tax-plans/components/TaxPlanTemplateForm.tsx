@@ -137,7 +137,7 @@ export function TaxPlanTemplateForm({ companyId, companyName, projectId, project
       {/* ── Bảng chỉ tiêu ──────────────────────────────────────────── */}
       <div className="rounded-xl border bg-white shadow-sm overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="border-b border-brand-100 bg-brand-50/60 text-xs text-brand-800 font-semibold">
+          <thead className="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase font-montserrat font-semibold">
             <tr>
               <th className="px-3 py-2.5 text-left w-[60px]">STT</th>
               <th className="px-3 py-2.5 text-left">Chỉ tiêu</th>

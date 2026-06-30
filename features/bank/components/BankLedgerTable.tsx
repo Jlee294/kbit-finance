@@ -45,7 +45,7 @@ export function BankLedgerTable({
       <div className="rounded-xl border bg-white shadow-sm overflow-x-auto">
         <table className="w-full text-sm min-w-[1100px]">
           <thead>
-            <tr className="border-b border-brand-100 bg-brand-50/60 text-xs text-brand-800 font-semibold tracking-wide">
+            <tr className="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase font-montserrat font-semibold tracking-wide">
               <th className="px-3 py-2.5 text-left w-[8%]">Ngày</th>
               <th className="px-3 py-2.5 text-center w-[6%]">Loại</th>
               <th className="px-3 py-2.5 text-left w-[16%]">Tài khoản ngân hàng</th>

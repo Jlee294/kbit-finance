@@ -27,7 +27,7 @@ export function TransactionHistory({ rows }: { rows: TxnRow[] }) {
     <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-brand-100 bg-brand-50/60 text-xs text-brand-800 font-semibold">
+          <tr className="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase font-montserrat font-semibold">
             <th className="px-4 py-3 text-left">{t('Ngày')}</th>
             <th className="px-4 py-3 text-left">{t('Công ty')}</th>
             <th className="px-4 py-3 text-left">{t('Loại')}</th>

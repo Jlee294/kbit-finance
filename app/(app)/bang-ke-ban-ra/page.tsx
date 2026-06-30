@@ -65,7 +65,7 @@ export default async function BangKeBanRaPage({
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-x-auto">
           <table className="w-full text-xs min-w-[1300px]">
             <thead>
-              <tr className="border-b border-brand-100 bg-brand-50/60 text-[10px] text-brand-800 font-semibold tracking-wide">
+              <tr className="bg-slate-50 border-b border-slate-200 text-[10px] text-slate-500 uppercase font-montserrat font-semibold tracking-wide">
                 <th className="px-2 py-2 text-left">{t('Mẫu HĐ')}</th>
                 <th className="px-2 py-2 text-left">{t('Ký hiệu')}</th>
                 <th className="px-2 py-2 text-left">{t('Số HĐ')}</th>

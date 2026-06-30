@@ -63,7 +63,7 @@ function Section({ title, leadCols, lines, variant }: {
       <h3 className="text-sm font-semibold text-gray-700 mb-2">{title}</h3>
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="border-b border-brand-100 bg-brand-50/60 text-brand-800 text-xs font-semibold tracking-wide">
+          <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-montserrat text-xs font-semibold tracking-wide">
             <tr>
               <th className="px-4 py-3 text-left">{leadCols[0]}</th>
               <th className="px-4 py-3 text-left">{leadCols[1]}</th>

@@ -2,30 +2,32 @@
 
 import { FULFILLMENT_LABEL, PAYMENT_LABEL } from '@/lib/orders-labels'
 import { useT } from '@/lib/i18n/client'
+import { Badge, type BadgeProps } from '@/components/kbit'
 
 type FulfillmentStatus = keyof typeof FULFILLMENT_LABEL
 type PaymentStatus = keyof typeof PAYMENT_LABEL
+type Variant = NonNullable<BadgeProps['variant']>
 
-const FULFILLMENT_COLOR: Record<FulfillmentStatus, string> = {
-  draft:          'bg-gray-100 text-gray-700 ring-1 ring-gray-200',
-  confirmed:      'bg-brand-50 text-brand-800 ring-1 ring-brand-200',
-  awaiting_goods: 'bg-warning-50 text-warning-700 ring-1 ring-warning-500/30',
-  delivered:      'bg-success-50 text-success-700 ring-1 ring-success-500/30',
+const FULFILLMENT_VARIANT: Record<FulfillmentStatus, Variant> = {
+  draft:          'default',
+  confirmed:      'primary',
+  awaiting_goods: 'warning',
+  delivered:      'success',
 }
 
-const PAYMENT_COLOR: Record<PaymentStatus, string> = {
-  unpaid:  'bg-danger-50 text-danger-700 ring-1 ring-danger-500/30',
-  partial: 'bg-warning-50 text-warning-700 ring-1 ring-warning-500/30',
-  paid:    'bg-success-50 text-success-700 ring-1 ring-success-500/30',
+const PAYMENT_VARIANT: Record<PaymentStatus, Variant> = {
+  unpaid:  'danger',
+  partial: 'warning',
+  paid:    'success',
 }
 
 export function FulfillmentBadge({ status }: { status: string }) {
   const t = useT()
   const s = status as FulfillmentStatus
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${FULFILLMENT_COLOR[s] ?? 'bg-gray-100 text-gray-700'}`}>
+    <Badge variant={FULFILLMENT_VARIANT[s] ?? 'default'} size="sm">
       {t(FULFILLMENT_LABEL[s] ?? status)}
-    </span>
+    </Badge>
   )
 }
 
@@ -33,8 +35,8 @@ export function PaymentBadge({ status }: { status: string }) {
   const t = useT()
   const s = status as PaymentStatus
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${PAYMENT_COLOR[s] ?? 'bg-gray-100 text-gray-700'}`}>
+    <Badge variant={PAYMENT_VARIANT[s] ?? 'default'} size="sm">
       {t(PAYMENT_LABEL[s] ?? status)}
-    </span>
+    </Badge>
   )
 }

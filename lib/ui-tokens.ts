@@ -76,6 +76,6 @@ export const FORM_COL_FULL = 'sm:col-span-2'
  * Áp: wrapper <div>=LIST_WRAP, <thead>=LIST_THEAD, <tr> dữ liệu=LIST_ROW.
  * th/td giữ padding 'px-4 py-3' để chiều cao hàng thống nhất.
  * ───────────────────────────────────────────────────────────── */
-export const LIST_WRAP  = 'overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm'
-export const LIST_THEAD = 'border-b border-brand-100 bg-brand-50/60 text-brand-800 text-xs font-semibold tracking-wide'
-export const LIST_ROW   = 'border-t border-gray-100 hover:bg-brand-50/40 transition-colors cursor-pointer'
+export const LIST_WRAP  = 'overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm'
+export const LIST_THEAD = 'bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-semibold uppercase tracking-wider font-montserrat'
+export const LIST_ROW   = 'border-t border-slate-100 hover:bg-primary-50/60 transition-colors cursor-pointer'

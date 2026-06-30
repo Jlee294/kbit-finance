@@ -83,7 +83,7 @@ export function CatalogPage<T extends { id: string }>({
       ) : (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="border-b border-brand-100 bg-brand-50/60 text-brand-800 text-xs font-semibold tracking-wide">
+            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-montserrat text-xs font-semibold tracking-wide">
               <tr>
                 {columns.map((col) => (
                   <th key={String(col.key)} className="px-4 py-2.5 text-left">{t(col.label)}</th>

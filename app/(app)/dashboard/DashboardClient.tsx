@@ -195,7 +195,7 @@ export function DashboardClient({ data, projectName }: { data: DashboardData; pr
           <h3 className="text-sm font-semibold text-gray-700 mb-3">Hiệu quả theo dự án</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="border-b border-brand-100 bg-brand-50/60 text-brand-800 text-xs font-semibold tracking-wide">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-montserrat text-xs font-semibold tracking-wide">
                 <tr>
                   <th className="px-3 py-2 text-left">Dự án</th>
                   <th className="px-3 py-2 text-right">Doanh thu</th>

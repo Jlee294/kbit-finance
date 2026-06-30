@@ -58,7 +58,7 @@ export function NxtTable({ fromPeriod, toPeriod, warehouseId, warehouses, rows }
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-brand-100 bg-brand-50/60 text-xs text-brand-800 font-semibold">
+              <tr className="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase font-montserrat font-semibold">
                 <th rowSpan={2} className="px-3 py-2 text-left align-bottom">Mã hàng</th>
                 <th rowSpan={2} className="px-3 py-2 text-left align-bottom border-l">Tên hàng</th>
                 <th colSpan={2} className="px-3 py-2 text-center border-l">Tồn đầu kỳ</th>
