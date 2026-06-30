@@ -18,16 +18,16 @@ function fmtShort(v: number) {
   return String(Math.round(v))
 }
 
-const BRAND = '#0f1038'
+const BRAND = '#202940'
 const C = {
-  revenue: '#0f1038',
-  purchase: '#f59e0b',
-  profit: '#16a34a',
-  cashIn: '#2563eb',
-  cashOut: '#ef4444',
-  net: '#0f1038',
+  revenue: '#202940',   // primary navy KBIT
+  purchase: '#f59e0b',  // warning
+  profit: '#10b981',    // success
+  cashIn: '#3b82f6',    // info
+  cashOut: '#ef4444',   // danger
+  net: '#202940',
 }
-const PIE = ['#0f1038', '#3b3d91', '#6366f1', '#f59e0b', '#16a34a', '#0ea5e9', '#ec4899', '#64748b', '#a855f7', '#14b8a6']
+const PIE = ['#202940', '#2E3A5A', '#4F5D80', '#8E99B4', '#3b82f6', '#10b981', '#f59e0b', '#64748b', '#B5BCCE', '#1A2135']
 
 function ChartTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null
@@ -76,11 +76,11 @@ export function DashboardClient({ data, projectName }: { data: DashboardData; pr
         <Kpi label="Doanh thu (bán ra)" value={kpis.revenue}     accent={C.revenue}  hint={`${kpis.salesCount} đơn`} />
         <Kpi label="Chi phí (mua vào)"  value={kpis.purchase}    accent={C.purchase} hint={`${kpis.purchaseCount} hóa đơn`} />
         <Kpi label="Lãi gộp (đã chốt giá vốn)" value={kpis.grossProfit} accent={C.profit} hint={`Giá vốn ${fmtShort(kpis.cogs)}`} />
-        <Kpi label="Doanh thu chưa VAT" value={kpis.revenueNet}  accent="#6366f1" />
+        <Kpi label="Doanh thu chưa VAT" value={kpis.revenueNet}  accent="#4F5D80" />
         <Kpi label="Tiền đã thu"        value={kpis.cashIn}      accent={C.cashIn} />
         <Kpi label="Tiền đã chi"        value={kpis.cashOut}     accent={C.cashOut} />
         <Kpi label="Dòng tiền ròng"     value={kpis.netCash}     accent={BRAND} />
-        <Kpi label="Phải thu − Phải trả" value={kpis.ar - kpis.ap} accent="#0ea5e9" hint={`Thu ${fmtShort(kpis.ar)} · Trả ${fmtShort(kpis.ap)}`} />
+        <Kpi label="Phải thu − Phải trả" value={kpis.ar - kpis.ap} accent="#3b82f6" hint={`Thu ${fmtShort(kpis.ar)} · Trả ${fmtShort(kpis.ap)}`} />
       </div>
 
       {/* ── Doanh thu / Chi phí / Lãi gộp theo tháng ──────── */}

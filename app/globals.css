@@ -5,25 +5,33 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ── KBIT Brand Design Tokens ──────────────────────────────────────────────
- * Brand: #0f1038 (Navy KBIT — đậm) — sang trọng, chuyên nghiệp
- * Scale 50→950 build quanh brand-800 (#0f1038), HSL ~(239°, 58%)
+/* ── KBIT Brand Design Tokens (đồng bộ với @kbit/ui) ───────────────────────
+ * Primary: #202940 (Navy KBIT) — scale slate-navy chuyên nghiệp
+ * Secondary: #4F5D80 (= brand-400)
  * Dùng: bg-brand-50, text-brand-800, border-brand-200, ...
  */
 @theme {
-  --color-brand-50:  #ecedfb;
-  --color-brand-100: #d8daf5;
-  --color-brand-200: #b3b6eb;
-  --color-brand-300: #888dd9;
-  --color-brand-400: #5d63c0;
-  --color-brand-500: #3940a5;
-  --color-brand-600: #292d80;
-  --color-brand-700: #1a1d5c;
-  --color-brand-800: #0f1038;  /* ★ Brand chính (Navy KBIT) */
-  --color-brand-900: #080926;
-  --color-brand-950: #040514;
+  --color-brand-50:  #EFF1F5;
+  --color-brand-100: #DADEE8;
+  --color-brand-200: #B5BCCE;
+  --color-brand-300: #8E99B4;
+  --color-brand-400: #4F5D80;  /* secondary KBIT */
+  --color-brand-500: #2E3A5A;
+  --color-brand-600: #202940;  /* ★ Primary KBIT (Navy) */
+  --color-brand-700: #1A2135;
+  --color-brand-800: #141926;
+  --color-brand-900: #0D1019;
+  --color-brand-950: #060810;
 
-  /* Semantic accents — dùng cho status */
+  /* Secondary alias (đồng bộ tên với @kbit/ui) */
+  --color-secondary-50:  #EFF1F5;
+  --color-secondary-100: #DADEE8;
+  --color-secondary-200: #B5BCCE;
+  --color-secondary-500: #2E3A5A;
+  --color-secondary-600: #202940;
+  --color-secondary-700: #1A2135;
+
+  /* Semantic accents — đồng bộ @kbit/ui */
   --color-success-50:  #ecfdf5;
   --color-success-500: #10b981;
   --color-success-700: #047857;
@@ -36,17 +44,17 @@
   --color-danger-500: #ef4444;
   --color-danger-700: #b91c1c;
 
-  --color-info-50:  #f0f9ff;
-  --color-info-500: #0ea5e9;
-  --color-info-700: #0369a1;
+  --color-info-50:  #eff6ff;
+  --color-info-500: #3b82f6;
+  --color-info-700: #1d4ed8;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-roboto), system-ui, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-montserrat), var(--font-roboto), sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -92,8 +100,8 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  /* Primary = KBIT brand Navy #0f1038 */
-  --primary: #0f1038;
+  /* Primary = KBIT brand Navy #202940 */
+  --primary: #202940;
   --primary-foreground: #ffffff;
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -104,7 +112,7 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: #0f1038;
+  --ring: #202940;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -161,8 +169,13 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-roboto), system-ui, sans-serif;
   }
   html {
     @apply font-sans;
+  }
+  /* Nhận diện KBIT: tiêu đề dùng Montserrat */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-montserrat), var(--font-roboto), sans-serif;
   }
 }
