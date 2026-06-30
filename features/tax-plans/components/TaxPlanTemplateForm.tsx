@@ -26,7 +26,7 @@ interface Props {
 // KTT E3: cho phép thêm sub ở mọi mục input thuần (formula=null, không phải sub)
 const PARENTS_ALLOW_SUB = new Set(['1', '2', '4', '6', '7', '8', '10', '11'])
 
-const INPUT = 'w-full h-8 rounded-md border border-gray-300 bg-white px-2 text-sm text-right focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100'
+const INPUT = 'w-full h-8 rounded-xl border border-slate-200 bg-white px-2 text-sm text-right focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40'
 
 function fmtVND(n: number) {
   return n.toLocaleString('vi-VN')

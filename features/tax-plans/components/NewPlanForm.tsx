@@ -15,7 +15,7 @@ interface Props {
   projects:  ProjectOpt[]
 }
 
-const SEL = 'h-9 px-2.5 text-sm rounded-md border border-gray-300 bg-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100 w-full'
+const SEL = 'h-9 px-2.5 text-sm rounded-xl border border-slate-200 bg-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40 w-full'
 
 export function NewPlanForm({ companies, projects }: Props) {
   const router = useRouter()

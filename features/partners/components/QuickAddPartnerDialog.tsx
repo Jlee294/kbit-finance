@@ -19,7 +19,7 @@ interface Props {
   defaultName?: string
 }
 
-const INPUT = 'w-full h-9 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100'
+const INPUT = 'w-full h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40'
 
 const LABEL_MAP: Record<Kind, { title: string; nameLabel: string }> = {
   customer:    { title: 'Thêm nhanh khách hàng',           nameLabel: 'Tên khách hàng' },

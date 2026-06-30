@@ -12,7 +12,7 @@ interface Props {
   defaultYear: string
 }
 
-const SEL = 'h-9 rounded-md border border-gray-300 bg-white px-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100'
+const SEL = 'h-9 rounded-xl border border-slate-200 bg-white px-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40'
 
 export function BulkLockPanel({ companies, defaultYear }: Props) {
   const router = useRouter()

@@ -24,7 +24,7 @@ const ROLE_OPTIONS: { value: string; label: string }[] = [
 ]
 const ROLE_LABEL: Record<string, string> = Object.fromEntries(ROLE_OPTIONS.map(r => [r.value, r.label]))
 
-const INPUT = 'w-full h-9 rounded-md border border-gray-300 bg-white px-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100'
+const INPUT = 'w-full h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40'
 
 export function CompanyAccessClient({ users, companies }: { users: UserRow[]; companies: Company[] }) {
   const router = useRouter()
@@ -119,7 +119,7 @@ export function CompanyAccessClient({ users, companies }: { users: UserRow[]; co
                       value={u.role}
                       onChange={(e) => changeRole(u.id, e.target.value)}
                       disabled={pending}
-                      className="h-8 rounded-md border border-gray-300 bg-white text-xs px-2 focus:border-brand-500 focus:outline-none"
+                      className="h-8 rounded-xl border border-slate-200 bg-white text-xs px-2 focus:border-primary focus:outline-none"
                     >
                       {ROLE_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
                     </select>

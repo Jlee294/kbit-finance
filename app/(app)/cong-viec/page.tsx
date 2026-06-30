@@ -96,7 +96,7 @@ export default async function CongViecPage({
             <input
               name="title"
               required
-              className="w-full h-9 rounded-md border border-gray-300 text-sm px-2 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
+              className="w-full h-9 rounded-md border border-gray-300 text-sm px-2 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
               
             />
           </div>
@@ -105,7 +105,7 @@ export default async function CongViecPage({
             <select
               name="assigned_to"
               defaultValue=""
-              className="w-full h-9 rounded-md border border-gray-300 bg-white text-sm px-2 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
+              className="w-full h-9 rounded-xl border border-slate-200 bg-white text-sm px-2 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
             >
               <option value="">{t('— Không gán —')}</option>
               {users.map((u: any) => (
@@ -130,7 +130,7 @@ export default async function CongViecPage({
           <label className="text-xs text-gray-500">{t('Ghi chú (tùy chọn)')}</label>
           <input
             name="note"
-            className="w-full h-9 rounded-md border border-gray-300 text-sm px-2 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
+            className="w-full h-9 rounded-md border border-gray-300 text-sm px-2 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
             placeholder={t('Mô tả thêm cho công việc...')}
           />
         </div>

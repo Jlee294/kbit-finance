@@ -73,4 +73,4 @@ export function FilterReset({ href }: { href: string }) {
 }
 
 // Common control classes — tái sử dụng cho select, input trong FilterField
-export const FILTER_CONTROL = 'h-8 rounded-md border border-gray-300 bg-white px-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100'
+export const FILTER_CONTROL = 'h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40'
