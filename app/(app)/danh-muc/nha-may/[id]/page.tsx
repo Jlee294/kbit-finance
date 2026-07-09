@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { getManufacturer, listManufacturerPrices } from '@/features/manufacturers/queries'
+import { getManufacturer, listFormulas, listManufacturerPrices } from '@/features/manufacturers/queries'
 import { getCurrentUser, canApprove } from '@/lib/auth'
 import { ManufacturerDetail } from '@/features/manufacturers/components/ManufacturerDetail'
 
@@ -11,9 +11,10 @@ export default async function ManufacturerDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const [me, manufacturer, prices] = await Promise.all([
+  const [me, manufacturer, formulas, prices] = await Promise.all([
     getCurrentUser(),
     getManufacturer(id),
+    listFormulas(id),
     listManufacturerPrices(id),
   ])
 
@@ -22,6 +23,7 @@ export default async function ManufacturerDetailPage({
   return (
     <ManufacturerDetail
       manufacturer={manufacturer}
+      formulas={formulas}
       prices={prices}
       canWrite={me ? canApprove(me.role) : false}
     />

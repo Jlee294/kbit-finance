@@ -18,7 +18,7 @@ type Manufacturer = {
   email: string | null
   note: string | null
   is_active: boolean
-  product_count: number
+  formula_count: number
 }
 
 export function ManufacturerCatalog({ rows, canWrite }: { rows: Manufacturer[]; canWrite: boolean }) {
@@ -42,9 +42,9 @@ export function ManufacturerCatalog({ rows, canWrite }: { rows: Manufacturer[]; 
         )},
         { key: 'country', label: 'Quốc gia', render: r => COUNTRY_LABELS[r.country] ?? r.country },
         { key: 'phone', label: 'Liên hệ', render: r => r.phone || r.email || '—' },
-        { key: 'product_count', label: 'Sản phẩm', render: r => (
-          <Badge variant={r.product_count > 0 ? 'default' : 'secondary'}>
-            {r.product_count} SP
+        { key: 'formula_count', label: 'Công thức', render: r => (
+          <Badge variant={r.formula_count > 0 ? 'default' : 'secondary'}>
+            {r.formula_count} CT
           </Badge>
         )},
         { key: 'is_active', label: 'Trạng thái', render: r => (

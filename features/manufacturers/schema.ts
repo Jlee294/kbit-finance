@@ -13,11 +13,21 @@ export const manufacturerSchema = z.object({
 
 export type ManufacturerInput = z.infer<typeof manufacturerSchema>
 
+export const formulaSchema = z.object({
+  manufacturer_id: z.string().uuid(),
+  code:            z.string().min(1, 'Bắt buộc'),
+  name:            z.string().min(1, 'Bắt buộc'),
+  note:            z.string().optional().nullable(),
+  is_active:       z.boolean().optional().default(true),
+})
+
+export type FormulaInput = z.infer<typeof formulaSchema>
+
 export const PRICE_CURRENCIES = ['KRW', 'VND', 'USD'] as const
 
 export const manufacturerPriceSchema = z.object({
   manufacturer_id:    z.string().uuid(),
-  product_id:         z.string().uuid('Chọn sản phẩm'),
+  formula_id:         z.string().uuid('Chọn công thức'),
   unit_price:         z.coerce.number().positive('Đơn giá > 0'),
   currency:           z.enum(PRICE_CURRENCIES).default('KRW'),
   moq:                z.coerce.number().int().nonnegative().optional().nullable(),
