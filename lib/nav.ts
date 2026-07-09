@@ -2,11 +2,11 @@ import type { LucideIcon } from 'lucide-react'
 import {
   BarChart3, Wallet, ClipboardList, ClipboardCheck, Activity,
   ShoppingCart, Truck, Landmark, Files,
-  Package, History,
+  Package, History, FileUp,
   Lock, Paperclip, ListTodo, FileType, BookOpen,
   Calculator, CalendarClock,
   Building2, FolderKanban, Users, Barcode, CreditCard, Box, ArrowRightLeft, ShieldCheck,
-  Boxes, TrendingUp, Warehouse, LayoutDashboard,
+  Boxes, TrendingUp, Warehouse, LayoutDashboard, Factory,
 } from 'lucide-react'
 import type { UserRole } from '@/lib/auth'
 
@@ -33,6 +33,7 @@ export const navGroups: NavGroup[] = [
     { href: '/kho',              label: 'Tồn kho',      icon: Package },
     { href: '/kho/lich-su',      label: 'Lịch sử',      icon: History },
     { href: '/kho/so-du-dau-ky', label: 'Số dư đầu kỳ', icon: Boxes },
+    { href: '/kho/import',       label: 'Import Excel',  icon: FileUp },
   ]},
   { label: 'Kế toán', items: [
     { href: '/duyet-khoa-ky',               label: 'Duyệt & Khóa kỳ',   icon: Lock },
@@ -52,6 +53,7 @@ export const navGroups: NavGroup[] = [
     { href: '/danh-muc/ma-hang',             label: 'Mã hàng',      icon: Barcode },
     { href: '/danh-muc/tai-khoan-ngan-hang', label: 'Tài khoản NH', icon: CreditCard },
     { href: '/danh-muc/san-pham',            label: 'Sản phẩm',     icon: Box },
+    { href: '/danh-muc/nha-may',            label: 'Nhà máy',      icon: Factory },
     { href: '/danh-muc/kho',                 label: 'Kho',          icon: Warehouse },
     { href: '/danh-muc/ty-gia',              label: 'Tỷ giá',       icon: ArrowRightLeft },
     { href: '/danh-muc/phan-quyen-cong-ty',  label: 'Người dùng & Phân quyền', icon: ShieldCheck },

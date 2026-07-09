@@ -27,6 +27,7 @@ export interface ProductRow extends ProductOption {
   is_active:           boolean
   brand_id:            string | null
   brand:               { id: string; code: string; name: string } | null
+  manufacturer:        string | null
   cost_material:       number | null
   cost_material_curr:  string
   cost_bottle:         number | null
@@ -45,7 +46,7 @@ export const listProductsDetail = cache(async (): Promise<ProductRow[]> => {
     .from('products')
     .select(`
       id, code, name, unit, is_active,
-      brand_id,
+      brand_id, manufacturer,
       brands!brand_id ( id, code, name ),
       cost_material, cost_material_curr,
       cost_bottle,   cost_bottle_curr,
@@ -59,8 +60,9 @@ export const listProductsDetail = cache(async (): Promise<ProductRow[]> => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (data ?? []).map((r: any) => ({
     ...r,
-    brand:  r.brands ?? null,
-    brands: undefined,
+    brand:        r.brands ?? null,
+    brands:       undefined,
+    manufacturer: r.manufacturer ?? null,
   })) as ProductRow[]
 })
 
