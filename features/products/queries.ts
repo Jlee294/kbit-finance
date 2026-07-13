@@ -27,6 +27,7 @@ export interface ProductRow extends ProductOption {
   is_active:           boolean
   brand_id:            string | null
   brand:               { id: string; code: string; name: string } | null
+  manufacturer_id:     string | null
   manufacturer:        string | null
   cost_material:       number | null
   cost_material_curr:  string
@@ -46,7 +47,7 @@ export const listProductsDetail = cache(async (): Promise<ProductRow[]> => {
     .from('products')
     .select(`
       id, code, name, unit, is_active,
-      brand_id, manufacturer,
+      brand_id, manufacturer_id, manufacturer,
       brands!brand_id ( id, code, name ),
       cost_material, cost_material_curr,
       cost_bottle,   cost_bottle_curr,

@@ -14,8 +14,10 @@ export const productSchema = z.object({
   name:  z.string().min(1, 'Bắt buộc'),
   unit:  z.string().min(1, 'Bắt buộc'),
 
-  brand_id:     z.string().uuid().optional().nullable(),
-  manufacturer: z.string().optional().nullable(),
+  brand_id:        z.string().uuid().optional().nullable(),
+  manufacturer_id: z.string().uuid().optional().nullable(),
+  manufacturer:    z.string().optional().nullable(),
+  formula_id:      z.string().uuid().optional().nullable(),
 
   // Chi phí sản xuất (nguyên liệu, đóng gói, vận chuyển)
   cost_material:       z.coerce.number().min(0).optional().nullable(),

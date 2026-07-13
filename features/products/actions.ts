@@ -16,13 +16,41 @@ const quickProductSchema = z.object({
 
 export interface QuickProductOption { id: string; code: string; name: string; unit: string }
 
+export async function suggestProductCode(brandCode: string, mfrCode: string): Promise<string> {
+  const prefix = `${brandCode}-${mfrCode}-`
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('products')
+    .select('code')
+    .ilike('code', `${prefix}%`)
+    .order('code', { ascending: false })
+    .limit(1)
+  let seq = 1
+  if (data?.length) {
+    const last = data[0].code.slice(prefix.length)
+    const n = parseInt(last, 10)
+    if (!isNaN(n)) seq = n + 1
+  }
+  return `${prefix}${String(seq).padStart(3, '0')}`
+}
+
 export async function createProduct(input: unknown): Promise<ActionResult> {
   try {
-    const data = productSchema.parse(input)
+    const { formula_id, ...data } = productSchema.parse(input)
     const supabase = await createClient()
-    const { error } = await supabase.from('products').insert(data)
+    const { data: row, error } = await supabase
+      .from('products')
+      .insert(data)
+      .select('id')
+      .single()
     if (error) return { error: error.message }
+    if (formula_id && row) {
+      await supabase
+        .from('formula_products')
+        .insert({ formula_id, product_id: row.id })
+    }
     revalidatePath('/danh-muc/san-pham')
+    revalidatePath('/danh-muc/nha-may')
     return {}
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Lỗi không xác định' }
