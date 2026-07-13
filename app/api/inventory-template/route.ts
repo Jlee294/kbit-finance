@@ -54,10 +54,10 @@ export async function GET() {
     ['Công ty', 'Công ty đặt hàng', 'Không', 'Tên công ty trên hệ thống'],
     ['Kỳ', 'YYYY-MM', 'Có', 'VD: 2026-07'],
     ['Số lượng', 'SL tồn kho', 'Có', '> 0'],
-    ['Giá SX', 'Giá chất + bao bì', 'Không', 'KRW/VND/USD'],
-    ['Giá nhập (tờ khai)', 'Giá sau phân bổ phí VC+thuế (VND)', 'Có', 'Dùng làm đơn giá vốn'],
-    ['Giá bán NCC', 'Giá bán sỉ (VND)', 'Không', ''],
-    ['Giá niêm yết', 'Giá bán lẻ (VND)', 'Không', ''],
+    ['Giá SX', 'Giá chất + bao bì', 'Không', 'KRW/VND/USD — cập nhật sau qua Nhà máy'],
+    ['Giá nhập (tờ khai)', 'Giá sau phân bổ phí VC+thuế (VND)', 'Không', 'Dùng làm đơn giá vốn, bỏ trống = 0'],
+    ['Giá bán NCC', 'Giá bán sỉ (VND)', 'Không', 'Cập nhật sau qua Brand'],
+    ['Giá niêm yết', 'Giá bán lẻ (VND)', 'Không', 'Cập nhật sau qua Brand'],
   ]
   const wsGuide = XLSX.utils.aoa_to_sheet(guideData)
   wsGuide['!cols'] = [{ wch: 22 }, { wch: 40 }, { wch: 10 }, { wch: 50 }]

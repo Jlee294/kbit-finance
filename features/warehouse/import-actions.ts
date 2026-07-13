@@ -174,10 +174,7 @@ export async function parseInventoryExcel(formData: FormData): Promise<ParseResu
       errors.push('Số lượng phải > 0')
     }
 
-    // Validate cost_import (giá nhập — dùng làm unit_cost)
-    if (row.cost_import <= 0) {
-      errors.push('Giá nhập (tờ khai NK) phải > 0')
-    }
+    // cost_import không bắt buộc — có thể cập nhật sau
 
     // Validate dates
     if (row.production_date && !/^\d{4}-\d{2}-\d{2}$/.test(row.production_date)) {
