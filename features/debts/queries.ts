@@ -200,6 +200,54 @@ export async function listUnassignedDeposits(): Promise<DepositRow[]> {
   }))
 }
 
+// ── Số dư đầu kỳ công nợ nhập tay ──────────────────────────────────────────────
+
+export interface DebtOpeningRow {
+  id:            string
+  partner_type:  'customer' | 'supplier'
+  partner_id:    string
+  partner_code:  string
+  partner_name:  string
+  year:          number
+  debit_amount:  number
+  credit_amount: number
+  note:          string | null
+}
+
+export async function listDebtOpenings(year: number, companyId: string | undefined, partnerType: 'customer' | 'supplier'): Promise<DebtOpeningRow[]> {
+  const supabase = await createClient()
+  let q = supabase
+    .from('debt_opening_balances')
+    .select('*')
+    .eq('partner_type', partnerType)
+    .eq('year', year)
+  if (companyId) q = q.eq('company_id', companyId)
+  const { data, error } = await q
+  if (error) { console.error('[listDebtOpenings]', error.message); return [] }
+
+  const ids = (data ?? []).map((d: any) => d.partner_id)
+  if (ids.length === 0) return []
+
+  const table = partnerType === 'customer' ? 'customers' : 'suppliers'
+  const { data: partners } = await supabase.from(table).select('id, code, name').in('id', ids)
+  const pMap = new Map((partners ?? []).map((p: any) => [p.id, p]))
+
+  return (data ?? []).map((d: any) => {
+    const p = pMap.get(d.partner_id)
+    return {
+      id:            d.id,
+      partner_type:  d.partner_type,
+      partner_id:    d.partner_id,
+      partner_code:  p?.code ?? '',
+      partner_name:  p?.name ?? '',
+      year:          d.year,
+      debit_amount:  Number(d.debit_amount),
+      credit_amount: Number(d.credit_amount),
+      note:          d.note,
+    }
+  })
+}
+
 // ── Bảng tổng hợp công nợ theo kỳ (Đầu kỳ / Phát sinh / Cuối kỳ) ─────────────
 
 export interface LedgerOrderDetail {
@@ -235,14 +283,45 @@ interface PartyAccum {
   detail:     LedgerOrderDetail[]
 }
 
+async function fetchManualOpenings(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  year: number,
+  companyId: string | undefined,
+  partnerType: 'customer' | 'supplier',
+): Promise<Map<string, { debit: number; credit: number }>> {
+  let q = supabase
+    .from('debt_opening_balances')
+    .select('partner_id, debit_amount, credit_amount')
+    .eq('partner_type', partnerType)
+    .eq('year', year)
+  if (companyId) q = q.eq('company_id', companyId)
+  const { data } = await q
+  const m = new Map<string, { debit: number; credit: number }>()
+  for (const d of data ?? []) {
+    m.set(d.partner_id, { debit: Number(d.debit_amount), credit: Number(d.credit_amount) })
+  }
+  return m
+}
+
 /** Tính ledger từng đối tượng, lọc đối tượng có hoạt động, sắp xếp + đánh ký hiệu. */
-function assembleLedger(groups: Map<string, PartyAccum>, year: number, prefix: string): LedgerRow[] {
+function assembleLedger(
+  groups: Map<string, PartyAccum>,
+  year: number,
+  prefix: string,
+  manualOpenings?: Map<string, { debit: number; credit: number }>,
+): LedgerRow[] {
   const yearStart = `${year}-01-01`
   const yearEnd   = `${year}-12-31`
   const rows: LedgerRow[] = []
   for (const g of groups.values()) {
     const t = computeLedger(g.source, yearStart, yearEnd)
-    if (t.opening === 0 && t.incurred === 0 && t.settled === 0) continue   // không liên quan kỳ
+    const mo = manualOpenings?.get(g.party_id)
+    if (mo) {
+      const adj = mo.debit - mo.credit
+      t.opening += adj
+      t.closing = t.opening + t.incurred - t.settled
+    }
+    if (t.opening === 0 && t.incurred === 0 && t.settled === 0) continue
     rows.push({
       party_id:   g.party_id,
       party_code: g.party_code,
@@ -255,6 +334,18 @@ function assembleLedger(groups: Map<string, PartyAccum>, year: number, prefix: s
       closing:    t.closing,
       orders:     g.detail.sort((a, b) => a.order_date.localeCompare(b.order_date)),
     })
+  }
+  // Partners with manual opening but no orders
+  if (manualOpenings) {
+    for (const [pid, mo] of manualOpenings) {
+      if (groups.has(pid)) continue
+      const adj = mo.debit - mo.credit
+      if (adj === 0) continue
+      rows.push({
+        party_id: pid, party_code: '', party_name: '', tax_code: null, symbol: '',
+        opening: adj, incurred: 0, settled: 0, closing: adj, orders: [],
+      })
+    }
   }
   rows.sort((a, b) => a.party_code.localeCompare(b.party_code))
   rows.forEach((r, i) => { r.symbol = `${prefix}-${String(i + 1).padStart(2, '0')}` })
@@ -343,7 +434,9 @@ export async function getReceivableLedger(year: number, companyId?: string): Pro
       g.detail.push({ id: d.id, order_code: 'Thu chưa gắn đơn', order_date: d.txn_date, total: 0, paid: amount, outstanding: -amount, is_cash: true })
     }
   }
-  return assembleLedger(groups, year, '131')
+  // Manual opening balances
+  const moData = await fetchManualOpenings(supabase, year, companyId, 'customer')
+  return assembleLedger(groups, year, '131', moData)
 }
 
 export async function getPayableLedger(year: number, companyId?: string): Promise<LedgerRow[]> {
@@ -433,5 +526,7 @@ export async function getPayableLedger(year: number, companyId?: string): Promis
       g.detail.push({ id: e.id, order_code: 'Chi chưa gắn đơn', order_date: e.txn_date, total: 0, paid: amount, outstanding: -amount, is_cash: true })
     }
   }
-  return assembleLedger(groups, year, '331')
+  // Manual opening balances
+  const moData = await fetchManualOpenings(supabase, year, companyId, 'supplier')
+  return assembleLedger(groups, year, '331', moData)
 }

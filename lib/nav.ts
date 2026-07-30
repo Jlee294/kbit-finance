@@ -17,7 +17,8 @@ export const navGroups: NavGroup[] = [
   { label: 'Tổng quan', items: [
     { href: '/dashboard',       label: 'Dashboard',       icon: LayoutDashboard },
     { href: '/bao-cao',         label: 'Báo cáo',         icon: BarChart3 },
-    { href: '/cong-no',         label: 'Công nợ',         icon: Wallet },
+    { href: '/cong-no',             label: 'Công nợ',         icon: Wallet },
+    { href: '/cong-no/so-du-dau-ky', label: 'Số dư đầu kỳ CN', icon: Boxes },
     { href: '/bang-ke-ban-ra',  label: 'Bảng kê bán ra',  icon: ClipboardList },
     { href: '/bang-ke-mua-vao', label: 'Bảng kê mua vào', icon: ClipboardCheck },
     { href: '/rui-ro',          label: 'Sức khỏe',        icon: Activity },
