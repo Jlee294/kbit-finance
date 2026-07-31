@@ -7,4 +7,10 @@ export const debtOpeningSchema = z.object({
   debit_amount:  z.coerce.number().nonnegative('So Nợ >= 0'),
   credit_amount: z.coerce.number().nonnegative('So Có >= 0'),
   note:          z.string().optional(),
-})
+}).refine(
+  (value) => !(value.debit_amount > 0 && value.credit_amount > 0),
+  {
+    message: 'Một đối tượng chỉ được có dư Nợ hoặc dư Có tại cùng thời điểm',
+    path: ['credit_amount'],
+  },
+)

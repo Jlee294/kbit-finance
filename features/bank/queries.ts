@@ -1,4 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
+import { isDemoMode } from '@/lib/demo'
+import { GLA_DATA } from '@/lib/gla-data'
+import { cookies } from 'next/headers'
+import { calculateBankSummary, type BankMovement } from './summary'
+import { parseDemoOpeningValue, toDemoOpeningCookieName } from './demo-opening'
 
 export interface BankRow {
   id:                string
@@ -18,6 +23,30 @@ export interface BankRow {
   is_unassigned:     boolean
 }
 
+export interface BankAccountOption {
+  id: string
+  company_id: string
+  company_name: string | null
+  name: string
+  account_no: string | null
+  currency: string
+}
+
+export interface BankAccountSummary {
+  bankAccountId: string
+  companyId: string
+  companyName: string | null
+  bankAccountName: string
+  accountNo: string | null
+  currency: string
+  year: number
+  declaredOpening: number
+  opening: number
+  receipts: number
+  payments: number
+  closing: number
+}
+
 export async function listBankLedger(opts: {
   companyId?:     string
   bankAccountId?: string
@@ -26,6 +55,34 @@ export async function listBankLedger(opts: {
   to?:            string
   limit?:         number
 } = {}): Promise<BankRow[]> {
+  if (isDemoMode()) {
+    return GLA_DATA.bankTransactions
+      .filter((row) => !opts.companyId || row.companyId === opts.companyId)
+      .filter((row) => !opts.bankAccountId || row.bankAccountId === opts.bankAccountId)
+      .filter((row) => !opts.direction || row.direction === opts.direction)
+      .filter((row) => !opts.from || row.txnDate >= opts.from)
+      .filter((row) => !opts.to || row.txnDate <= opts.to)
+      .sort((a, b) => b.sourceDateSerial - a.sourceDateSerial)
+      .slice(0, opts.limit ?? 300)
+      .map((row) => ({
+        id: row.id,
+        direction: row.direction,
+        txn_date: row.txnDate,
+        company_id: row.companyId,
+        company_name: GLA_DATA.company.name,
+        bank_account_id: row.bankAccountId,
+        bank_account_name: GLA_DATA.bankAccount.name,
+        partner_name: row.partyName,
+        amount_local: row.amountLocal,
+        amount_vnd: row.amountVnd,
+        currency: row.currency,
+        region: 'VN',
+        note: row.note,
+        status: row.status,
+        is_unassigned: !row.affectsDebt,
+      }))
+  }
+
   const supabase = await createClient()
 
   // Query thu (incomes)
@@ -126,11 +183,175 @@ export async function listBankLedger(opts: {
   return all.slice(0, opts.limit ?? 300)
 }
 
-export async function listBankAccounts() {
+export async function listBankAccounts(): Promise<BankAccountOption[]> {
+  if (isDemoMode()) {
+    return [{
+      id: GLA_DATA.bankAccount.id,
+      company_id: GLA_DATA.bankAccount.companyId,
+      company_name: GLA_DATA.company.name,
+      name: GLA_DATA.bankAccount.name,
+      account_no: GLA_DATA.bankAccount.accountNumber,
+      currency: GLA_DATA.bankAccount.currency,
+    }]
+  }
+
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('bank_accounts')
-    .select('id, name, currency')
+    .select('id, company_id, name, account_no, currency, companies!company_id(name)')
+    .eq('is_active', true)
     .order('name')
-  return (data ?? []) as Array<{ id: string; name: string; currency: string }>
+  if (error) {
+    console.error('[listBankAccounts]', error.message)
+    return []
+  }
+  return ((data ?? []) as any[]).map((row) => ({
+    id: row.id,
+    company_id: row.company_id,
+    company_name: row.companies?.name ?? null,
+    name: row.name,
+    account_no: row.account_no,
+    currency: row.currency,
+  }))
+}
+
+export async function getBankAccountSummaries(opts: {
+  companyId?: string
+  bankAccountId?: string
+  year: number
+  from: string
+  to: string
+}): Promise<BankAccountSummary[]> {
+  if (isDemoMode()) {
+    const account = GLA_DATA.bankAccount
+    if ((opts.companyId && opts.companyId !== account.companyId)
+        || (opts.bankAccountId && opts.bankAccountId !== account.id)) {
+      return []
+    }
+    const defaultOpening = opts.year === GLA_DATA.period.year ? account.openingBalance : 0
+    const cookieStore = await cookies()
+    const savedOpening = parseDemoOpeningValue(
+      cookieStore.get(toDemoOpeningCookieName(account.id, opts.year))?.value ?? null,
+    )
+    const result = calculateBankSummary({
+      declaredOpening: savedOpening ?? defaultOpening,
+      year: opts.year,
+      from: opts.from,
+      to: opts.to,
+      movements: GLA_DATA.bankTransactions.map((row) => ({
+        txnDate: row.txnDate,
+        direction: row.direction,
+        amount: row.amountLocal,
+      })),
+    })
+    return [{
+      bankAccountId: account.id,
+      companyId: account.companyId,
+      companyName: GLA_DATA.company.name,
+      bankAccountName: account.name,
+      accountNo: account.accountNumber,
+      currency: account.currency,
+      year: opts.year,
+      ...result,
+    }]
+  }
+
+  const supabase = await createClient()
+  let accountQuery = supabase
+    .from('bank_accounts')
+    .select('id, company_id, name, account_no, currency, companies!company_id(name)')
+    .eq('is_active', true)
+    .order('name')
+  if (opts.companyId) accountQuery = accountQuery.eq('company_id', opts.companyId)
+  if (opts.bankAccountId) accountQuery = accountQuery.eq('id', opts.bankAccountId)
+  const { data: accountData, error: accountError } = await accountQuery
+  if (accountError) {
+    console.error('[getBankAccountSummaries:accounts]', accountError.message)
+    return []
+  }
+
+  const accounts = (accountData ?? []) as any[]
+  const accountIds = accounts.map((account) => account.id as string)
+  if (accountIds.length === 0) return []
+
+  const yearFrom = `${opts.year}-01-01`
+  const [openingResult, incomeResult, expenseResult] = await Promise.all([
+    supabase
+      .from('bank_opening_balances')
+      .select('bank_account_id, amount')
+      .eq('year', opts.year)
+      .in('bank_account_id', accountIds),
+    supabase
+      .from('income_transactions')
+      .select('bank_account_id, txn_date, amount')
+      .in('bank_account_id', accountIds)
+      .in('status', ['confirmed', 'approved'])
+      .gte('txn_date', yearFrom)
+      .lte('txn_date', opts.to),
+    supabase
+      .from('expense_transactions')
+      .select('bank_account_id, txn_date, amount_vnd, amount_krw')
+      .in('bank_account_id', accountIds)
+      .in('status', ['confirmed', 'approved'])
+      .gte('txn_date', yearFrom)
+      .lte('txn_date', opts.to),
+  ])
+
+  if (openingResult.error || incomeResult.error || expenseResult.error) {
+    console.error(
+      '[getBankAccountSummaries]',
+      openingResult.error?.message ?? incomeResult.error?.message ?? expenseResult.error?.message,
+    )
+    return []
+  }
+
+  const openingByAccount = new Map(
+    (openingResult.data ?? []).map((row: any) => [
+      row.bank_account_id as string,
+      Number(row.amount ?? 0),
+    ]),
+  )
+  const movementsByAccount = new Map<string, BankMovement[]>()
+  const addMovement = (bankAccountId: string, movement: BankMovement) => {
+    movementsByAccount.set(
+      bankAccountId,
+      [...(movementsByAccount.get(bankAccountId) ?? []), movement],
+    )
+  }
+  for (const row of incomeResult.data ?? []) {
+    addMovement(row.bank_account_id, {
+      txnDate: row.txn_date,
+      direction: 'thu',
+      amount: Number(row.amount ?? 0),
+    })
+  }
+  const currencyByAccount = new Map(
+    accounts.map((account) => [account.id as string, account.currency as string]),
+  )
+  for (const row of expenseResult.data ?? []) {
+    addMovement(row.bank_account_id, {
+      txnDate: row.txn_date,
+      direction: 'chi',
+      amount: currencyByAccount.get(row.bank_account_id) === 'KRW'
+        ? Number(row.amount_krw ?? 0)
+        : Number(row.amount_vnd ?? 0),
+    })
+  }
+
+  return accounts.map((account) => ({
+    bankAccountId: account.id,
+    companyId: account.company_id,
+    companyName: account.companies?.name ?? null,
+    bankAccountName: account.name,
+    accountNo: account.account_no,
+    currency: account.currency,
+    year: opts.year,
+    ...calculateBankSummary({
+      declaredOpening: openingByAccount.get(account.id) ?? 0,
+      year: opts.year,
+      from: opts.from,
+      to: opts.to,
+      movements: movementsByAccount.get(account.id) ?? [],
+    }),
+  }))
 }

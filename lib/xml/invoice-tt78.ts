@@ -55,6 +55,7 @@ export interface ParsedInvoice {
 
 export interface ParsedInvoiceItem {
   no:           number            // STT
+  code:         string | null     // Mã hàng nếu có trong XML
   name:         string            // THHDVu
   unit:         string | null     // DVTinh
   qty:          number             // SLuong
@@ -117,6 +118,7 @@ export function parseInvoiceTT78(xml: string, filename?: string): ParsedInvoice 
 
   const items: ParsedInvoiceItem[] = hhItems.map((it: any, idx: number) => ({
     no:         num(it.STT) || (idx + 1),
+    code:       str(it.MHHDVu ?? it.MHHDV ?? it.MaHHDVu ?? it.Ma),
     name:       String(it.THHDVu ?? '').trim(),
     unit:       str(it.DVTinh),
     qty:        num(it.SLuong),

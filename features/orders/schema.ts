@@ -24,6 +24,7 @@ export const createOrderSchema = z.object({
   lot_no: z.string().optional().nullable(),
   expiry_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   is_intercompany: z.coerce.boolean().default(false),
+  is_gift: z.coerce.boolean().default(false),
   counterpart_company_id: z.string().uuid().optional().nullable(),
   discount_pct:  z.coerce.number().min(0).max(100).default(0),
   vat_pct:       z.coerce.number().min(0).max(100).default(0),

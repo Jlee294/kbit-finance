@@ -1,5 +1,7 @@
 import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
+import { isDemoMode } from '@/lib/demo'
+import { GLA_DATA } from '@/lib/gla-data'
 
 export interface Warehouse {
   id: string
@@ -39,6 +41,18 @@ export interface TxnRow {
 }
 
 export const listWarehouses = cache(async (companyId?: string): Promise<Warehouse[]> => {
+  if (isDemoMode()) {
+    if (companyId && companyId !== GLA_DATA.company.id) return []
+    return [{
+      id: GLA_DATA.warehouse.id,
+      code: GLA_DATA.warehouse.code,
+      name: GLA_DATA.warehouse.name,
+      is_active: GLA_DATA.warehouse.isActive,
+      is_default: GLA_DATA.warehouse.isDefault,
+      company_id: GLA_DATA.warehouse.companyId,
+    }]
+  }
+
   const supabase = await createClient()
   let q = supabase
     .from('warehouses').select('id, code, name, is_active, is_default, company_id')
@@ -52,6 +66,8 @@ export const listWarehouses = cache(async (companyId?: string): Promise<Warehous
 /** Kho mặc định (kho chính) của 1 công ty — gọi RPC kbit_default_warehouse.
  *  Trả null nếu công ty không có kho active. Dùng để tự điền kho khi tạo đơn bán/mua. */
 export async function defaultWarehouseId(companyId: string): Promise<string | null> {
+  if (isDemoMode()) return companyId === GLA_DATA.company.id ? GLA_DATA.warehouse.id : null
+
   const supabase = await createClient()
   const { data, error } = await supabase.rpc('kbit_default_warehouse', { p_company_id: companyId })
   if (error) { console.error('[defaultWarehouseId]', error.message); return null }
@@ -59,6 +75,23 @@ export async function defaultWarehouseId(companyId: string): Promise<string | nu
 }
 
 export const listStock = cache(async (warehouseId?: string): Promise<StockRow[]> => {
+  if (isDemoMode()) {
+    if (warehouseId && warehouseId !== GLA_DATA.warehouse.id) return []
+    return GLA_DATA.inventorySummary
+      .filter((row) => row.qtyClose > 0)
+      .sort((a, b) => b.qtyClose - a.qtyClose)
+      .map((row) => ({
+        warehouse_id: GLA_DATA.warehouse.id,
+        warehouse_code: GLA_DATA.warehouse.code,
+        warehouse_name: GLA_DATA.warehouse.name,
+        product_id: row.productId,
+        product_code: row.code,
+        product_name: row.name,
+        unit: row.unit,
+        qty_on_hand: row.qtyClose,
+      }))
+  }
+
   const supabase = await createClient()
   let q = supabase
     .from('warehouse_stock')
@@ -104,6 +137,58 @@ export async function listTransactions(opts: {
   onlyNoInvoice?: boolean   // KTT C3: filter chưa có hóa đơn
   limit?: number
 }): Promise<TxnRow[]> {
+  if (isDemoMode()) {
+    const rows: TxnRow[] = []
+    for (const order of GLA_DATA.purchaseJournal) {
+      for (const item of order.items) {
+        rows.push({
+          id: `receipt-${item.id}`,
+          txn_date: order.orderDate,
+          txn_type: 'receipt',
+          warehouse_name: GLA_DATA.warehouse.name,
+          product_name: item.productName,
+          product_code: item.productCode,
+          qty: item.qty,
+          reason: 'Nhập từ nhật ký mua GLA',
+          note: order.invoiceNo ? `HĐ ${order.invoiceNo}` : null,
+          to_warehouse_name: null,
+          ref_order_id: order.id,
+          created_by_name: null,
+          company_name: GLA_DATA.company.name,
+          has_invoice: true,
+        })
+      }
+    }
+    for (const order of GLA_DATA.salesJournal) {
+      for (const item of order.items) {
+        rows.push({
+          id: `issue-${item.id}`,
+          txn_date: order.orderDate,
+          txn_type: 'order_deduction',
+          warehouse_name: GLA_DATA.warehouse.name,
+          product_name: item.productName,
+          product_code: item.productCode,
+          qty: item.qty,
+          reason: 'Xuất từ nhật ký bán GLA',
+          note: order.invoiceNo ? `HĐ ${order.invoiceNo}` : null,
+          to_warehouse_name: null,
+          ref_order_id: order.id,
+          created_by_name: null,
+          company_name: GLA_DATA.company.name,
+          has_invoice: true,
+        })
+      }
+    }
+    return rows
+      .filter((row) => !opts.warehouseId || opts.warehouseId === GLA_DATA.warehouse.id)
+      .filter((row) => !opts.productId || row.product_code === GLA_DATA.products.find((p) => p.id === opts.productId)?.code)
+      .filter((row) => !opts.txnType || row.txn_type === opts.txnType)
+      .filter((row) => !opts.companyId || opts.companyId === GLA_DATA.company.id)
+      .filter((row) => !opts.onlyNoInvoice || !row.has_invoice)
+      .sort((a, b) => b.txn_date.localeCompare(a.txn_date))
+      .slice(0, opts.limit ?? 100)
+  }
+
   const supabase = await createClient()
   // KTT C3: has_invoice optional — fallback nếu migration 0041 chưa chạy
   const buildSelect = (withInvoice: boolean) => `
@@ -171,6 +256,11 @@ export async function listTransactions(opts: {
 }
 
 export async function getStockQty(warehouseId: string, productId: string): Promise<number> {
+  if (isDemoMode()) {
+    if (warehouseId !== GLA_DATA.warehouse.id) return 0
+    return GLA_DATA.inventorySummary.find((row) => row.productId === productId)?.qtyClose ?? 0
+  }
+
   const supabase = await createClient()
   const { data } = await supabase
     .from('warehouse_stock')
@@ -189,6 +279,26 @@ export interface NxtRow {
 
 /** Bảng Nhập-Xuất-Tồn theo kỳ (YYYY-MM), tùy chọn lọc 1 kho. Suy từ sổ cái (RPC kbit_inventory_nxt). */
 export async function listInventoryNxt(period: string, warehouseId?: string, companyId?: string): Promise<NxtRow[]> {
+  if (isDemoMode()) {
+    if (warehouseId && warehouseId !== GLA_DATA.warehouse.id) return []
+    if (companyId && companyId !== GLA_DATA.company.id) return []
+    return (GLA_DATA.inventoryByMonth[period] ?? []).map((row) => ({
+      product_id: row.productId,
+      code: row.code,
+      name: row.name,
+      unit: row.unit,
+      qty_open: row.qtyOpen,
+      value_open: row.valueOpen,
+      qty_in: row.qtyIn,
+      value_in: row.valueIn,
+      qty_out: row.qtyOut,
+      value_out: row.valueOut,
+      qty_close: row.qtyClose,
+      value_close: row.valueClose,
+      avg_cost: row.avgCost,
+    }))
+  }
+
   const supabase = await createClient()
   const { data, error } = await supabase.rpc('kbit_inventory_nxt', {
     p_period: period,
@@ -267,6 +377,19 @@ export interface WarehouseAdminRow {
 }
 
 export const listWarehousesAdmin = cache(async (): Promise<WarehouseAdminRow[]> => {
+  if (isDemoMode()) {
+    return [{
+      id: GLA_DATA.warehouse.id,
+      code: GLA_DATA.warehouse.code,
+      name: GLA_DATA.warehouse.name,
+      note: 'Kho chính nhập từ bộ dữ liệu GLA 01–06/2026',
+      is_active: GLA_DATA.warehouse.isActive,
+      is_default: GLA_DATA.warehouse.isDefault,
+      company_id: GLA_DATA.company.id,
+      company_name: `${GLA_DATA.company.code} — ${GLA_DATA.company.name}`,
+    }]
+  }
+
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('warehouses')

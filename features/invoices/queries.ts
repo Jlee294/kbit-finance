@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { computePurchaseInvoiceTotals } from './purchase-total'
+import { isDemoMode } from '@/lib/demo'
+import { GLA_DATA } from '@/lib/gla-data'
 
 interface OrderItemRaw {
   description: string | null
@@ -20,6 +22,9 @@ interface SalesOrderRaw {
   grand_total: number | null
   fulfillment_status: string
   payment_status: string
+  is_gift: boolean
+  recognize_revenue: boolean
+  creates_receivable: boolean
   customers: { code: string; name: string } | null
   companies: { name: string } | null
   items: OrderItemRaw[]
@@ -66,6 +71,9 @@ export interface SalesInvoiceRow {
   company_name:      string
   fulfillment_status: string
   payment_status:    string
+  is_gift:           boolean
+  recognize_revenue: boolean
+  creates_receivable: boolean
 }
 
 export async function listSalesInvoices(opts: {
@@ -74,6 +82,43 @@ export async function listSalesInvoices(opts: {
   to?: string
   limit?: number
 } = {}): Promise<SalesInvoiceRow[]> {
+  if (isDemoMode()) {
+    return GLA_DATA.salesInvoices
+      .filter((row) => !opts.companyId || row.companyId === opts.companyId)
+      .filter((row) => !opts.from || row.invoiceDate >= opts.from)
+      .filter((row) => !opts.to || row.invoiceDate <= opts.to)
+      .sort((a, b) => b.invoiceDate.localeCompare(a.invoiceDate))
+      .slice(0, opts.limit ?? 300)
+      .map((row) => {
+        const journal = GLA_DATA.salesJournal.find(
+          (item) => item.invoiceNo === row.invoiceNo && item.invoiceDate === row.invoiceDate,
+        )
+        return {
+          id: row.id,
+          order_code: row.orderCode,
+          invoice_template: row.invoiceTemplate,
+          invoice_symbol: row.invoiceSymbol,
+          invoice_no: row.invoiceNo,
+          invoice_date: row.invoiceDate,
+          order_date: row.orderDate,
+          customer_name: row.customerName,
+          customer_code: row.customerCode,
+          customer_tax_code: row.customerTaxCode,
+          noi_dung: row.content || row.note || '',
+          subtotal: row.subtotal,
+          vat_pct: row.vatPct,
+          vat_amount: row.vatAmount,
+          grand_total: row.grandTotal,
+          company_name: GLA_DATA.company.name,
+          fulfillment_status: journal?.fulfillmentStatus ?? 'delivered',
+          payment_status: journal?.paymentStatus ?? 'paid',
+          is_gift: row.isGift,
+          recognize_revenue: row.recognizeRevenue,
+          creates_receivable: row.createsReceivable,
+        }
+      })
+  }
+
   const supabase = await createClient()
   let q = supabase
     .from('customer_orders')
@@ -81,7 +126,7 @@ export async function listSalesInvoices(opts: {
       id, order_code, order_date,
       invoice_template, invoice_symbol, invoice_no, invoice_date, customer_tax_code,
       vat_pct, vat_amount, grand_total,
-      fulfillment_status, payment_status,
+      fulfillment_status, payment_status, is_gift, recognize_revenue, creates_receivable,
       customers!customer_id ( code, name ),
       companies!company_id ( name ),
       items:customer_order_items ( description, products(name) )
@@ -129,6 +174,9 @@ export async function listSalesInvoices(opts: {
       company_name:      r.companies?.name ?? '',
       fulfillment_status: r.fulfillment_status,
       payment_status:    r.payment_status,
+      is_gift:            r.is_gift,
+      recognize_revenue:  r.recognize_revenue,
+      creates_receivable: r.creates_receivable,
     }
   })
 }
@@ -161,6 +209,34 @@ export async function listPurchaseInvoices(opts: {
   to?: string
   limit?: number
 } = {}): Promise<PurchaseInvoiceRow[]> {
+  if (isDemoMode()) {
+    return GLA_DATA.purchaseInvoices
+      .filter((row) => !opts.companyId || row.companyId === opts.companyId)
+      .filter((row) => !opts.from || row.invoiceDate >= opts.from)
+      .filter((row) => !opts.to || row.invoiceDate <= opts.to)
+      .sort((a, b) => b.invoiceDate.localeCompare(a.invoiceDate))
+      .slice(0, opts.limit ?? 300)
+      .map((row) => ({
+        id: row.id,
+        order_code: row.orderCode,
+        invoice_template: row.invoiceTemplate,
+        invoice_symbol: row.invoiceSymbol,
+        invoice_no: row.invoiceNo,
+        invoice_date: row.invoiceDate,
+        order_date: row.orderDate,
+        supplier_name: row.supplierName,
+        supplier_code: row.supplierCode,
+        supplier_tax_code: row.supplierTaxCode,
+        noi_dung: row.content || row.note || '',
+        subtotal: row.subtotal,
+        vat_pct: row.vatPct,
+        vat_amount: row.vatAmount,
+        grand_total: row.grandTotal,
+        company_name: GLA_DATA.company.name,
+        order_type: row.orderType,
+      }))
+  }
+
   const supabase = await createClient()
   let q = supabase
     .from('supplier_orders')

@@ -26,12 +26,7 @@ export async function GET() {
     'Thành tiền nhập',
   ]
 
-  const sampleRows = [
-    [1, 'MK-001', 'Serum Vitamin C 30ml', 'Chai', 'MINT KOREA', 'Cosmax', 'L2026-001', '2026-03-15', '2028-03-15', 'KHO-KR', 'Kho Hàn Quốc', 'Mint Korea_KR', '2026-07', 500, 15000, 'KRW', 350000, 450000, 590000, '=N2*O2', '=N2*Q2'],
-    [2, 'MK-002', 'Kem dưỡng da 50ml', 'Hộp', 'MINT KOREA', 'Kolmar', 'L2026-002', '2026-04-01', '2028-04-01', 'KHO-VN', 'Kho Việt Nam', 'KBIT_KR', '2026-07', 300, 22000, 'KRW', 520000, 650000, 850000, '=N3*O3', '=N3*Q3'],
-  ]
-
-  const ws = XLSX.utils.aoa_to_sheet([headers, ...sampleRows])
+  const ws = XLSX.utils.aoa_to_sheet([headers])
   ws['!cols'] = [
     { wch: 5 }, { wch: 12 }, { wch: 28 }, { wch: 8 }, { wch: 18 },
     { wch: 16 }, { wch: 14 }, { wch: 12 }, { wch: 14 }, { wch: 12 },

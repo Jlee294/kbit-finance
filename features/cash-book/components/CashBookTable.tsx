@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { createCashEntry, updateCashEntry, deleteCashEntry } from '../actions'
+import { createCashEntry, updateCashEntry, deleteCashEntry, upsertCashOpening } from '../actions'
 import { DIALOG_MD } from '@/lib/ui-tokens'
-import type { CashRow } from '../queries'
+import type { CashRow, CashSummary } from '../queries'
 import { EntityFilesButton } from '@/features/documents/components/EntityFilesButton'
 import { StatsCard } from '@/components/shared/StatsCard'
 import { FormSection } from '@/components/shared/FormSection'
@@ -25,12 +25,17 @@ interface Props {
   customers: PartyOption[]
   suppliers: PartyOption[]
   canWrite:  boolean
+  summary: CashSummary
+  selectedCompanyId: string
+  year: number
 }
 
 function fmtVND(v: number) { return v.toLocaleString('vi-VN') + ' đ' }
 function fmtDate(s: string) { return new Date(s).toLocaleDateString('vi-VN') }
 
-export function CashBookTable({ rows, companies, users, customers, suppliers, canWrite }: Props) {
+export function CashBookTable({
+  rows, companies, users, customers, suppliers, canWrite, summary, selectedCompanyId, year,
+}: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<CashRow | undefined>()
@@ -42,17 +47,23 @@ export function CashBookTable({ rows, companies, users, customers, suppliers, ca
     const r = await deleteCashEntry(id); if (r.error) return alert(r.error); router.refresh()
   }
 
-  // Totals
-  const totalThu = rows.filter(r => r.direction === 'thu').reduce((s, r) => s + r.so_tien, 0)
-  const totalChi = rows.filter(r => r.direction === 'chi').reduce((s, r) => s + r.so_tien, 0)
-
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-3">
-        <StatsCard label="Tổng thu"   value={fmtVND(totalThu)}            accent="success" />
-        <StatsCard label="Tổng chi"   value={fmtVND(totalChi)}            accent="danger" />
-        <StatsCard label="Chênh lệch" value={fmtVND(totalThu - totalChi)} accent={totalThu - totalChi >= 0 ? 'brand' : 'danger'} />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatsCard label="Tiền mặt đầu kỳ" value={fmtVND(summary.opening)} accent="neutral" />
+        <StatsCard label="Tiền mặt tăng" value={fmtVND(summary.receipts)} accent="success" />
+        <StatsCard label="Tiền mặt giảm" value={fmtVND(summary.payments)} accent="danger" />
+        <StatsCard label="Tiền mặt cuối kỳ" value={fmtVND(summary.closing)} accent={summary.closing >= 0 ? 'brand' : 'danger'} />
       </div>
+
+      {canWrite && (
+        <CashOpeningForm
+          companies={companies}
+          selectedCompanyId={selectedCompanyId}
+          year={year}
+          currentOpening={summary.declaredOpening}
+        />
+      )}
 
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-500">{rows.length} chứng từ</p>
@@ -143,6 +154,59 @@ export function CashBookTable({ rows, companies, users, customers, suppliers, ca
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+function CashOpeningForm({
+  companies,
+  selectedCompanyId,
+  year,
+  currentOpening,
+}: {
+  companies: SimpleOption[]
+  selectedCompanyId: string
+  year: number
+  currentOpening: number
+}) {
+  const router = useRouter()
+  const [companyId, setCompanyId] = useState(selectedCompanyId || companies[0]?.id || '')
+  const [amount, setAmount] = useState(selectedCompanyId ? String(currentOpening) : '0')
+  const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  async function saveOpening(e: React.FormEvent) {
+    e.preventDefault()
+    setSaving(true)
+    setError('')
+    const result = await upsertCashOpening({
+      company_id: companyId,
+      year,
+      amount: Number(amount),
+      note: `Số dư tiền mặt đầu kỳ ${year}`,
+    })
+    setSaving(false)
+    if (result.error) return setError(result.error)
+    router.refresh()
+  }
+
+  return (
+    <form onSubmit={saveOpening} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+        <div className="flex-1 space-y-1">
+          <Label>Khai báo tiền mặt đầu kỳ năm {year}</Label>
+          <p className="text-xs text-gray-500">Chỉ nhập một lần cho từng công ty; hệ thống cộng thu, trừ chi để ra cuối kỳ.</p>
+        </div>
+        <select required value={companyId} onChange={(e) => setCompanyId(e.target.value)}
+          className="h-9 min-w-56 rounded-md border border-input bg-transparent px-3 text-sm">
+          <option value="">— Chọn công ty —</option>
+          {companies.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}
+        </select>
+        <Input required type="number" min="0" step="1" value={amount}
+          onChange={(e) => setAmount(e.target.value)} className="lg:w-52" />
+        <Button type="submit" disabled={saving}>{saving ? 'Đang lưu...' : 'Lưu đầu kỳ'}</Button>
+      </div>
+      {error && <p className="mt-2 text-sm text-danger-700">{error}</p>}
+    </form>
   )
 }
 

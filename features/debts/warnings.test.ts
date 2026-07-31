@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest'
-import { isOverSettled, depositNeedsAllocation } from './warnings'
+import { hasOppositeBalance, depositNeedsAllocation } from './warnings'
 
-// C — cảnh báo thu/trả VƯỢT số nợ (settled > phát sinh → closing âm) → nghi ghi trùng.
-describe('C — thu/trả vượt nợ', () => {
-  it('closing < 0 (đã thu/trả vượt phát sinh) → cảnh báo', () => {
-    expect(isOverSettled({ closing: -2_000_000 })).toBe(true)
+// C — số dư bên ngược cần được trình bày đúng bản chất, không tự kết luận ghi trùng.
+describe('C — số dư công nợ bên ngược', () => {
+  it('closing < 0 → nhận diện số dư bên ngược', () => {
+    expect(hasOppositeBalance({ closing: -2_000_000 })).toBe(true)
   })
-  it('closing >= 0 → không cảnh báo', () => {
-    expect(isOverSettled({ closing: 0 })).toBe(false)
-    expect(isOverSettled({ closing: 6_000_000 })).toBe(false)
+  it('closing >= 0 → số dư bên thông thường', () => {
+    expect(hasOppositeBalance({ closing: 0 })).toBe(false)
+    expect(hasOppositeBalance({ closing: 6_000_000 })).toBe(false)
   })
 })
 

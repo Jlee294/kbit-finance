@@ -4,14 +4,22 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { supplierImportSchema } from './schema'
-import { allocateUnitCost } from './cost'
 import { buildOrderCode } from '@/features/orders/order-code'
 import { getNextSupplierOrderSeq } from './queries'
 import { defaultWarehouseId } from '@/features/warehouse/queries'
+import { canEdit, getCurrentUser } from '@/lib/auth'
+import { allocateLandedCost, calculateLandedCostVnd } from './landed-cost'
+
+async function requireImportEditor() {
+  const me = await getCurrentUser()
+  if (!me || !canEdit(me.role)) throw new Error('Không có quyền sửa chứng từ mua vào')
+  return me
+}
 
 /** Tạo đơn nhập khẩu mới. Trả về id đơn vừa tạo. */
 export async function createImportOrder(input: unknown): Promise<string> {
   const data = supplierImportSchema.parse(input)
+  const me = await requireImportEditor()
   const supabase = await createClient()
 
   // C-1: chặn chọn kho thuộc CÔNG TY KHÁC (kbit_receive_stock suy công ty TỪ kho
@@ -31,8 +39,40 @@ export async function createImportOrder(input: unknown): Promise<string> {
 
   // (1) Chèn header. KHÔNG gửi cost_total / outstanding (GENERATED ALWAYS).
   //     order_type cố định 'import'. C4/D4: ghi exchange_rate khi KRW.
-  const { items, order_code: rawCode, ...rest } = data
-  const header = { ...rest, order_type: rest.order_type ?? 'import' }
+  const { items, cost_components: inputComponents, order_code: rawCode, ...rest } = data
+  const goodsRate = data.currency === 'KRW' ? data.exchange_rate! : 1
+  const components = data.order_type === 'import'
+    ? [
+        {
+          kind: 'goods' as const,
+          creditor_type: 'supplier' as const,
+          creditor_supplier_id: data.supplier_id,
+          description: 'Tiền hàng nhà cung cấp nước ngoài',
+          currency: data.currency,
+          amount: data.goods_value,
+          exchange_rate: goodsRate,
+          capitalizable: true,
+        },
+        ...inputComponents
+          .filter((component) => component.amount > 0)
+          .map((component) => ({
+            ...component,
+            capitalizable: component.kind !== 'import_vat',
+          })),
+      ]
+    : []
+  const landed = calculateLandedCostVnd(components.map((component) => ({
+    kind: component.kind,
+    amount: component.amount,
+    exchangeRate: component.exchange_rate,
+    capitalizable: component.capitalizable,
+  })))
+  const header = {
+    ...rest,
+    order_type: rest.order_type ?? 'import',
+    landed_cost_vnd: data.order_type === 'import' ? landed.landedCostVnd : data.goods_value,
+    recoverable_import_vat_vnd: data.order_type === 'import' ? landed.recoverableTaxVnd : 0,
+  }
   const manualCode = rawCode?.trim() || null
 
   // Mã đơn: nếu người dùng để trống → tự sinh <mãNCC>-MMYY-NN, retry chống trùng
@@ -68,17 +108,16 @@ export async function createImportOrder(input: unknown): Promise<string> {
   }
   if (!order) throw new Error('Không thể tạo mã đơn — vui lòng thử lại')
 
-  // (2) Tính costTotalVnd để phân bổ unit_cost (C3/D3):
-  //     cost_total lô NGUYÊN TỆ = goods_value + import_duty + other_fees (KHÔNG gồm vat_import)
-  //     Đơn KRW → nhân exchange_rate ra VND; đơn VND → rate = 1
-  const costTotalFc  = data.goods_value + data.import_duty + data.other_fees
-  const rate         = data.currency === 'KRW' ? data.exchange_rate! : 1
-  const costTotalVnd = costTotalFc * rate
-
-  const unitCosts = allocateUnitCost(
-    items.map((it) => ({ qty: it.qty, unit_price: it.unit_price })),
-    costTotalVnd,
+  // (2) Phân bổ giá vốn theo tỷ trọng tiền hàng. Mỗi khoản có tỷ giá riêng;
+  //     VAT nhập khẩu được khấu trừ đã bị loại khỏi landedCostVnd.
+  const landedAllocations = allocateLandedCost(
+    items.map((item) => ({
+      quantity: item.qty,
+      goodsValueVnd: item.qty * item.unit_price * goodsRate,
+    })),
+    data.order_type === 'import' ? landed.landedCostVnd : data.goods_value,
   )
+  const unitCosts = landedAllocations.map((allocation) => allocation.unitCostVnd)
 
   // (3) Chèn dòng hàng kèm unit_cost + KTT G: lot_no, expiry_date. KHÔNG gửi line_total (generated).
   const rows = items.map((it, i) => ({
@@ -90,9 +129,34 @@ export async function createImportOrder(input: unknown): Promise<string> {
     unit_cost:   unitCosts[i],
     lot_no:      it.lot_no      || null,
     expiry_date: it.expiry_date || null,
+    accounting_treatment: it.product_id ? 'inventory' : it.accounting_treatment,
+    accounting_category_id: it.accounting_category_id ?? null,
   }))
   const { error: e2 } = await supabase.from('supplier_order_items').insert(rows)
   if (e2) throw new Error(e2.message)
+
+  if (components.length > 0) {
+    const { error: componentError } = await supabase.from('import_cost_components').insert(
+      components.map((component) => ({
+        company_id: data.company_id,
+        supplier_order_id: order.id,
+        kind: component.kind,
+        creditor_type: component.creditor_type,
+        creditor_supplier_id: component.creditor_supplier_id,
+        description: component.description ?? null,
+        currency: component.currency,
+        amount: component.amount,
+        exchange_rate: component.exchange_rate,
+        capitalizable: component.capitalizable,
+        created_by: me.id,
+      })),
+    )
+    if (componentError) {
+      await supabase.from('supplier_order_items').delete().eq('order_id', order.id)
+      await supabase.from('supplier_orders').delete().eq('id', order.id)
+      throw new Error(`Không lưu được chủ nợ/chi phí nhập khẩu: ${componentError.message}`)
+    }
+  }
 
   // Tự động cộng tồn kho — dùng kbit_receive_stock_batch (nguyên tử).
   // KTT G: pass lot_no + expiry_date xuống warehouse_transactions để query HSD sau.
@@ -132,8 +196,33 @@ export async function createImportOrder(input: unknown): Promise<string> {
 /** Sửa đơn nhập khẩu: cập nhật header + thay toàn bộ dòng (xóa rồi chèn lại + phân bổ lại). */
 export async function updateImportOrder(id: string, input: unknown): Promise<void> {
   const data = supplierImportSchema.parse(input)
+  const me = await requireImportEditor()
   const supabase = await createClient()
-  const { items, ...header } = data
+  const { items, cost_components: inputComponents, ...header } = data
+  const goodsRate = data.currency === 'KRW' ? data.exchange_rate! : 1
+  const components = data.order_type === 'import'
+    ? [
+        {
+          kind: 'goods' as const,
+          creditor_type: 'supplier' as const,
+          creditor_supplier_id: data.supplier_id,
+          description: 'Tiền hàng nhà cung cấp nước ngoài',
+          currency: data.currency,
+          amount: data.goods_value,
+          exchange_rate: goodsRate,
+          capitalizable: true,
+        },
+        ...inputComponents
+          .filter((component) => component.amount > 0)
+          .map((component) => ({ ...component, capitalizable: component.kind !== 'import_vat' })),
+      ]
+    : []
+  const landed = calculateLandedCostVnd(components.map((component) => ({
+    kind: component.kind,
+    amount: component.amount,
+    exchangeRate: component.exchange_rate,
+    capitalizable: component.capitalizable,
+  })))
 
   // C-1: chặn chọn kho thuộc CÔNG TY KHÁC (kbit_receive_stock suy công ty TỪ kho).
   // Chốt ở server trước khi đụng tồn.
@@ -177,7 +266,12 @@ export async function updateImportOrder(id: string, input: unknown): Promise<voi
   }
 
   // Sửa đơn KHÔNG đổi mã đơn (giữ mã gốc đã phát hành) → loại order_code khỏi payload update.
-  const updateHeader = { ...header, order_type: header.order_type ?? 'import' }
+  const updateHeader = {
+    ...header,
+    order_type: header.order_type ?? 'import',
+    landed_cost_vnd: data.order_type === 'import' ? landed.landedCostVnd : data.goods_value,
+    recoverable_import_vat_vnd: data.order_type === 'import' ? landed.recoverableTaxVnd : 0,
+  }
   delete updateHeader.order_code
   const { error: e1 } = await supabase
     .from('supplier_orders')
@@ -193,13 +287,14 @@ export async function updateImportOrder(id: string, input: unknown): Promise<voi
   if (eDel) throw new Error(eDel.message)
 
   // Tính lại unit_cost (C3/D3 — cùng quy ước)
-  const costTotalFc  = data.goods_value + data.import_duty + data.other_fees
-  const rate         = data.currency === 'KRW' ? data.exchange_rate! : 1
-  const costTotalVnd = costTotalFc * rate
-  const unitCosts    = allocateUnitCost(
-    items.map((it) => ({ qty: it.qty, unit_price: it.unit_price })),
-    costTotalVnd,
+  const landedAllocations = allocateLandedCost(
+    items.map((item) => ({
+      quantity: item.qty,
+      goodsValueVnd: item.qty * item.unit_price * goodsRate,
+    })),
+    data.order_type === 'import' ? landed.landedCostVnd : data.goods_value,
   )
+  const unitCosts = landedAllocations.map((allocation) => allocation.unitCostVnd)
 
   const rows = items.map((it, i) => ({
     order_id:    id,
@@ -210,9 +305,35 @@ export async function updateImportOrder(id: string, input: unknown): Promise<voi
     unit_cost:   unitCosts[i],
     lot_no:      it.lot_no      || null,      // KTT G
     expiry_date: it.expiry_date || null,      // KTT G
+    accounting_treatment: it.product_id ? 'inventory' : it.accounting_treatment,
+    accounting_category_id: it.accounting_category_id ?? null,
   }))
   const { error: e2 } = await supabase.from('supplier_order_items').insert(rows)
   if (e2) throw new Error(e2.message)
+
+  const { error: deleteComponentsError } = await supabase
+    .from('import_cost_components')
+    .delete()
+    .eq('supplier_order_id', id)
+  if (deleteComponentsError) throw new Error(deleteComponentsError.message)
+  if (components.length > 0) {
+    const { error: componentError } = await supabase.from('import_cost_components').insert(
+      components.map((component) => ({
+        company_id: data.company_id,
+        supplier_order_id: id,
+        kind: component.kind,
+        creditor_type: component.creditor_type,
+        creditor_supplier_id: component.creditor_supplier_id,
+        description: component.description ?? null,
+        currency: component.currency,
+        amount: component.amount,
+        exchange_rate: component.exchange_rate,
+        capitalizable: component.capitalizable,
+        created_by: me.id,
+      })),
+    )
+    if (componentError) throw new Error(componentError.message)
+  }
 
   revalidatePath('/nhap-khau')
   revalidatePath(`/nhap-khau/${id}`)

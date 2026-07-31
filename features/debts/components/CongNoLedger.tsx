@@ -3,7 +3,7 @@
 import { useState, Fragment } from 'react'
 import Link from 'next/link'
 import type { LedgerRow } from '../queries'
-import { isOverSettled } from '../warnings'
+import { hasOppositeBalance } from '../warnings'
 
 function n(v: number) {
   const r = Math.round(v)
@@ -107,7 +107,13 @@ export function CongNoLedger({
                         {r.party_name}
                         <span className="text-[10px] text-gray-400 ml-1">[{r.party_code}]</span>
                         {/* KTT E1: phiếu thu chưa gắn đơn đã được tính vào settled — không show banner deposit nữa */}
-                        {isOverSettled(r) ? <span className="block text-[10px] text-red-600 font-medium">⚠ Đã {kind === 'AR' ? 'thu' : 'trả'} vượt số nợ — kiểm tra ghi trùng</span> : null}
+                        {hasOppositeBalance(r) ? (
+                          <span className="block text-[10px] text-amber-700 font-medium">
+                            {kind === 'AR'
+                              ? 'Số dư Có — có thể là khách trả trước hoặc khoản điều chỉnh'
+                              : 'Số dư Nợ — có thể là trả trước nhà cung cấp hoặc khoản điều chỉnh'}
+                          </span>
+                        ) : null}
                       </td>
                       <td className="px-2 py-1.5 border-r font-mono text-gray-500 break-all align-top">{r.tax_code ?? '—'}</td>
                       <td className="px-2 py-1.5 border-r font-mono text-gray-600 break-all align-top">{r.symbol}</td>

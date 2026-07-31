@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUser, canEdit } from '@/lib/auth'
+import { defaultPartnerCode } from './codes'
 
 /**
  * KTT (B3): Đối tác (KH/NCC) phải tự đồng bộ từ form nhập — không bắt người dùng
@@ -25,10 +26,11 @@ const quickSupplierSchema = quickCustomerSchema.extend({
   country: z.enum(['VN', 'KR']).default('VN'),
 })
 
-function genCode(prefix: 'KH' | 'NCC'): string {
-  const ymd = new Date().toISOString().slice(0, 10).replace(/-/g, '')
-  const rand = Math.floor(Math.random() * 9000 + 1000)
-  return `${prefix}-${ymd}-${rand}`
+async function getExistingCodes(table: 'customers' | 'suppliers'): Promise<string[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase.from(table).select('code')
+  if (error) throw new Error(error.message)
+  return (data ?? []).map((row) => String(row.code))
 }
 
 export async function quickCreateCustomer(input: unknown): Promise<
@@ -52,7 +54,11 @@ export async function quickCreateCustomer(input: unknown): Promise<
     if (existed) return { ok: true, id: existed.id, code: existed.code, name: existed.name }
   }
 
-  const code = genCode('KH')
+  const code = defaultPartnerCode(
+    'customer',
+    data.tax_code,
+    await getExistingCodes('customers'),
+  )
   const { data: newRow, error } = await supabase
     .from('customers')
     .insert({ ...data, code, is_active: true })
@@ -85,7 +91,11 @@ export async function quickCreateSupplier(input: unknown): Promise<
     if (existed) return { ok: true, id: existed.id, code: existed.code, name: existed.name }
   }
 
-  const code = genCode('NCC')
+  const code = defaultPartnerCode(
+    'supplier',
+    data.tax_code,
+    await getExistingCodes('suppliers'),
+  )
   const { data: newRow, error } = await supabase
     .from('suppliers')
     .insert({ ...data, code, is_active: true })

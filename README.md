@@ -1,4 +1,17 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# KBIT Finance
+
+Đây là source KBIT Finance (Next.js + Supabase).
+
+Admin nhận gói cập nhật ngày 31/07/2026 phải đọc trước:
+
+- `BAN-GIAO-ADMIN-2026-07-31.md`
+- `AGENTS.md`
+- `HUONG-DAN-CAP-NHAT.md`
+
+Không deploy nếu chưa kiểm tra migration đến `0059`, chạy
+`npm run test:handoff` và `npm run build`.
+
+## Development
 
 ## Getting Started
 

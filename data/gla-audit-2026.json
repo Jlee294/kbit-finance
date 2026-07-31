@@ -1,0 +1,769 @@
+{
+  "auditedAt": "2026-07-31T01:30:27.972Z",
+  "status": "pass_with_explained_difference",
+  "allowedDifferencePolicy": "Chỉ giá vốn/giá trị tồn cuối do bình quân liên hoàn được phép explained; mọi chênh lệch khác là fail.",
+  "summary": {
+    "checks": 53,
+    "passed": 52,
+    "explained": 1,
+    "failed": 0,
+    "sourceFiles": 8,
+    "salesInvoices": 19,
+    "salesJournalGroups": 17,
+    "purchaseInvoices": 49,
+    "purchaseJournalGroups": 15,
+    "inventoryProducts": 85,
+    "receivableParties": 7,
+    "payableParties": 17,
+    "bankTransactions": 48,
+    "bankDebtMapped": 28,
+    "inventoryIssueValueDifference": 506694.4128496647
+  },
+  "checks": [
+    {
+      "id": "source-file-count",
+      "scope": "Đủ tám file Quyên, gồm SPNH",
+      "actual": 8,
+      "expected": 8,
+      "difference": 0,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "sales-listing-count",
+      "scope": "Bảng kê bán ra: số hóa đơn",
+      "actual": 19,
+      "expected": 19,
+      "difference": 0,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "sales-listing-subtotal",
+      "scope": "Bảng kê bán ra: tiền chưa VAT",
+      "actual": 337106617,
+      "expected": 337106617,
+      "difference": 0,
+      "tolerance": 0.01,
+      "status": "pass"
+    },
+    {
+      "id": "sales-listing-vat",
+      "scope": "Bảng kê bán ra: VAT đầu ra",
+      "actual": 26968529,
+      "expected": 26968529,
+      "difference": 0,
+      "tolerance": 0.01,
+      "status": "pass"
+    },
+    {
+      "id": "purchase-listing-count",
+      "scope": "Bảng kê mua vào: số hóa đơn",
+      "actual": 49,
+      "expected": 49,
+      "difference": 0,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "purchase-listing-subtotal",
+      "scope": "Bảng kê mua vào: tiền chưa VAT",
+      "actual": 493665397,
+      "expected": 493665397,
+      "difference": 0,
+      "tolerance": 0.01,
+      "status": "pass"
+    },
+    {
+      "id": "purchase-listing-vat",
+      "scope": "Bảng kê mua vào: VAT",
+      "actual": 39341416,
+      "expected": 39341416,
+      "difference": 0,
+      "tolerance": 0.01,
+      "status": "pass"
+    },
+    {
+      "id": "sales-journal-lines",
+      "scope": "Nhật ký bán: đủ dòng hàng tồn kho",
+      "actual": 120,
+      "expected": 120,
+      "difference": 0,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "sales-journal-qty",
+      "scope": "Nhật ký bán: tổng số lượng",
+      "actual": 9565,
+      "expected": 9565,
+      "difference": 0,
+      "tolerance": 0.01,
+      "status": "pass"
+    },
+    {
+      "id": "purchase-journal-lines",
+      "scope": "Nhật ký mua: đủ dòng hàng tồn kho",
+      "actual": 37,
+      "expected": 37,
+      "difference": 0,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "purchase-journal-qty",
+      "scope": "Nhật ký mua: tổng số lượng",
+      "actual": 112424,
+      "expected": 112424,
+      "difference": 0,
+      "tolerance": 0.01,
+      "status": "pass"
+    },
+    {
+      "id": "product-code-set",
+      "scope": "Mã hàng giữ nguyên tuyệt đối theo file Quyên",
+      "actual": {
+        "missing": [],
+        "invented": []
+      },
+      "expected": {
+        "missing": [],
+        "invented": []
+      },
+      "difference": null,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "inventory-quantity-and-input",
+      "scope": "NXT tổng hợp: đầu kỳ, nhập, xuất và cuối kỳ tự chảy đúng số lượng",
+      "actual": 0,
+      "expected": 0,
+      "difference": 0,
+      "tolerance": 0,
+      "status": "pass",
+      "note": []
+    },
+    {
+      "id": "inventory-moving-average-reference",
+      "scope": "NXT tổng hợp: giá vốn/giá trị cuối so với file Quyên",
+      "actual": 6,
+      "expected": 0,
+      "difference": 6,
+      "tolerance": 0,
+      "status": "explained",
+      "note": {
+        "reason": "App tự tính bình quân liên hoàn; không chép/khóa giá vốn hoặc tồn cuối từ file NXT.",
+        "totalIssueDifference": 506694.4128496647,
+        "totalClosingDifference": -506694.4128499031,
+        "rows": [
+          {
+            "code": "Khaygiayivory",
+            "field": "valueOut",
+            "actual": 3803762.376237624,
+            "expected": 3310666.6666666665,
+            "difference": 493095.70957095735
+          },
+          {
+            "code": "Khaygiayivory",
+            "field": "valueClose",
+            "actual": 23896237.623762377,
+            "expected": 24389333.333333332,
+            "difference": -493095.7095709555
+          },
+          {
+            "code": "Nhangiaycouche",
+            "field": "valueOut",
+            "actual": 1359854.798803647,
+            "expected": 1346363.4291887996,
+            "difference": 13491.36961484747
+          },
+          {
+            "code": "Nhangiaycouche",
+            "field": "valueClose",
+            "actual": 26890943.201196358,
+            "expected": 26904434.5708112,
+            "difference": -13491.36961484328
+          },
+          {
+            "code": "Nhanmangtudinh",
+            "field": "valueOut",
+            "actual": 502096.4732779098,
+            "expected": 501989.13961407484,
+            "difference": 107.3336638349574
+          },
+          {
+            "code": "Nhanmangtudinh",
+            "field": "valueClose",
+            "actual": 13594354.526722092,
+            "expected": 13594461.860385923,
+            "difference": -107.33366383053362
+          }
+        ]
+      }
+    },
+    {
+      "id": "inventory-2026-01-quantity",
+      "scope": "NXT 2026-01: số lượng theo từng mã",
+      "actual": 0,
+      "expected": 0,
+      "difference": 0,
+      "tolerance": 0,
+      "status": "pass",
+      "note": []
+    },
+    {
+      "id": "inventory-2026-02-quantity",
+      "scope": "NXT 2026-02: số lượng theo từng mã",
+      "actual": 0,
+      "expected": 0,
+      "difference": 0,
+      "tolerance": 0,
+      "status": "pass",
+      "note": []
+    },
+    {
+      "id": "inventory-2026-03-quantity",
+      "scope": "NXT 2026-03: số lượng theo từng mã",
+      "actual": 0,
+      "expected": 0,
+      "difference": 0,
+      "tolerance": 0,
+      "status": "pass",
+      "note": []
+    },
+    {
+      "id": "inventory-2026-04-quantity",
+      "scope": "NXT 2026-04: số lượng theo từng mã",
+      "actual": 0,
+      "expected": 0,
+      "difference": 0,
+      "tolerance": 0,
+      "status": "pass",
+      "note": []
+    },
+    {
+      "id": "inventory-2026-05-quantity",
+      "scope": "NXT 2026-05: số lượng theo từng mã",
+      "actual": 0,
+      "expected": 0,
+      "difference": 0,
+      "tolerance": 0,
+      "status": "pass",
+      "note": []
+    },
+    {
+      "id": "inventory-2026-06-quantity",
+      "scope": "NXT 2026-06: số lượng theo từng mã",
+      "actual": 0,
+      "expected": 0,
+      "difference": 0,
+      "tolerance": 0,
+      "status": "pass",
+      "note": []
+    },
+    {
+      "id": "receivable-by-code",
+      "scope": "Công nợ phải thu: đầu kỳ + bán ra - tiền thu = cuối kỳ theo từng mã",
+      "actual": 0,
+      "expected": 0,
+      "difference": 0,
+      "tolerance": 0,
+      "status": "pass",
+      "note": []
+    },
+    {
+      "id": "payable-by-code",
+      "scope": "Công nợ phải trả: đầu kỳ + tiền chi/mua vào = cuối kỳ theo từng mã",
+      "actual": 0,
+      "expected": 0,
+      "difference": 0,
+      "tolerance": 0,
+      "status": "pass",
+      "note": []
+    },
+    {
+      "id": "customer-code-set",
+      "scope": "Mã công nợ phải thu giữ nguyên tuyệt đối theo file Quyên",
+      "actual": [
+        "131-01",
+        "131-02",
+        "131-03",
+        "131-05",
+        "131-07",
+        "131-08",
+        "131-09"
+      ],
+      "expected": [
+        "131-01",
+        "131-02",
+        "131-03",
+        "131-05",
+        "131-07",
+        "131-08",
+        "131-09"
+      ],
+      "difference": null,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "supplier-code-set",
+      "scope": "Mã công nợ phải trả giữ nguyên tuyệt đối theo file Quyên",
+      "actual": [
+        "331-02",
+        "331-12",
+        "331-14",
+        "331-15",
+        "331-17",
+        "331-18",
+        "331-19",
+        "331-20",
+        "331-22",
+        "331-24",
+        "331-25",
+        "331-26",
+        "331-27",
+        "331-28",
+        "331-29",
+        "331-30",
+        "331-31"
+      ],
+      "expected": [
+        "331-02",
+        "331-12",
+        "331-14",
+        "331-15",
+        "331-17",
+        "331-18",
+        "331-19",
+        "331-20",
+        "331-22",
+        "331-24",
+        "331-25",
+        "331-26",
+        "331-27",
+        "331-28",
+        "331-29",
+        "331-30",
+        "331-31"
+      ],
+      "difference": null,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "ar-natural-131-01",
+      "scope": "Phải thu 131-01: phát sinh tự chảy từ hóa đơn và SPNH",
+      "actual": [
+        0,
+        0
+      ],
+      "expected": [
+        0,
+        0
+      ],
+      "difference": null,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "ar-natural-131-02",
+      "scope": "Phải thu 131-02: phát sinh tự chảy từ hóa đơn và SPNH",
+      "actual": [
+        47439000,
+        0
+      ],
+      "expected": [
+        47439000,
+        0
+      ],
+      "difference": null,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "ar-natural-131-03",
+      "scope": "Phải thu 131-03: phát sinh tự chảy từ hóa đơn và SPNH",
+      "actual": [
+        0,
+        0
+      ],
+      "expected": [
+        0,
+        0
+      ],
+      "difference": null,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "ar-natural-131-05",
+      "scope": "Phải thu 131-05: phát sinh tự chảy từ hóa đơn và SPNH",
+      "actual": [
+        176547600,
+        176547600
+      ],
+      "expected": [
+        176547600,
+        176547600
+      ],
+      "difference": null,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "ar-natural-131-07",
+      "scope": "Phải thu 131-07: phát sinh tự chảy từ hóa đơn và SPNH",
+      "actual": [
+        73499346,
+        27909846
+      ],
+      "expected": [
+        73499346,
+        27909846
+      ],
+      "difference": null,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "ar-natural-131-08",
+      "scope": "Phải thu 131-08: phát sinh tự chảy từ hóa đơn và SPNH",
+      "actual": [
+        55447200,
+        43513200
+      ],
+      "expected": [
+        55447200,
+        43513200
+      ],
+      "difference": null,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "ar-natural-131-09",
+      "scope": "Phải thu 131-09: phát sinh tự chảy từ hóa đơn và SPNH",
+      "actual": [
+        1242000,
+        0
+      ],
+      "expected": [
+        1242000,
+        0
+      ],
+      "difference": null,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "ap-natural-331-02",
+      "scope": "Phải trả 331-02: phát sinh tự chảy từ SPNH và hóa đơn",
+      "actual": [
+        7992000,
+        7992000
+      ],
+      "expected": [
+        7992000,
+        7992000
+      ],
+      "difference": null,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "ap-natural-331-12",
+      "scope": "Phải trả 331-12: phát sinh tự chảy từ SPNH và hóa đơn",
+      "actual": [
+        0,
+        0
+      ],
+      "expected": [
+        0,
+        0
+      ],
+      "difference": null,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "ap-natural-331-14",
+      "scope": "Phải trả 331-14: phát sinh tự chảy từ SPNH và hóa đơn",
+      "actual": [
+        0,
+        0
+      ],
+      "expected": [
+        0,
+        0
+      ],
+      "difference": null,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "ap-natural-331-15",
+      "scope": "Phải trả 331-15: phát sinh tự chảy từ SPNH và hóa đơn",
+      "actual": [
+        0,
+        200624306
+      ],
+      "expected": [
+        0,
+        200624306
+      ],
+      "difference": null,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "ap-natural-331-17",
+      "scope": "Phải trả 331-17: phát sinh tự chảy từ SPNH và hóa đơn",
+      "actual": [
+        0,
+        0
+      ],
+      "expected": [
+        0,
+        0
+      ],
+      "difference": null,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "ap-natural-331-18",
+      "scope": "Phải trả 331-18: phát sinh tự chảy từ SPNH và hóa đơn",
+      "actual": [
+        175586419,
+        148046419
+      ],
+      "expected": [
+        175586419,
+        148046419
+      ],
+      "difference": null,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "ap-natural-331-19",
+      "scope": "Phải trả 331-19: phát sinh tự chảy từ SPNH và hóa đơn",
+      "actual": [
+        56290000,
+        13700000
+      ],
+      "expected": [
+        56290000,
+        13700000
+      ],
+      "difference": null,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "ap-natural-331-20",
+      "scope": "Phải trả 331-20: phát sinh tự chảy từ SPNH và hóa đơn",
+      "actual": [
+        26739471,
+        25748529
+      ],
+      "expected": [
+        26739471,
+        25748529
+      ],
+      "difference": null,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "ap-natural-331-22",
+      "scope": "Phải trả 331-22: phát sinh tự chảy từ SPNH và hóa đơn",
+      "actual": [
+        67284000,
+        79029000
+      ],
+      "expected": [
+        67284000,
+        79029000
+      ],
+      "difference": null,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "ap-natural-331-24",
+      "scope": "Phải trả 331-24: phát sinh tự chảy từ SPNH và hóa đơn",
+      "actual": [
+        23034132,
+        19254132
+      ],
+      "expected": [
+        23034132,
+        19254132
+      ],
+      "difference": null,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "ap-natural-331-25",
+      "scope": "Phải trả 331-25: phát sinh tự chảy từ SPNH và hóa đơn",
+      "actual": [
+        0,
+        935000
+      ],
+      "expected": [
+        0,
+        935000
+      ],
+      "difference": null,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "ap-natural-331-26",
+      "scope": "Phải trả 331-26: phát sinh tự chảy từ SPNH và hóa đơn",
+      "actual": [
+        0,
+        200000
+      ],
+      "expected": [
+        0,
+        200000
+      ],
+      "difference": null,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "ap-natural-331-27",
+      "scope": "Phải trả 331-27: phát sinh tự chảy từ SPNH và hóa đơn",
+      "actual": [
+        0,
+        1061000
+      ],
+      "expected": [
+        0,
+        1061000
+      ],
+      "difference": null,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "ap-natural-331-28",
+      "scope": "Phải trả 331-28: phát sinh tự chảy từ SPNH và hóa đơn",
+      "actual": [
+        0,
+        3028070
+      ],
+      "expected": [
+        0,
+        3028070
+      ],
+      "difference": null,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "ap-natural-331-29",
+      "scope": "Phải trả 331-29: phát sinh tự chảy từ SPNH và hóa đơn",
+      "actual": [
+        0,
+        894960
+      ],
+      "expected": [
+        0,
+        894960
+      ],
+      "difference": null,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "ap-natural-331-30",
+      "scope": "Phải trả 331-30: phát sinh tự chảy từ SPNH và hóa đơn",
+      "actual": [
+        13068000,
+        13068000
+      ],
+      "expected": [
+        13068000,
+        13068000
+      ],
+      "difference": null,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "ap-natural-331-31",
+      "scope": "Phải trả 331-31: phát sinh tự chảy từ SPNH và hóa đơn",
+      "actual": [
+        0,
+        1814335
+      ],
+      "expected": [
+        0,
+        1814335
+      ],
+      "difference": null,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "bank-lines",
+      "scope": "SPNH: đủ từng dòng thu/chi và số dư chạy",
+      "actual": 0,
+      "expected": 0,
+      "difference": 0,
+      "tolerance": 0,
+      "status": "pass",
+      "note": []
+    },
+    {
+      "id": "bank-opening",
+      "scope": "SPNH: số dư đầu kỳ",
+      "actual": 198445880,
+      "expected": 198445880,
+      "difference": 0,
+      "tolerance": 0.01,
+      "status": "pass"
+    },
+    {
+      "id": "bank-closing-equation",
+      "scope": "SPNH: đầu kỳ + thu - chi = cuối kỳ",
+      "actual": 35618383,
+      "expected": 35618383,
+      "difference": 0,
+      "tolerance": 0.01,
+      "status": "pass"
+    },
+    {
+      "id": "bank-debt-mapping",
+      "scope": "SPNH: số dòng nối tự nhiên vào 131/331",
+      "actual": 28,
+      "expected": 28,
+      "difference": 0,
+      "tolerance": 0,
+      "status": "pass"
+    },
+    {
+      "id": "gift-treatment",
+      "scope": "Quà tặng vẫn ở bảng kê/VAT nhưng không doanh thu, không công nợ",
+      "actual": 0,
+      "expected": 0,
+      "difference": 0,
+      "tolerance": 0,
+      "status": "pass",
+      "note": {
+        "invoices": [
+          "0000005",
+          "0000006",
+          "0000007"
+        ]
+      }
+    }
+  ]
+}

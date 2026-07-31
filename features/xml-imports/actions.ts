@@ -8,6 +8,7 @@ import { parseInvoiceTT78, type ParsedInvoice } from '@/lib/xml/invoice-tt78'
 import { parseBankTechcomXml, type ParsedBankStatement } from '@/lib/xml/bank-techcom'
 import { parseBankExcelBuffer, parseBankCsvText } from '@/lib/xml/bank-techcom-table'
 import { parseBankTechcomPdf } from '@/lib/xml/bank-techcom-pdf'
+import { defaultPartnerCode } from '@/features/partners/codes'
 
 export interface ActionResult<T = void> { error?: string; data?: T }
 
@@ -50,14 +51,12 @@ export async function parseInvoiceFiles(
         if (data) supplierMatch = data
       }
 
-      // Tìm products theo tên
+      // Ưu tiên mã hàng; nếu XML không có mã thì chỉ ghép tên chính xác.
       const productMatches = await Promise.all(parsed.items.map(async (it) => {
-        const { data } = await supabase
-          .from('products')
-          .select('id, name')
-          .ilike('name', `%${it.name.slice(0, 50)}%`)
-          .limit(1)
-          .maybeSingle()
+        const query = supabase.from('products').select('id, name')
+        const { data } = it.code
+          ? await query.eq('code', it.code).limit(1).maybeSingle()
+          : await query.eq('name', it.name).limit(1).maybeSingle()
         return data
           ? { product_id: data.id, product_name: data.name }
           : { product_id: null, product_name: null }
@@ -114,10 +113,16 @@ export async function commitInvoiceImport(input: CommitInvoiceInput): Promise<Ac
     // 1. Resolve supplier_id (tạo mới nếu cần)
     let supplierId = input.existing_supplier_id ?? null
     if (!supplierId && input.create_supplier) {
+      const { data: existingCodes } = await supabase.from('suppliers').select('code')
+      const code = defaultPartnerCode(
+        'supplier',
+        input.create_supplier.tax_code,
+        (existingCodes ?? []).map((row) => String(row.code)),
+      )
       const { data: newSup, error: supErr } = await supabase
         .from('suppliers')
         .insert({
-          code:     input.create_supplier.code,
+          code,
           name:     input.create_supplier.name,
           tax_code: input.create_supplier.tax_code,
           country:  input.create_supplier.country ?? 'VN',
@@ -252,14 +257,12 @@ export async function parseSalesInvoiceFiles(
         if (data) customerMatch = data
       }
 
-      // Tìm products theo tên
+      // Ưu tiên mã hàng; nếu XML không có mã thì chỉ ghép tên chính xác.
       const productMatches = await Promise.all(parsed.items.map(async (it) => {
-        const { data } = await supabase
-          .from('products')
-          .select('id, name')
-          .ilike('name', `%${it.name.slice(0, 50)}%`)
-          .limit(1)
-          .maybeSingle()
+        const query = supabase.from('products').select('id, name')
+        const { data } = it.code
+          ? await query.eq('code', it.code).limit(1).maybeSingle()
+          : await query.eq('name', it.name).limit(1).maybeSingle()
         return data
           ? { product_id: data.id, product_name: data.name }
           : { product_id: null, product_name: null }
@@ -314,10 +317,16 @@ export async function commitSalesInvoiceImport(
     // 1. Resolve customer_id
     let customerId = input.existing_customer_id ?? null
     if (!customerId && input.create_customer) {
+      const { data: existingCodes } = await supabase.from('customers').select('code')
+      const code = defaultPartnerCode(
+        'customer',
+        input.create_customer.tax_code,
+        (existingCodes ?? []).map((row) => String(row.code)),
+      )
       const { data: newCust, error: cErr } = await supabase
         .from('customers')
         .insert({
-          code:     input.create_customer.code,
+          code,
           name:     input.create_customer.name,
           tax_code: input.create_customer.tax_code,
           is_active: true,

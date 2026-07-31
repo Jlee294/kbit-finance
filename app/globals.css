@@ -110,6 +110,9 @@
 }
 
 :root {
+  /* Font hệ thống giúp bản local chạy ngay cả khi không có Internet. */
+  --font-montserrat: "Segoe UI", Arial, sans-serif;
+  --font-roboto: "Segoe UI", Arial, sans-serif;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);

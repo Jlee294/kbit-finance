@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { isDemoMode } from '@/lib/demo'
 
 export interface CashRow {
   id:                string
@@ -26,6 +27,71 @@ export interface CashRow {
   party_name:        string | null
 }
 
+export interface CashSummary {
+  declaredOpening: number
+  opening: number
+  receipts: number
+  payments: number
+  closing: number
+}
+
+export async function getCashSummary(opts: {
+  companyId?: string
+  year: string
+  from: string
+  to: string
+}): Promise<CashSummary> {
+  if (isDemoMode()) return { declaredOpening: 0, opening: 0, receipts: 0, payments: 0, closing: 0 }
+
+  const supabase = await createClient()
+  const yearNumber = Number(opts.year)
+  const yearFrom = `${opts.year}-01-01`
+
+  let openingQuery = supabase
+    .from('cash_opening_balances')
+    .select('amount')
+    .eq('year', yearNumber)
+  let beforeQuery = supabase
+    .from('cash_book')
+    .select('so_tien, direction')
+    .eq('status', 'confirmed')
+    .gte('txn_date', yearFrom)
+    .lt('txn_date', opts.from)
+  let periodQuery = supabase
+    .from('cash_book')
+    .select('so_tien, direction')
+    .eq('status', 'confirmed')
+    .gte('txn_date', opts.from)
+    .lte('txn_date', opts.to)
+
+  if (opts.companyId) {
+    openingQuery = openingQuery.eq('company_id', opts.companyId)
+    beforeQuery = beforeQuery.eq('company_id', opts.companyId)
+    periodQuery = periodQuery.eq('company_id', opts.companyId)
+  }
+
+  const [openingResult, beforeResult, periodResult] = await Promise.all([
+    openingQuery,
+    beforeQuery,
+    periodQuery,
+  ])
+  if (openingResult.error || beforeResult.error || periodResult.error) {
+    console.error('[getCashSummary]', openingResult.error?.message ?? beforeResult.error?.message ?? periodResult.error?.message)
+    return { declaredOpening: 0, opening: 0, receipts: 0, payments: 0, closing: 0 }
+  }
+
+  const sumDirection = (rows: Array<{ so_tien: number | null; direction: string }>, direction: 'thu' | 'chi') =>
+    rows.filter((row) => row.direction === direction).reduce((sum, row) => sum + Number(row.so_tien ?? 0), 0)
+
+  const baseOpening = (openingResult.data ?? []).reduce((sum, row) => sum + Number(row.amount ?? 0), 0)
+  const beforeRows = (beforeResult.data ?? []) as Array<{ so_tien: number | null; direction: string }>
+  const periodRows = (periodResult.data ?? []) as Array<{ so_tien: number | null; direction: string }>
+  const opening = baseOpening + sumDirection(beforeRows, 'thu') - sumDirection(beforeRows, 'chi')
+  const receipts = sumDirection(periodRows, 'thu')
+  const payments = sumDirection(periodRows, 'chi')
+  return { declaredOpening: baseOpening, opening, receipts, payments, closing: opening + receipts - payments }
+}
+
 export async function listCashBook(opts: {
   companyId?: string
   direction?: string
@@ -33,6 +99,8 @@ export async function listCashBook(opts: {
   to?: string
   limit?: number
 } = {}): Promise<CashRow[]> {
+  if (isDemoMode()) return []
+
   const supabase = await createClient()
   // FULL kèm đối tượng công nợ (KH/NCC) — cần migration 0024 (cột customer_id/supplier_id).
   // BASIC bỏ phần đó để trang vẫn chạy khi DB CHƯA deploy 0024 (tự thích nghi).

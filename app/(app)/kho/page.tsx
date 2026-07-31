@@ -8,6 +8,7 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { PAGE_WRAPPER } from '@/lib/ui-tokens'
 import { todayLocal } from '@/lib/format'
 import { getGlobalFilter } from '@/lib/global-filter'
+import { isDemoMode } from '@/lib/demo'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,12 +17,13 @@ export default async function KhoPage({ searchParams }: { searchParams: Promise<
   const { companyId: gCompany, year } = await getGlobalFilter()
   const companies = await listCompanies()
   const companyId = gCompany || companies[0]?.id
+  const demoMode = isDemoMode()
   // Kho theo KỲ THÁNG (snapshot NXT). Mặc định: tháng hiện tại nếu là năm nay, ngược lại tháng 1 của năm chọn.
   const defMonth = year === todayLocal().slice(0, 4) ? todayLocal().slice(5, 7) : '01'
-  const defPeriod = `${year}-${defMonth}`
+  const defPeriod = demoMode ? '2026-01' : `${year}-${defMonth}`
   // Hỗ trợ lọc 1 tháng (from=to) hoặc khoảng tháng (from→to). `period` cũ vẫn nhận.
   const fromPeriod = sp.from || sp.period || defPeriod
-  const toPeriod   = sp.to   || sp.period || fromPeriod
+  const toPeriod   = sp.to || sp.period || (demoMode ? '2026-06' : fromPeriod)
   const wh = sp.wh && sp.wh !== 'all' ? sp.wh : undefined
   const [me, warehouses, products, rows] = await Promise.all([
     getCurrentUser(),

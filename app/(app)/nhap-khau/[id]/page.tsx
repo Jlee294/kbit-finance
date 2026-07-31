@@ -12,6 +12,7 @@ import { PushToStockButton } from '@/features/imports/components/PushToStockButt
 import { getOperationChecklist } from '@/features/operation-library/checklist'
 import { DocumentChecklist } from '@/features/operation-library/components/DocumentChecklist'
 import { createClient } from '@/lib/supabase/server'
+import { listAccountingCategories } from '@/features/accounting-categories/queries'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,13 +20,14 @@ export default async function ImportOrderDetailPage({ params, searchParams }: { 
   const { id } = await params as unknown as { id: string }
   const { edit } = await searchParams as unknown as { edit?: string }
 
-  const [me, order, companies, suppliersRaw, productsRaw, projects] = await Promise.all([
+  const [me, order, companies, suppliersRaw, productsRaw, projects, categories] = await Promise.all([
     getCurrentUser(),
     getImportOrder(id).catch(() => null),
     listCompanies(),
     listSuppliers(),
     listProducts(),
     listProjects(),
+    listAccountingCategories(),
   ])
 
   if (!order) notFound()
@@ -50,10 +52,9 @@ export default async function ImportOrderDetailPage({ params, searchParams }: { 
   const suppliers = suppliersRaw.map((s) => ({ id: s.id, code: s.code as string, name: s.name }))
   const products  = productsRaw.map((p) => ({ id: p.id, code: p.code as string, name: p.name, unit: p.unit as string | null }))
   const isKrw     = order.currency === 'KRW'
-  const rate      = isKrw ? (order.exchange_rate ?? 1) : 1
 
   const fmtNative = (n: number) => isKrw ? formatKRW(n) : formatVND(n)
-  const totalPayable = order.goods_value + order.import_duty + order.vat_import + order.other_fees
+  const totalPayable = order.payable_total
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -85,6 +86,7 @@ export default async function ImportOrderDetailPage({ params, searchParams }: { 
                 suppliers={suppliers}
                 products={products}
                 projects={projects.map((p) => ({ id: p.id, code: p.code, name: p.name, company_id: p.company_id }))}
+                categories={categories}
               />
             )}
           </div>
@@ -93,30 +95,33 @@ export default async function ImportOrderDetailPage({ params, searchParams }: { 
         {/* ── Giá vốn lô ───────────────────────────────────────── */}
         <div className="grid grid-cols-2 gap-4 pt-2 border-t">
           <div className="space-y-2 text-sm">
-            <p className="font-semibold text-gray-700 mb-1">Chi phí nhập khẩu ({order.currency})</p>
+            <p className="font-semibold text-gray-700 mb-1">Chi phí nhập khẩu</p>
             <div className="flex justify-between text-gray-600">
               <span>Giá mua hàng:</span><span>{fmtNative(order.goods_value)}</span>
             </div>
             <div className="flex justify-between text-gray-600">
-              <span>Thuế nhập khẩu:</span><span>{fmtNative(order.import_duty)}</span>
+              <span>Thuế nhập khẩu:</span><span>{formatVND(order.import_duty)}</span>
             </div>
             <div className="flex justify-between text-gray-500 text-xs">
-              <span>VAT khâu NK (khấu trừ riêng):</span><span>{fmtNative(order.vat_import)}</span>
+              <span>VAT khâu NK (khấu trừ riêng):</span><span>{formatVND(order.recoverable_import_vat_vnd)}</span>
             </div>
             <div className="flex justify-between text-gray-600">
-              <span>Phí khác (HQ, vận chuyển...):</span><span>{fmtNative(order.other_fees)}</span>
+              <span>Vận chuyển / dịch vụ:</span><span>{formatVND(order.other_fees)}</span>
             </div>
             <div className="flex justify-between font-bold text-brand-800 border-t pt-1">
-              <span>Giá vốn lô (cost_total):</span>
-              <span>{fmtNative(order.cost_total)}</span>
+              <span>Giá vốn lô:</span>
+              <span>{formatVND(order.landed_cost_vnd)}</span>
             </div>
             <p className="text-xs text-gray-400">= Mua + thuế NK + phí khác (không gồm VAT)</p>
-            {isKrw && rate > 0 && (
-              <div className="flex justify-between text-brand-700 text-xs">
-                <span>Quy VNĐ (×{rate}):</span>
-                <span>{formatVND(order.cost_total * rate)}</span>
+            {order.import_cost_components.filter((component) => component.kind !== 'goods').map((component) => (
+              <div key={component.id} className="border-t pt-1 text-xs text-gray-500">
+                <div className="flex justify-between gap-3">
+                  <span>{component.description ?? component.kind}</span>
+                  <span>{formatVND(component.amount_vnd)}</span>
+                </div>
+                <p>Chủ nợ: {component.creditor?.name ?? 'Chưa mapping'}</p>
               </div>
-            )}
+            ))}
           </div>
 
           {/* ── Công nợ NCC ─────────────────────────────────────── */}
@@ -129,11 +134,11 @@ export default async function ImportOrderDetailPage({ params, searchParams }: { 
             <div className="flex justify-between text-brand-700">
               <span>Đã trả:</span><span>{fmtNative(order.amount_paid)}</span>
             </div>
-            <div className={`flex justify-between font-bold border-t pt-1 ${order.outstanding > 0 ? 'text-amber-700' : 'text-brand-700'}`}>
+            <div className={`flex justify-between font-bold border-t pt-1 ${order.payable_outstanding > 0 ? 'text-amber-700' : 'text-brand-700'}`}>
               <span>Còn nợ (outstanding):</span>
-              <span>{order.outstanding > 0 ? fmtNative(order.outstanding) : '✓ Đã thanh toán'}</span>
+              <span>{order.payable_outstanding > 0 ? fmtNative(order.payable_outstanding) : '✓ Đã thanh toán'}</span>
             </div>
-            {canWrite && order.outstanding > 0 && (
+            {canWrite && order.payable_outstanding > 0 && (
               <ImportOrderDetailClient
                 order={order}
                 mode="pay"
@@ -142,6 +147,7 @@ export default async function ImportOrderDetailPage({ params, searchParams }: { 
                 suppliers={[]}
                 products={[]}
                 projects={[]}
+                categories={[]}
               />
             )}
           </div>

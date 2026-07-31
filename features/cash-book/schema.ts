@@ -37,3 +37,12 @@ export const cashBookSchema = z.object({
 )
 
 export type CashBookInput = z.infer<typeof cashBookSchema>
+
+export const cashOpeningSchema = z.object({
+  company_id: z.string().uuid('Chọn công ty'),
+  year: z.coerce.number().int().min(2020).max(2099),
+  amount: z.coerce.number().min(0, 'Số dư tiền mặt đầu kỳ không được âm'),
+  note: z.string().max(500).optional().nullable(),
+})
+
+export type CashOpeningInput = z.infer<typeof cashOpeningSchema>

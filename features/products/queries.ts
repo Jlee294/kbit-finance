@@ -1,5 +1,7 @@
 import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
+import { isDemoMode } from '@/lib/demo'
+import { GLA_DATA } from '@/lib/gla-data'
 
 // ── Lightweight row for dropdowns (existing callers) ──────────────────────────
 
@@ -11,6 +13,15 @@ export interface ProductOption {
 }
 
 export const listProducts = cache(async (): Promise<ProductOption[]> => {
+  if (isDemoMode()) {
+    return GLA_DATA.products.map((row) => ({
+      id: row.id,
+      code: row.code,
+      name: row.name,
+      unit: row.unit,
+    }))
+  }
+
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('products')
@@ -42,6 +53,30 @@ export interface ProductRow extends ProductOption {
 }
 
 export const listProductsDetail = cache(async (): Promise<ProductRow[]> => {
+  if (isDemoMode()) {
+    return GLA_DATA.products.map((row) => ({
+      id: row.id,
+      code: row.code,
+      name: row.name,
+      unit: row.unit,
+      is_active: row.isActive,
+      brand_id: null,
+      brand: null,
+      manufacturer_id: null,
+      manufacturer: null,
+      cost_material: null,
+      cost_material_curr: 'VND',
+      cost_bottle: null,
+      cost_bottle_curr: 'VND',
+      cost_packaging: null,
+      cost_packaging_curr: 'VND',
+      cost_shipping: null,
+      cost_shipping_curr: 'VND',
+      price_list_kr: null,
+      price_list_vn: null,
+    }))
+  }
+
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('products')

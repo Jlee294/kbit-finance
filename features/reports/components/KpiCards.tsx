@@ -50,7 +50,7 @@ function KpiCard({ label, value, currency, positive, neutral, accent }: KpiCardP
 /* ── Company KPIs ── */
 interface CompanyKpiProps {
   revenue:      number   // doanh thu (bán ra)
-  purchase:     number   // chi phí mua vào
+  purchase:     number   // giá trị mua vào, không đồng nghĩa toàn bộ là chi phí
   totalIncome:  number   // tiền đã thu (dòng tiền vào)
   totalExpense: number   // tiền đã chi (dòng tiền ra)
   netCashFlow:  number
@@ -62,8 +62,8 @@ export function CompanyKpiCards({
 }: CompanyKpiProps) {
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-      <KpiCard label="Doanh thu (bán ra)"   value={revenue}      currency={currency} accent="success" neutral />
-      <KpiCard label="Chi phí (mua vào)"    value={purchase}     currency={currency} accent="danger"  neutral />
+      <KpiCard label="Giá trị bán ra ghi nhận (gồm VAT)" value={revenue} currency={currency} accent="success" neutral />
+      <KpiCard label="Giá trị mua vào"       value={purchase}   currency={currency} accent="danger"  neutral />
       <KpiCard label="Tiền đã thu"          value={totalIncome}  currency={currency} accent="info"    neutral />
       <KpiCard label="Tiền đã chi"          value={totalExpense} currency={currency} accent="warning" neutral />
       <KpiCard label="Dòng tiền thuần"      value={netCashFlow}  currency={currency} accent="brand"   positive />

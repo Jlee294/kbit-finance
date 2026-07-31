@@ -57,8 +57,13 @@ export default async function OrderDetailPage({ params, searchParams }: Props) {
             </p>
           </div>
           <div className="flex flex-col items-end gap-2">
+            {order.is_gift && (
+              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
+                HÓA ĐƠN QUÀ TẶNG
+              </span>
+            )}
             <FulfillmentBadge status={order.fulfillment_status} />
-            <PaymentBadge status={order.payment_status} />
+            {!order.is_gift && <PaymentBadge status={order.payment_status} />}
           </div>
         </div>
 
@@ -103,15 +108,22 @@ export default async function OrderDetailPage({ params, searchParams }: Props) {
         )}
 
         {/* Financial summary */}
-        <div className="mt-6 grid grid-cols-3 gap-4">
-          <FinCard label="Tổng cộng"   value={formatVND(Number(order.grand_total))} />
-          <FinCard label="Đã thanh toán" value={formatVND(Number(order.amount_paid))} />
-          <FinCard
-            label="Còn lại"
-            value={formatVND(Number(order.outstanding))}
-            highlight={Number(order.outstanding) > 0}
-          />
-        </div>
+        {order.is_gift ? (
+          <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            <strong>{formatVND(Number(order.grand_total))}</strong> vẫn nằm trên bảng kê thuế và VAT đầu ra vẫn phải kê.
+            Chứng từ này không ghi doanh thu, không tạo công nợ; hàng có mã vẫn đã/được xuất kho và tính giá vốn.
+          </div>
+        ) : (
+          <div className="mt-6 grid grid-cols-3 gap-4">
+            <FinCard label="Tổng cộng" value={formatVND(Number(order.grand_total))} />
+            <FinCard label="Đã thanh toán" value={formatVND(Number(order.amount_paid))} />
+            <FinCard
+              label="Còn lại"
+              value={formatVND(Number(order.outstanding))}
+              highlight={Number(order.outstanding) > 0}
+            />
+          </div>
+        )}
       </div>
 
       {/* Items table */}

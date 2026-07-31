@@ -1,11 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
 import { computePurchaseInvoiceTotals } from '@/features/invoices/purchase-total'
+import { isDemoMode } from '@/lib/demo'
+import { GLA_DATA } from '@/lib/gla-data'
 
 // ── Kiểu dữ liệu trả về cho Dashboard giám đốc ───────────────────────────────
 export interface DashboardKpis {
-  revenue:     number   // doanh thu bán ra (gồm VAT) trong kỳ
-  revenueNet:  number   // doanh thu chưa VAT
-  purchase:    number   // chi phí mua vào (gồm VAT)
+  revenue:     number   // giá trị bán ra tạo doanh thu, gồm VAT
+  revenueNet:  number   // doanh thu kế toán được ghi nhận, chưa VAT
+  purchase:    number   // giá trị hóa đơn mua vào (gồm VAT), không đồng nghĩa chi phí kỳ
   grossProfit: number   // lãi gộp = doanh thu thuần đã chốt giá vốn − giá vốn
   cogs:        number
   cashIn:      number   // tiền đã thu thực
@@ -48,6 +50,125 @@ export interface DashboardData {
   hasProjectFilter: boolean
 }
 
+function getDemoDashboardData(opts: {
+  from: string
+  to: string
+}): DashboardData {
+  const sales = GLA_DATA.salesInvoices.filter((row) => row.invoiceDate >= opts.from && row.invoiceDate <= opts.to)
+  const revenueSales = sales.filter((row) => row.recognizeRevenue)
+  const purchases = GLA_DATA.purchaseInvoices.filter((row) => row.invoiceDate >= opts.from && row.invoiceDate <= opts.to)
+  const money = GLA_DATA.bankTransactions.filter((row) => row.txnDate >= opts.from && row.txnDate <= opts.to)
+  const monthKeys = Object.keys(GLA_DATA.inventoryByMonth)
+    .filter((period) => `${period}-01` <= opts.to && `${period}-31` >= opts.from)
+  const cogs = monthKeys.reduce(
+    (total, period) => total + GLA_DATA.inventoryByMonth[period].reduce((sum, row) => sum + row.valueOut, 0),
+    0,
+  )
+  const revenue = revenueSales.reduce((total, row) => total + row.grandTotal, 0)
+  const revenueNet = revenueSales.reduce((total, row) => total + row.subtotal, 0)
+  const purchase = purchases.reduce((total, row) => total + row.grandTotal, 0)
+  const cashIn = money
+    .filter((row) => row.direction === 'thu')
+    .reduce((total, row) => total + row.amountVnd, 0)
+  const cashOut = money
+    .filter((row) => row.direction === 'chi')
+    .reduce((total, row) => total + row.amountVnd, 0)
+
+  const months: MonthPoint[] = Array.from({ length: 12 }, (_, index) => {
+    const month = String(index + 1).padStart(2, '0')
+    const period = `2026-${month}`
+    const monthSales = revenueSales.filter((row) => row.invoiceDate.slice(0, 7) === period)
+    const monthPurchases = purchases.filter((row) => row.invoiceDate.slice(0, 7) === period)
+    const monthMoney = money.filter((row) => row.txnDate.slice(0, 7) === period)
+    const monthRevenue = monthSales.reduce((total, row) => total + row.grandTotal, 0)
+    const monthRevenueNet = monthSales.reduce((total, row) => total + row.subtotal, 0)
+    const monthPurchase = monthPurchases.reduce((total, row) => total + row.grandTotal, 0)
+    const monthCogs = (GLA_DATA.inventoryByMonth[period] ?? []).reduce((total, row) => total + row.valueOut, 0)
+    const monthCashIn = monthMoney
+      .filter((row) => row.direction === 'thu')
+      .reduce((total, row) => total + row.amountVnd, 0)
+    const monthCashOut = monthMoney
+      .filter((row) => row.direction === 'chi')
+      .reduce((total, row) => total + row.amountVnd, 0)
+    return {
+      month,
+      label: `T${index + 1}`,
+      revenue: monthRevenue,
+      purchase: monthPurchase,
+      grossProfit: monthRevenueNet - monthCogs,
+      cashIn: monthCashIn,
+      cashOut: monthCashOut,
+      netCash: monthCashIn - monthCashOut,
+    }
+  })
+
+  const customerAgg = new Map<string, RankRow>()
+  for (const row of revenueSales) {
+    const current = customerAgg.get(row.customerId) ?? {
+      id: row.customerId,
+      code: row.customerCode,
+      name: row.customerName,
+      revenue: 0,
+      profit: 0,
+    }
+    current.revenue += row.grandTotal
+    customerAgg.set(row.customerId, current)
+  }
+
+  const productAgg = new Map<string, RankRow>()
+  for (const order of GLA_DATA.salesJournal.filter(
+    (row) => row.recognizeRevenue && row.orderDate >= opts.from && row.orderDate <= opts.to,
+  )) {
+    for (const item of order.items) {
+      const current = productAgg.get(item.productId) ?? {
+        id: item.productId,
+        code: item.productCode,
+        name: item.productName,
+        revenue: 0,
+        profit: 0,
+        qty: 0,
+      }
+      current.revenue += item.lineTotal
+      current.qty = (current.qty ?? 0) + item.qty
+      productAgg.set(item.productId, current)
+    }
+  }
+  for (const row of GLA_DATA.inventorySummary) {
+    const product = productAgg.get(row.productId)
+    if (product) product.profit = product.revenue - row.valueOut
+  }
+
+  const grossProfit = revenueNet - cogs
+  return {
+    kpis: {
+      revenue,
+      revenueNet,
+      purchase,
+      grossProfit,
+      cogs,
+      cashIn,
+      cashOut,
+      netCash: cashIn - cashOut,
+      ar: GLA_DATA.receivables.reduce((total, row) => total + row.closingDebit, 0),
+      ap: GLA_DATA.payables.reduce((total, row) => total + row.closingCredit, 0),
+      salesCount: sales.length,
+      purchaseCount: purchases.length,
+    },
+    months,
+    byProject: [],
+    byCompany: [{
+      id: GLA_DATA.company.id,
+      name: GLA_DATA.company.name,
+      revenue,
+      profit: grossProfit,
+      share: revenue ? 100 : 0,
+    }],
+    topCustomers: [...customerAgg.values()].sort((a, b) => b.revenue - a.revenue).slice(0, 8),
+    topProducts: [...productAgg.values()].sort((a, b) => b.revenue - a.revenue).slice(0, 8),
+    hasProjectFilter: false,
+  }
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const mkey = (d: string | null) => (d ?? '').slice(5, 7)
 function vatOf(total: number, vatAmount: number | null, vatPct: number | null) {
@@ -62,18 +183,20 @@ function inRange(d: string | null, from: string, to: string) {
 interface SalesRow {
   grand_total: number | null; vat_amount: number | null; vat_pct: number | null
   outstanding: number | null; order_date: string | null; fulfillment_status: string | null
+  recognize_revenue: boolean; creates_receivable: boolean
   company_id: string; project_id: string | null; customer_id: string | null
   customers: { code: string; name: string } | null
 }
 interface PurchRow {
   goods_value: number | null; vat_amount: number | null; vat_import: number | null
-  currency: string | null; exchange_rate: number | null; outstanding: number | null
+  currency: string | null; exchange_rate: number | null; payable_outstanding: number | null
+  creates_payable: boolean
   order_date: string | null; company_id: string; project_id: string | null
 }
 interface ItemRow {
   qty: number | null; unit_price: number | null; cost_price: number | null; product_id: string | null
   products: { code: string; name: string } | null
-  customer_orders: { order_date: string | null; company_id: string; project_id: string | null } | null
+  customer_orders: { order_date: string | null; company_id: string; project_id: string | null; recognize_revenue: boolean } | null
 }
 interface CashRow { amount?: number | null; amount_vnd?: number | null; txn_date: string | null; project_id: string | null }
 
@@ -91,6 +214,8 @@ export async function getDashboardData(opts: {
   from: string
   to: string
 }): Promise<DashboardData> {
+  if (isDemoMode()) return getDemoDashboardData(opts)
+
   const supabase = await createClient()
   const { year } = opts
   const companyId = opts.companyId || null
@@ -105,13 +230,13 @@ export async function getDashboardData(opts: {
 
   // Build queries (lọc company/project tùy chọn)
   let sq = supabase.from('customer_orders')
-    .select('grand_total, vat_amount, vat_pct, outstanding, order_date, fulfillment_status, company_id, project_id, customer_id, customers!customer_id(code,name)')
+    .select('grand_total, vat_amount, vat_pct, outstanding, order_date, fulfillment_status, recognize_revenue, creates_receivable, company_id, project_id, customer_id, customers!customer_id(code,name)')
     .gte('order_date', fetchFrom).lte('order_date', fetchTo).limit(20000)
   let pq = supabase.from('supplier_orders')
-    .select('goods_value, vat_amount, vat_import, currency, exchange_rate, outstanding, order_date, company_id, project_id')
+    .select('goods_value, vat_amount, vat_import, currency, exchange_rate, payable_outstanding, creates_payable, order_date, company_id, project_id')
     .gte('order_date', fetchFrom).lte('order_date', fetchTo).limit(20000)
   let iq = supabase.from('customer_order_items')
-    .select('qty, unit_price, cost_price, product_id, products!product_id(code,name), customer_orders!inner(order_date, company_id, project_id)')
+    .select('qty, unit_price, cost_price, product_id, products!product_id(code,name), customer_orders!inner(order_date, company_id, project_id, recognize_revenue)')
     .limit(50000)
   let incq = supabase.from('v_income_lines')
     .select('amount, txn_date, project_id, company_id')
@@ -168,37 +293,39 @@ export async function getDashboardData(opts: {
   for (const r of sales) {
     const total = Number(r.grand_total ?? 0)
     const vat   = vatOf(total, r.vat_amount, r.vat_pct)
+    const recognizedTotal = r.recognize_revenue ? total : 0
     const m = mkey(r.order_date)
-    if (M(m)) M(m).revenue += total
+    if (M(m)) M(m).revenue += recognizedTotal
     // AR: công nợ phải thu (loại draft), theo điểm cuối kỳ
-    if (r.fulfillment_status !== 'draft' && r.order_date && r.order_date <= rangeTo) {
+    if (r.creates_receivable && r.fulfillment_status !== 'draft' && r.order_date && r.order_date <= rangeTo) {
       kpis.ar += Number(r.outstanding ?? 0)
     }
     if (inRange(r.order_date, rangeFrom, rangeTo)) {
-      kpis.revenue += total
-      kpis.revenueNet += total - vat
+      kpis.revenue += recognizedTotal
+      kpis.revenueNet += r.recognize_revenue ? total - vat : 0
       kpis.salesCount += 1
       const pid = r.project_id
       if (pid) {
-        const a = projAgg.get(pid) ?? { revenue: 0, profit: 0 }; a.revenue += total; projAgg.set(pid, a)
+        const a = projAgg.get(pid) ?? { revenue: 0, profit: 0 }; a.revenue += recognizedTotal; projAgg.set(pid, a)
       }
-      const c = compAgg.get(r.company_id) ?? { revenue: 0, profit: 0 }; c.revenue += total; compAgg.set(r.company_id, c)
+      const c = compAgg.get(r.company_id) ?? { revenue: 0, profit: 0 }; c.revenue += recognizedTotal; compAgg.set(r.company_id, c)
       if (r.customer_id) {
         const cu = custAgg.get(r.customer_id) ?? { code: r.customers?.code ?? '', name: r.customers?.name ?? '—', revenue: 0, profit: 0 }
-        cu.revenue += total; custAgg.set(r.customer_id, cu)
+        cu.revenue += recognizedTotal; custAgg.set(r.customer_id, cu)
       }
     }
   }
 
-  // Chi phí mua vào
+  // Giá trị bảng kê mua vào. Công nợ chỉ lấy dòng được phép tạo phải trả;
+  // thuế/phí nhập khẩu có chủ nợ riêng được theo dõi ở sổ công nợ chi tiết.
   for (const r of purch) {
     const { grand_total } = computePurchaseInvoiceTotals(r)
     const m = mkey(r.order_date)
     if (M(m)) M(m).purchase += grand_total
     // AP: công nợ phải trả (nguyên tệ × tỷ giá nếu KRW)
-    if (r.order_date && r.order_date <= rangeTo) {
+    if (r.creates_payable && r.order_date && r.order_date <= rangeTo) {
       const rate = r.currency === 'KRW' ? Number(r.exchange_rate ?? 0) : 1
-      kpis.ap += Number(r.outstanding ?? 0) * rate
+      kpis.ap += Number(r.payable_outstanding ?? 0) * rate
     }
     if (inRange(r.order_date, rangeFrom, rangeTo)) {
       kpis.purchase += grand_total
@@ -210,7 +337,7 @@ export async function getDashboardData(opts: {
   for (const it of items) {
     const od = it.customer_orders?.order_date ?? null
     const qty = Number(it.qty ?? 0)
-    const rev = qty * Number(it.unit_price ?? 0)
+    const rev = it.customer_orders?.recognize_revenue ? qty * Number(it.unit_price ?? 0) : 0
     const hasCost = it.cost_price != null
     const cogs = hasCost ? qty * Number(it.cost_price) : 0
     const profit = hasCost ? rev - cogs : 0

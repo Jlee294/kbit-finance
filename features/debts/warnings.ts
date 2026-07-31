@@ -3,10 +3,11 @@
  */
 
 /**
- * C — Đối tượng bị thu/trả VƯỢT số nợ: tổng đã thu/trả > tổng phát sinh → số dư
- * cuối kỳ ÂM. Tín hiệu rõ ràng của ghi trùng / thu dư (cần kiểm tra), ít báo nhầm.
+ * Số dư nằm ở bên ngược với tính chất thông thường của tài khoản.
+ * Đây có thể là tiền khách trả trước / doanh nghiệp trả trước nhà cung cấp,
+ * không được tự kết luận là ghi trùng.
  */
-export function isOverSettled(row: { closing: number }): boolean {
+export function hasOppositeBalance(row: { closing: number }): boolean {
   return row.closing < 0
 }
 

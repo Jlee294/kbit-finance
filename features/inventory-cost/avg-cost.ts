@@ -30,6 +30,7 @@ export function computePeriodCost(i: PeriodCostInput): PeriodCostResult {
 export interface GrossRow {
   product_id: string; qty: number; unit_price: number; cost_price: number | null
   product_code?: string; product_name?: string; order_code?: string; invoice_no?: string
+  recognize_revenue?: boolean
 }
 export interface GrossLine {
   key: string; label: string; revenue: number; cogs: number; profit: number; margin: number
@@ -65,7 +66,7 @@ export function summarizeGrossProfit(rows: GrossRow[]): GrossSummary {
     p.margin = pct(p.profit, p.revenue); m.set(key, p)
   }
   for (const r of rows) {
-    const revenue = round2(r.qty * r.unit_price)
+    const revenue = r.recognize_revenue === false ? 0 : round2(r.qty * r.unit_price)
     const cogs = round2(r.qty * (r.cost_price ?? 0))
     const profit = round2(revenue - cogs)
     tRev = round2(tRev + revenue); tCogs = round2(tCogs + cogs)

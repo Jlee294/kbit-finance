@@ -1,5 +1,5 @@
 import { getCurrentUser, canEdit } from '@/lib/auth'
-import { listBankLedger, listBankAccounts } from '@/features/bank/queries'
+import { getBankAccountSummaries, listBankLedger, listBankAccounts } from '@/features/bank/queries'
 import { listCompanies } from '@/features/companies/queries'
 import { listCustomers } from '@/features/customers/queries'
 import { listSuppliers } from '@/features/suppliers/queries'
@@ -9,6 +9,7 @@ import { listKrSuppliers, listKrwBankAccounts } from '@/features/expenses-kr/que
 import { createClient } from '@/lib/supabase/server'
 import { BankLedgerTable } from '@/features/bank/components/BankLedgerTable'
 import { BankCreateButtons } from '@/features/bank/components/BankCreateButtons'
+import { BankOpeningBalances } from '@/features/bank/components/BankOpeningBalances'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { StatsCard } from '@/components/shared/StatsCard'
 import { FilterBar, FilterField, FilterReset, FILTER_CONTROL } from '@/components/shared/FilterBar'
@@ -18,6 +19,7 @@ import { getGlobalFilter } from '@/lib/global-filter'
 import { resolveRange } from '@/lib/date-range'
 import { PAGE_WRAPPER } from '@/lib/ui-tokens'
 import { getT } from '@/lib/i18n/server'
+import { isDemoMode } from '@/lib/demo'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,11 +32,10 @@ export default async function NganHangPage({
 }) {
   const t = await getT()
   const sp = await searchParams
-  const supabase = await createClient()
   const { companyId, year } = await getGlobalFilter()
   const range = resolveRange(year, sp.period, sp.from, sp.to)
 
-  const [me, rows, companies, banks, customers, suppliers, krSuppliers, krwBanks, projects, bankRes, importOrders] = await Promise.all([
+  const [me, rows, companies, banks, bankSummaries] = await Promise.all([
     getCurrentUser(),
     listBankLedger({
       companyId:     companyId || undefined,
@@ -46,16 +47,33 @@ export default async function NganHangPage({
     }),
     listCompanies(),
     listBankAccounts(),
-    listCustomers(),
-    listSuppliers(),
-    listKrSuppliers(),
-    listKrwBankAccounts(),
-    listProjects(),
-    supabase.from('bank_accounts').select('id, name, currency, company_id').eq('is_active', true).order('name'),
-    listUnpaidVndSupplierOrders(),
+    getBankAccountSummaries({
+      companyId: companyId || undefined,
+      bankAccountId: sp.bank || undefined,
+      year: Number(year),
+      from: range.from,
+      to: range.to,
+    }),
   ])
 
   const canWrite = !!me && canEdit(me.role)
+  const demoMode = isDemoMode()
+  const supabase = canWrite ? await createClient() : null
+
+  // Các danh mục dưới đây chỉ phục vụ form tạo/sửa. Viewer local GLA đọc hoàn toàn
+  // từ bộ nguồn đã kiểm toán nên không gọi Supabase giả.
+  const [customers, suppliers, krSuppliers, krwBanks, projects, bankRes, importOrders] =
+    canWrite && supabase
+      ? await Promise.all([
+          listCustomers(),
+          listSuppliers(),
+          listKrSuppliers(),
+          listKrwBankAccounts(),
+          listProjects(),
+          supabase.from('bank_accounts').select('id, name, currency, company_id').eq('is_active', true).order('name'),
+          listUnpaidVndSupplierOrders(),
+        ])
+      : [[], [], [], [], [], { data: [] }, []]
 
   const bankAccountsForForms = (bankRes.data ?? []).map((b: any) => ({
     id: b.id, name: b.name, currency: b.currency, company_id: b.company_id,
@@ -84,6 +102,16 @@ export default async function NganHangPage({
             supplierOrders={supplierOrdersForForms}
           />
         ) : undefined}
+      />
+
+      <BankOpeningBalances
+        summaries={bankSummaries}
+        accounts={banks}
+        selectedCompanyId={companyId || ''}
+        selectedBankAccountId={sp.bank || ''}
+        year={Number(year)}
+        canWrite={canWrite}
+        demoMode={demoMode}
       />
 
       <div className="grid grid-cols-3 gap-3">

@@ -11,6 +11,7 @@ import { ImportOrderForm } from './ImportOrderForm'
 import { recordSupplierPayment } from '../actions'
 import { payVnSupplier } from '@/features/expenses-vn/actions'
 import type { ImportOrderDetail } from '../queries'
+import type { AccountingCategory } from '@/features/accounting-categories/queries'
 
 type SimpleOption  = { id: string; name: string }
 type SupplierOpt   = { id: string; code: string; name: string }
@@ -26,9 +27,20 @@ interface Props {
   projects:  ProjectOpt[]
   autoEdit?: boolean
   bankAccounts?: { id: string; name: string; currency: string }[]
+  categories?: AccountingCategory[]
 }
 
-export function ImportOrderDetailClient({ order, mode, companies, suppliers, products, projects, autoEdit, bankAccounts = [] }: Props) {
+export function ImportOrderDetailClient({
+  order,
+  mode,
+  companies,
+  suppliers,
+  products,
+  projects,
+  autoEdit,
+  bankAccounts = [],
+  categories = [],
+}: Props) {
   const router = useRouter()
   const [editOpen, setEditOpen] = useState(!!autoEdit)
   const [payOpen,  setPayOpen]  = useState(false)
@@ -82,7 +94,7 @@ export function ImportOrderDetailClient({ order, mode, companies, suppliers, pro
             <div className="rounded-lg bg-gray-50 border px-4 py-3 text-sm space-y-1 mb-4">
               <div className="flex justify-between">
                 <span className="text-gray-500">Còn nợ:</span>
-                <span className="font-semibold text-amber-700">{fmtNative(order.outstanding)}</span>
+                <span className="font-semibold text-amber-700">{fmtNative(order.payable_outstanding)}</span>
               </div>
             </div>
             <form onSubmit={handlePay} className="space-y-4">
@@ -106,7 +118,7 @@ export function ImportOrderDetailClient({ order, mode, companies, suppliers, pro
                 <Label>Số tiền trả ({order.currency}) <span className="text-red-500">*</span></Label>
                 <Input type="number" min="1" step="1"
                   value={payAmt} onChange={(e) => setPayAmt(e.target.value)}
-                  placeholder={String(order.outstanding)} required />
+                  placeholder={String(order.payable_outstanding)} required />
                 {parseFloat(payAmt) > 0 && (
                   <p className="text-xs text-gray-500">{fmtNative(parseFloat(payAmt))}</p>
                 )}
@@ -137,6 +149,7 @@ export function ImportOrderDetailClient({ order, mode, companies, suppliers, pro
           <ImportOrderForm
             companies={companies} suppliers={suppliers}
             products={products} projects={projects}
+            categories={categories}
             editOrder={order}
             onDone={() => { setEditOpen(false); router.refresh() }}
           />

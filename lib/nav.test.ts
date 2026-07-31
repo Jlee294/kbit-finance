@@ -32,6 +32,13 @@ describe('activeGroupLabel', () => {
   it('null khi không khớp', () => expect(activeGroupLabel(navGroups, '/khong-co')).toBe(null))
 })
 
+describe('regression: accounting import is an AI workflow, not an app menu', () => {
+  it('does not expose the removed data-set import route in any menu group', () => {
+    const allHrefs = navGroups.flatMap((group) => group.items.map((item) => item.href))
+    expect(allHrefs).not.toContain('/nhap-du-lieu')
+  })
+})
+
 describe('resolveOpenGroups', () => {
   it('lần đầu (saved=null) → chỉ mở nhóm active', () =>
     expect([...resolveOpenGroups('Tổng quan', null)]).toEqual(['Tổng quan']))

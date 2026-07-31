@@ -11,6 +11,11 @@ import { NextResponse, type NextRequest } from 'next/server'
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request })
 
+  // Chế độ xem giao diện local: không đụng Supabase/Auth production.
+  if (process.env.KBIT_DEMO_MODE === 'true') {
+    return response
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

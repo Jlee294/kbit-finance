@@ -73,20 +73,20 @@ export function DashboardClient({ data, projectName }: { data: DashboardData; pr
 
       {/* ── KPI ─────────────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Kpi label="Doanh thu (bán ra)" value={kpis.revenue}     accent={C.revenue}  hint={`${kpis.salesCount} đơn`} />
-        <Kpi label="Chi phí (mua vào)"  value={kpis.purchase}    accent={C.purchase} hint={`${kpis.purchaseCount} hóa đơn`} />
+        <Kpi label="Giá trị bán ra ghi nhận (gồm VAT)" value={kpis.revenue}  accent={C.revenue}  hint={`${kpis.salesCount} hóa đơn kê khai`} />
+        <Kpi label="Giá trị mua vào"          value={kpis.purchase} accent={C.purchase} hint={`${kpis.purchaseCount} hóa đơn kê khai`} />
         <Kpi label="Lãi gộp (đã chốt giá vốn)" value={kpis.grossProfit} accent={C.profit} hint={`Giá vốn ${fmtShort(kpis.cogs)}`} />
-        <Kpi label="Doanh thu chưa VAT" value={kpis.revenueNet}  accent="#4F5D80" />
+        <Kpi label="Doanh thu ghi nhận (chưa VAT)" value={kpis.revenueNet}  accent="#4F5D80" />
         <Kpi label="Tiền đã thu"        value={kpis.cashIn}      accent={C.cashIn} />
         <Kpi label="Tiền đã chi"        value={kpis.cashOut}     accent={C.cashOut} />
         <Kpi label="Dòng tiền ròng"     value={kpis.netCash}     accent={BRAND} />
         <Kpi label="Phải thu − Phải trả" value={kpis.ar - kpis.ap} accent="#3b82f6" hint={`Thu ${fmtShort(kpis.ar)} · Trả ${fmtShort(kpis.ap)}`} />
       </div>
 
-      {/* ── Doanh thu / Chi phí / Lãi gộp theo tháng ──────── */}
+      {/* ── Giá trị bán ra / Giá trị mua vào / Lãi gộp theo tháng ─ */}
       <Card>
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-semibold text-gray-700">Doanh thu · Chi phí · Lãi gộp theo tháng</h3>
+          <h3 className="text-sm font-semibold text-gray-700">Giá trị bán ra · Giá trị mua vào · Lãi gộp theo tháng</h3>
           <span className="text-[11px] text-gray-400">12 tháng trong năm</span>
         </div>
         <ResponsiveContainer width="100%" height={300}>
@@ -96,8 +96,8 @@ export function DashboardClient({ data, projectName }: { data: DashboardData; pr
             <YAxis tickFormatter={fmtShort} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={48} />
             <Tooltip content={<ChartTooltip />} />
             <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Bar dataKey="revenue"  name="Doanh thu"  fill={C.revenue}  radius={[3, 3, 0, 0]} maxBarSize={26} />
-            <Bar dataKey="purchase" name="Chi phí mua" fill={C.purchase} radius={[3, 3, 0, 0]} maxBarSize={26} />
+            <Bar dataKey="revenue"  name="Giá trị bán ra (gồm VAT)"  fill={C.revenue}  radius={[3, 3, 0, 0]} maxBarSize={26} />
+            <Bar dataKey="purchase" name="Giá trị mua vào" fill={C.purchase} radius={[3, 3, 0, 0]} maxBarSize={26} />
             <Line dataKey="grossProfit" name="Lãi gộp" stroke={C.profit} strokeWidth={2.5} dot={{ r: 3 }} />
           </ComposedChart>
         </ResponsiveContainer>

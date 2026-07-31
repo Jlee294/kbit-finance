@@ -1,5 +1,6 @@
 import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
+import { DEMO_USER, isDemoMode } from '@/lib/demo'
 
 export type UserRole = 'admin' | 'ceo' | 'chief_accountant' | 'accountant' | 'viewer'
 
@@ -17,6 +18,8 @@ export interface CurrentUser {
  * thay vì getUser() (gọi network). Tiết kiệm 100-300ms mỗi request.
  */
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
+  if (isDemoMode()) return DEMO_USER
+
   const supabase = await createClient()
 
   // getClaims() — local JWT decode, no network

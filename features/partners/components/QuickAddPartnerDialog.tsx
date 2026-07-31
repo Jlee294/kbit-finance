@@ -66,7 +66,8 @@ export function QuickAddPartnerDialog({ kind, open, onClose, onCreated, defaultN
 
         <div className="space-y-3 mt-2">
           <p className="text-xs text-gray-500">
-            Mã sẽ tự sinh ({kind === 'customer' ? 'KH' : 'NCC'}-yyyymmdd-xxxx). Bổ sung MST/SĐT sau ở danh mục nếu cần.
+            Có MST: dùng MST làm mã công nợ. Không có MST: tự sinh tuần tự
+            {' '}{kind === 'customer' ? 'KH00001' : 'NCC00001'}.
           </p>
 
           <div>

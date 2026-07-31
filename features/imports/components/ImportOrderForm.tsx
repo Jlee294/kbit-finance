@@ -16,6 +16,7 @@ import { QuickAddPartnerDialog } from '@/features/partners/components/QuickAddPa
 import { DIALOG_SM } from '@/lib/ui-tokens'
 import { toast } from 'sonner'
 import { useT } from '@/lib/i18n/client'
+import type { AccountingCategory } from '@/features/accounting-categories/queries'
 
 type SimpleOption  = { id: string; name: string }
 type SupplierOpt   = { id: string; code: string; name: string }
@@ -34,6 +35,7 @@ interface Props {
   users?:      UserOpt[]
   warehouses?: WarehouseOpt[]
   operations?: OperationOpt[]   // KTT D3: nghiệp vụ → checklist HS
+  categories?: AccountingCategory[]
   editOrder?:  ImportOrderDetail | null
   onDone:      () => void
 }
@@ -45,8 +47,31 @@ interface ItemRow {
   unit_price:  string
   lot_no:      string   // KTT G
   expiry_date: string   // KTT G — YYYY-MM-DD hoặc ''
+  accounting_treatment: 'inventory' | 'expense' | 'prepaid' | 'tool' | 'fixed_asset' | 'tax_fee' | 'pass_through' | 'contract_penalty' | 'other'
+  accounting_category_id: string
 }
-const newRow = (): ItemRow => ({ product_id: '', description: '', qty: '', unit_price: '', lot_no: '', expiry_date: '' })
+const newRow = (): ItemRow => ({
+  product_id: '',
+  description: '',
+  qty: '',
+  unit_price: '',
+  lot_no: '',
+  expiry_date: '',
+  accounting_treatment: 'other',
+  accounting_category_id: '',
+})
+
+const TREATMENT_LABELS: Record<ItemRow['accounting_treatment'], string> = {
+  inventory: 'Hàng tồn kho',
+  expense: 'Chi phí trong kỳ',
+  prepaid: 'Chi phí trả trước',
+  tool: 'Công cụ dụng cụ',
+  fixed_asset: 'Tài sản cố định',
+  tax_fee: 'Thuế, phí',
+  pass_through: 'Thu hộ / chi hộ',
+  contract_penalty: 'Phạt hợp đồng',
+  other: 'Khác',
+}
 
 const sel = 'w-full h-9 rounded-lg border border-input bg-transparent px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50'
 
@@ -58,7 +83,18 @@ function pickDefaultWarehouse(warehouses: WarehouseOpt[], companyId: string): st
   return (list.find((w) => w.is_default) ?? list[0]).id
 }
 
-export function ImportOrderForm({ companies, suppliers, products, projects, users = [], warehouses = [], operations = [], editOrder, onDone }: Props) {
+export function ImportOrderForm({
+  companies,
+  suppliers,
+  products,
+  projects,
+  users = [],
+  warehouses = [],
+  operations = [],
+  categories = [],
+  editOrder,
+  onDone,
+}: Props) {
   const router = useRouter()
   const t = useT()
   const isEdit = !!editOrder
@@ -78,6 +114,15 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
   const [importDuty,      setImportDuty]      = useState(editOrder ? String(editOrder.import_duty) : '0')
   const [vatImport,       setVatImport]       = useState(editOrder ? String(editOrder.vat_import) : '0')
   const [otherFees,       setOtherFees]       = useState(editOrder ? String(editOrder.other_fees) : '0')
+  const [dutyCreditorId,  setDutyCreditorId]  = useState(
+    editOrder?.import_cost_components.find((component) => component.kind === 'import_duty')?.creditor_supplier_id ?? '',
+  )
+  const [vatCreditorId,   setVatCreditorId]   = useState(
+    editOrder?.import_cost_components.find((component) => component.kind === 'import_vat')?.creditor_supplier_id ?? '',
+  )
+  const [feeCreditorId,   setFeeCreditorId]   = useState(
+    editOrder?.import_cost_components.find((component) => ['freight', 'service', 'other'].includes(component.kind))?.creditor_supplier_id ?? '',
+  )
   const [isInterco,       setIsInterco]       = useState(editOrder?.is_intercompany ?? false)
   const [counterpartId,   setCounterpartId]   = useState(editOrder?.counterpart_company_id ?? '')
 
@@ -103,6 +148,8 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
           unit_price:  String(it.unit_price),
           lot_no:      it.lot_no ?? '',
           expiry_date: it.expiry_date ?? '',
+          accounting_treatment: it.product_id ? 'inventory' : (it.accounting_treatment ?? 'other'),
+          accounting_category_id: it.accounting_category_id ?? '',
         }))
       : [newRow()],
   )
@@ -116,6 +163,8 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
   const counterpartList  = companies.filter((c) => c.id !== companyId)
   // C-1: kho phải thuộc công ty đang chọn (tồn/giá vốn suy công ty TỪ kho).
   const filteredWarehouses = companyId ? warehouses.filter((w) => w.company_id === companyId) : warehouses
+  const filteredCategories = categories.filter((category) =>
+    category.company_id == null || category.company_id === companyId)
 
   // ── Preview giá vốn (client-side, hàm thuần)
   const gv   = parseFloat(goodsValue) || 0
@@ -123,13 +172,33 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
   const vat  = parseFloat(vatImport)  || 0
   const fees = parseFloat(otherFees)  || 0
   const rate = currency === 'KRW' ? (parseFloat(exchangeRate) || 0) : 1
-  const costTotalFc  = gv + duty + fees          // KHÔNG gồm vat_import
-  const costTotalVnd = costTotalFc * (currency === 'KRW' ? rate : 1)
+  const goodsValueVnd = gv * rate
+  const costTotalVnd = goodsValueVnd + duty + fees // KHÔNG gồm vat_import
   const parsedItems  = items.map((r) => ({ qty: parseFloat(r.qty) || 0, unit_price: parseFloat(r.unit_price) || 0 }))
   const previewUnitCosts = costTotalVnd > 0 ? allocateUnitCost(parsedItems, costTotalVnd) : []
 
   function updateItem(i: number, field: keyof ItemRow, value: string) {
     setItems((prev) => prev.map((r, idx) => idx === i ? { ...r, [field]: value } : r))
+  }
+  function updateItemProduct(i: number, productId: string) {
+    setItems((prev) => prev.map((row, index) => index === i
+      ? {
+          ...row,
+          product_id: productId,
+          accounting_treatment: productId ? 'inventory' : 'other',
+          accounting_category_id: '',
+        }
+      : row))
+  }
+  function updateItemCategory(i: number, categoryId: string) {
+    const category = filteredCategories.find((item) => item.id === categoryId)
+    setItems((prev) => prev.map((row, index) => index === i
+      ? {
+          ...row,
+          accounting_category_id: categoryId,
+          accounting_treatment: category?.treatment ?? 'other',
+        }
+      : row))
   }
   function addItem() { setItems((prev) => [...prev, newRow()]) }
   function removeItem(i: number) { setItems((prev) => prev.filter((_, idx) => idx !== i)) }
@@ -165,6 +234,37 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
         nhan_su_thuc_hien: nhanSuId         || null,
         warehouse_id:      warehouseId      || null,
         operation_id:      operationId      || null,
+        cost_components: orderType === 'import'
+          ? [
+              {
+                kind: 'import_duty' as const,
+                creditor_type: 'tax_authority' as const,
+                creditor_supplier_id: dutyCreditorId || null,
+                description: 'Thuế nhập khẩu',
+                currency: 'VND' as const,
+                amount: duty,
+                exchange_rate: 1,
+              },
+              {
+                kind: 'import_vat' as const,
+                creditor_type: 'tax_authority' as const,
+                creditor_supplier_id: vatCreditorId || null,
+                description: 'VAT nhập khẩu được khấu trừ',
+                currency: 'VND' as const,
+                amount: vat,
+                exchange_rate: 1,
+              },
+              {
+                kind: 'freight' as const,
+                creditor_type: 'service_provider' as const,
+                creditor_supplier_id: feeCreditorId || null,
+                description: 'Vận chuyển / dịch vụ nhập khẩu',
+                currency: 'VND' as const,
+                amount: fees,
+                exchange_rate: 1,
+              },
+            ]
+          : [],
         items: items.map((r) => ({
           product_id:  r.product_id || null,
           description: r.description || null,
@@ -172,6 +272,8 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
           unit_price:  parseFloat(r.unit_price) || 0,
           lot_no:      r.lot_no || null,
           expiry_date: r.expiry_date || null,
+          accounting_treatment: r.product_id ? 'inventory' as const : r.accounting_treatment,
+          accounting_category_id: r.product_id ? null : (r.accounting_category_id || null),
         })),
       }
       if (isEdit) {
@@ -306,35 +408,74 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
 
       {/* ── Chi phí nhập khẩu ─────────────────────────────────────── */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">{t('Chi phí nhập khẩu')} ({currency})</h3>
+        <h3 className="text-sm font-semibold text-gray-700 mb-3">{t('Chi phí nhập khẩu và chủ nợ')}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="space-y-1">
-            <Label>{t('Giá mua hàng')} <span className="text-red-500">*</span></Label>
+            <Label>{t('Giá mua hàng')} ({currency}) <span className="text-red-500">*</span></Label>
             <Input type="number" min="0" step="1"
               value={goodsValue} onChange={(e) => setGoodsValue(e.target.value)} required />
           </div>
           <div className="space-y-1">
-            <Label>{t('Thuế nhập khẩu')}</Label>
+            <Label>{t('Thuế nhập khẩu')} (VNĐ)</Label>
             <Input type="number" min="0" step="1" value={importDuty} onChange={(e) => setImportDuty(e.target.value)} />
           </div>
           <div className="space-y-1">
-            <Label>{t('VAT khâu nhập khẩu')}</Label>
+            <Label>{t('VAT khâu nhập khẩu')} (VNĐ)</Label>
             <Input type="number" min="0" step="1" value={vatImport} onChange={(e) => setVatImport(e.target.value)} />
             <p className="text-xs text-brand-700">{t('Khấu trừ riêng — KHÔNG tính vào giá vốn')}</p>
           </div>
           <div className="space-y-1">
-            <Label>{t('Phí khác')}</Label>
+            <Label>{t('Vận chuyển / dịch vụ')} (VNĐ)</Label>
             <Input type="number" min="0" step="1" value={otherFees} onChange={(e) => setOtherFees(e.target.value)} />
             <p className="text-xs text-gray-400">{t('HQ, lưu kho, vận chuyển, đại lý')}</p>
           </div>
         </div>
 
+        {orderType === 'import' && (
+          <div className="mt-4 grid grid-cols-1 gap-4 rounded-lg border border-amber-200 bg-amber-50 p-4 md:grid-cols-3">
+            <div className="space-y-1">
+              <Label>Chủ nợ thuế nhập khẩu {duty > 0 && <span className="text-red-500">*</span>}</Label>
+              <select value={dutyCreditorId} onChange={(e) => setDutyCreditorId(e.target.value)}
+                required={duty > 0} className={sel}>
+                <option value="">— Cơ quan hải quan / thuế —</option>
+                {[...extraSuppliers, ...suppliers].map((supplier) => (
+                  <option key={supplier.id} value={supplier.id}>[{supplier.code}] {supplier.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <Label>Chủ nợ VAT nhập khẩu {vat > 0 && <span className="text-red-500">*</span>}</Label>
+              <select value={vatCreditorId} onChange={(e) => setVatCreditorId(e.target.value)}
+                required={vat > 0} className={sel}>
+                <option value="">— Cơ quan hải quan / thuế —</option>
+                {[...extraSuppliers, ...suppliers].map((supplier) => (
+                  <option key={supplier.id} value={supplier.id}>[{supplier.code}] {supplier.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <Label>Chủ nợ vận chuyển / dịch vụ {fees > 0 && <span className="text-red-500">*</span>}</Label>
+              <select value={feeCreditorId} onChange={(e) => setFeeCreditorId(e.target.value)}
+                required={fees > 0} className={sel}>
+                <option value="">— Đơn vị cung cấp dịch vụ —</option>
+                {[...extraSuppliers, ...suppliers].map((supplier) => (
+                  <option key={supplier.id} value={supplier.id}>[{supplier.code}] {supplier.name}</option>
+                ))}
+              </select>
+            </div>
+            <p className="text-xs text-amber-900 md:col-span-3">
+              Tiền hàng theo dõi với nhà cung cấp chính phía trên. Thuế/VAT theo dõi với cơ quan hải quan hoặc thuế;
+              phí theo dõi với đúng đơn vị cung cấp dịch vụ.
+            </p>
+          </div>
+        )}
+
         {/* Preview giá vốn */}
-        {costTotalFc > 0 && (
+        {costTotalVnd > 0 && (
           <div className="mt-3 rounded-lg bg-brand-50 border border-brand-100 px-4 py-3 text-sm space-y-1">
             <div className="flex justify-between font-semibold text-brand-900">
-              <span>{t('Giá vốn lô (cost_total = mua + thuế NK + phí khác):')}</span>
-              <span>{fmtCurrency(costTotalFc)}</span>
+              <span>{t('Giá vốn lô = tiền hàng quy VNĐ + thuế NK + vận chuyển/dịch vụ:')}</span>
+              <span>{formatVND(costTotalVnd)}</span>
             </div>
             {currency === 'KRW' && rate > 0 && (
               <div className="flex justify-between text-brand-700">
@@ -345,7 +486,7 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
             {vat > 0 && (
               <div className="flex justify-between text-gray-500 text-xs">
                 <span>{t('VAT khâu NK (riêng, không vào giá vốn)')}:</span>
-                <span>{fmtCurrency(vat)}</span>
+                <span>{formatVND(vat)}</span>
               </div>
             )}
           </div>
@@ -366,6 +507,7 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
             <thead>
               <tr className="bg-gray-50 text-gray-600 text-xs">
                 <th className="px-3 py-2 text-left">{t('Sản phẩm')}</th>
+                <th className="px-3 py-2 text-left w-40">{t('Phân loại')}</th>
                 <th className="px-3 py-2 text-left w-32">{t('Mô tả')}</th>
                 <th className="px-3 py-2 text-right w-20">{t('Số lượng')}</th>
                 <th className="px-3 py-2 text-right w-28">{t('Đơn giá')} ({currency})</th>
@@ -393,11 +535,27 @@ export function ImportOrderForm({ companies, suppliers, products, projects, user
                 return (
                   <tr key={i}>
                     <td className="px-3 py-2">
-                      <select value={row.product_id} onChange={(e) => updateItem(i, 'product_id', e.target.value)}
+                      <select value={row.product_id} onChange={(e) => updateItemProduct(i, e.target.value)}
                         className="w-full h-8 rounded border border-input bg-transparent px-2 text-xs focus:outline-none">
                         <option value="">{t('— Chọn SP —')}</option>
                         {productList.map((p) => <option key={p.id} value={p.id}>[{p.code}] {p.name}</option>)}
                       </select>
+                    </td>
+                    <td className="px-3 py-2">
+                      <select value={row.product_id ? '' : row.accounting_category_id}
+                        onChange={(e) => updateItemCategory(i, e.target.value)}
+                        disabled={!!row.product_id}
+                        className="h-8 w-full rounded border border-input bg-transparent px-2 text-xs disabled:bg-gray-50">
+                        <option value="">{row.product_id ? 'Hàng tồn kho' : '— Chọn phân loại —'}</option>
+                        {filteredCategories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            [{category.code}] {category.name}
+                          </option>
+                        ))}
+                      </select>
+                      {!row.product_id && !row.accounting_category_id && (
+                        <span className="mt-1 block text-[10px] text-gray-400">{TREATMENT_LABELS[row.accounting_treatment]}</span>
+                      )}
                     </td>
                     <td className="px-3 py-2">
                       <Input value={row.description} onChange={(e) => updateItem(i, 'description', e.target.value)}

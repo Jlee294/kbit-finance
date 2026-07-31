@@ -10,6 +10,7 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { PAGE_WRAPPER, DIALOG_LG, LIST_WRAP, LIST_THEAD, LIST_ROW } from '@/lib/ui-tokens'
 import { useT } from '@/lib/i18n/client'
 import type { ImportOrderRow } from '../queries'
+import type { AccountingCategory } from '@/features/accounting-categories/queries'
 
 type SimpleOption  = { id: string; name: string }
 type SupplierOpt   = { id: string; code: string; name: string }
@@ -29,9 +30,21 @@ interface Props {
   users?:      UserOpt[]
   warehouses?: WarehouseOpt[]
   operations?: OperationOpt[]
+  categories?: AccountingCategory[]
 }
 
-export function ImportOrderTable({ rows, canWrite, companies, suppliers, products, projects, users = [], warehouses = [], operations = [] }: Props) {
+export function ImportOrderTable({
+  rows,
+  canWrite,
+  companies,
+  suppliers,
+  products,
+  projects,
+  users = [],
+  warehouses = [],
+  operations = [],
+  categories = [],
+}: Props) {
   const router = useRouter()
   const t = useT()
   const [addOpen, setAddOpen] = useState(false)
@@ -85,6 +98,7 @@ export function ImportOrderTable({ rows, canWrite, companies, suppliers, product
             products={products} projects={projects}
             users={users} warehouses={warehouses}
             operations={operations}
+            categories={categories}
             onDone={() => setAddOpen(false)}
           />
         </DialogContent>

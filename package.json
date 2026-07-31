@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
+    "test:handoff": "vitest run features/accounting-flow/domain.test.ts features/partners/codes.test.ts features/imports/landed-cost.test.ts features/import-staging/reconcile.test.ts features/import-staging/parser.test.ts features/import-staging/parser.gla.test.ts features/import-staging/posting.synthetic.test.ts features/import-staging/posting.gla.test.ts features/bank/demo-opening.test.ts features/bank/opening.test.ts features/reports/profit-loss.test.ts features/reports/gla-demo.test.ts lib/gla-data.test.ts lib/accounting-import-memory.test.ts lib/nav.test.ts scripts/accounting-flow-engine.test.ts supabase/tests/accounting_flow_foundation.test.ts supabase/tests/bank_opening_balance.test.ts",
+    "audit:gla": "node scripts/audit-gla.mjs",
     "test:watch": "vitest",
     "test:db": "vitest run supabase/tests"
   },

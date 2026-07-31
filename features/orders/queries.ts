@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { orderCodePrefix } from './order-code'
+import { isDemoMode } from '@/lib/demo'
+import { GLA_DATA } from '@/lib/gla-data'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -13,6 +15,9 @@ export type OrderListRow = {
   outstanding: number
   fulfillment_status: string
   payment_status: string
+  is_gift: boolean
+  recognize_revenue: boolean
+  creates_receivable: boolean
   lot_no: string | null
   discount_pct: number
   vat_pct: number
@@ -89,6 +94,50 @@ export async function listOrders({
   page?: number
   pageSize?: number
 } = {}) {
+  if (isDemoMode()) {
+    const allRows: OrderListRow[] = GLA_DATA.salesJournal
+      .filter((row) => !companyId || row.companyId === companyId)
+      .filter((row) => !customerId || row.customerId === customerId)
+      .filter((row) => !fulfillmentStatus || row.fulfillmentStatus === fulfillmentStatus)
+      .filter((row) => !paymentStatus || row.paymentStatus === paymentStatus)
+      .filter((row) => !from || row.orderDate >= from)
+      .filter((row) => !to || row.orderDate <= to)
+      .sort((a, b) => b.orderDate.localeCompare(a.orderDate) || b.orderCode.localeCompare(a.orderCode))
+      .map((row) => ({
+        id: row.id,
+        order_code: row.orderCode,
+        order_date: row.orderDate,
+        delivery_date: row.invoiceDate,
+        grand_total: row.grandTotal,
+        amount_paid: row.amountPaid,
+        outstanding: row.outstanding,
+        fulfillment_status: row.fulfillmentStatus,
+        payment_status: row.paymentStatus,
+        is_gift: row.isGift,
+        recognize_revenue: row.recognizeRevenue,
+        creates_receivable: row.createsReceivable,
+        lot_no: null,
+        discount_pct: 0,
+        vat_pct: row.vatPct,
+        vat_amount: row.vatAmount,
+        invoice_no: row.invoiceNo,
+        invoice_symbol: row.invoiceSymbol,
+        shipping_fee: 0,
+        created_at: `${row.orderDate}T00:00:00.000Z`,
+        customer: { id: row.customerId, code: row.customerCode, name: row.customerName },
+        company: { id: GLA_DATA.company.id, name: GLA_DATA.company.name },
+        project: null,
+      }))
+
+    const offset = (page - 1) * pageSize
+    return {
+      rows: allRows.slice(offset, offset + pageSize),
+      total: allRows.length,
+      page,
+      pageSize,
+    }
+  }
+
   const supabase = await createClient()
   const offset = (page - 1) * pageSize
 
@@ -97,13 +146,15 @@ export async function listOrders({
     .select(
       `id, order_code, order_date, delivery_date,
        grand_total, amount_paid, outstanding,
-       fulfillment_status, payment_status,
+       fulfillment_status, payment_status, is_gift, recognize_revenue, creates_receivable,
        lot_no, discount_pct, vat_pct, vat_amount, invoice_no, invoice_symbol, shipping_fee, created_at,
        customer:customers!customer_id(id, code, name),
        company:companies!company_id(id, name),
-       project:projects!project_id(id, name)`,
+       project:projects!project_id(id, name),
+       inventory_items:customer_order_items!inner(product_id)`,
       { count: 'exact' },
     )
+    .not('inventory_items.product_id', 'is', null)
     .order('order_date', { ascending: false })
     .order('order_code', { ascending: false })
     .range(offset, offset + pageSize - 1)
@@ -128,6 +179,68 @@ export async function listOrders({
 
 /** Chi tiết 1 đơn hàng kèm items */
 export async function getOrder(id: string): Promise<OrderDetail | null> {
+  if (isDemoMode()) {
+    const row = GLA_DATA.salesJournal.find((item) => item.id === id)
+    if (!row) return null
+    return {
+      id: row.id,
+      order_code: row.orderCode,
+      order_date: row.orderDate,
+      delivery_date: row.invoiceDate,
+      expiry_date: null,
+      grand_total: row.grandTotal,
+      amount_paid: row.amountPaid,
+      outstanding: row.outstanding,
+      fulfillment_status: row.fulfillmentStatus,
+      payment_status: row.paymentStatus,
+      is_gift: row.isGift,
+      recognize_revenue: row.recognizeRevenue,
+      creates_receivable: row.createsReceivable,
+      lot_no: null,
+      discount_pct: 0,
+      vat_pct: row.vatPct,
+      vat_amount: row.vatAmount,
+      invoice_no: row.invoiceNo,
+      invoice_symbol: row.invoiceSymbol,
+      shipping_fee: 0,
+      created_at: `${row.orderDate}T00:00:00.000Z`,
+      customer: { id: row.customerId, code: row.customerCode, name: row.customerName },
+      company: { id: GLA_DATA.company.id, name: GLA_DATA.company.name },
+      project: null,
+      is_intercompany: false,
+      counterpart_company_id: null,
+      counterpart_company: null,
+      warehouse_id: GLA_DATA.warehouse.id,
+      warehouse: {
+        id: GLA_DATA.warehouse.id,
+        code: GLA_DATA.warehouse.code,
+        name: GLA_DATA.warehouse.name,
+      },
+      stock_deducted: true,
+      invoice_template: row.invoiceTemplate,
+      invoice_date: row.invoiceDate,
+      customer_tax_code: row.customerTaxCode,
+      dinh_khoan_no: '131',
+      dinh_khoan_co: '511',
+      nhan_su_thuc_hien: null,
+      items: row.items.map((item) => ({
+        id: item.id,
+        product_id: item.productId,
+        description: item.description,
+        qty: item.qty,
+        unit_price: item.unitPrice,
+        line_total: item.lineTotal,
+        lot_no: item.lotNo,
+        expiry_date: item.expiryDate,
+        product: {
+          id: item.productId,
+          code: item.productCode,
+          name: item.productName,
+        },
+      })),
+    }
+  }
+
   const supabase = await createClient()
 
   const { data, error } = await supabase
@@ -135,7 +248,7 @@ export async function getOrder(id: string): Promise<OrderDetail | null> {
     .select(
       `id, order_code, order_date, delivery_date, expiry_date,
        grand_total, amount_paid, outstanding,
-       fulfillment_status, payment_status,
+       fulfillment_status, payment_status, is_gift, recognize_revenue, creates_receivable,
        lot_no, discount_pct, vat_pct, shipping_fee,
        is_intercompany, counterpart_company_id,
        warehouse_id, stock_deducted,
@@ -237,6 +350,7 @@ export async function listUnpaidOrderRefs(customerId: string): Promise<OrderRef[
     .from('customer_orders')
     .select('id, order_code, order_date, outstanding, customer_id')
     .eq('customer_id', customerId)
+    .eq('creates_receivable', true)
     .gt('outstanding', 0)
     .order('order_date', { ascending: true })
 

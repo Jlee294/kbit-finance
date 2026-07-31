@@ -11,6 +11,7 @@ import { AutoSubmit } from '@/components/shared/AutoSubmit'
 import { PAGE_WRAPPER } from '@/lib/ui-tokens'
 import Link from 'next/link'
 import { getT } from '@/lib/i18n/server'
+import { isDemoMode } from '@/lib/demo'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,10 +23,15 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const { companyId, year } = await getGlobalFilter()
 
   // Dự án cho bộ lọc (theo công ty đang chọn nếu có)
-  const supabase = await createClient()
-  let pq = supabase.from('projects').select('id, name').order('name')
-  if (companyId) pq = pq.eq('company_id', companyId)
-  const projects: Array<{ id: string; name: string }> = (await pq).data ?? []
+  let projects: Array<{ id: string; name: string }>
+  if (isDemoMode()) {
+    projects = []
+  } else {
+    const supabase = await createClient()
+    let pq = supabase.from('projects').select('id, name').order('name')
+    if (companyId) pq = pq.eq('company_id', companyId)
+    projects = (await pq).data ?? []
+  }
   const projectName = sp.project ? projects.find(p => p.id === sp.project)?.name : undefined
 
   const range = resolveRange(year, sp.period, sp.from, sp.to)
@@ -53,6 +59,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         <PeriodFields period={sp.period} from={sp.from} to={sp.to} />
         <FilterReset href="/dashboard" />
       </FilterBar>
+
+      {isDemoMode() && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Bộ GLA đã nhập đủ 48 dòng SPNH Techcombank: 28 dòng tự nối vào công nợ 131/331,
+          20 dòng còn lại chỉ ghi nhận dòng tiền. Chưa có file sổ quỹ tiền mặt nên phần tiền mặt chưa phát sinh.
+        </div>
+      )}
 
       <Suspense fallback={<div className="h-96 rounded-xl bg-gray-50 animate-pulse" />}>
         <ContentWithName companyId={companyId} year={year} sp={sp} projectName={projectName} />

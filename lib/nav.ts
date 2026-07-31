@@ -6,7 +6,7 @@ import {
   Lock, Paperclip, ListTodo, FileType, BookOpen,
   Calculator, CalendarClock,
   Building2, FolderKanban, Users, Barcode, CreditCard, Box, ArrowRightLeft, ShieldCheck,
-  Boxes, TrendingUp, Warehouse, LayoutDashboard, Factory,
+  Boxes, TrendingUp, Warehouse, LayoutDashboard, Factory, Tags,
 } from 'lucide-react'
 import type { UserRole } from '@/lib/auth'
 
@@ -57,6 +57,7 @@ export const navGroups: NavGroup[] = [
     { href: '/danh-muc/nha-may',            label: 'Nhà máy',      icon: Factory },
     { href: '/danh-muc/kho',                 label: 'Kho',          icon: Warehouse },
     { href: '/danh-muc/ty-gia',              label: 'Tỷ giá',       icon: ArrowRightLeft },
+    { href: '/danh-muc/phan-loai-chi-phi',   label: 'Phân loại chi phí', icon: Tags },
     { href: '/danh-muc/phan-quyen-cong-ty',  label: 'Người dùng & Phân quyền', icon: ShieldCheck },
   ]},
 ]

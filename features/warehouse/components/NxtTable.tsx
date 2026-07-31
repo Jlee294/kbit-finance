@@ -19,11 +19,18 @@ export function NxtTable({ fromPeriod, toPeriod, warehouseId, warehouses, rows }
   // Tổng giá trị tồn (dòng tổng KTT yêu cầu)
   const totals = rows.reduce(
     (a, r) => {
-      a.open  += r.value_open;  a.in   += r.value_in
-      a.out   += r.value_out;   a.close += r.value_close
+      a.qtyOpen  += r.qty_open;  a.valueOpen  += r.value_open
+      a.qtyIn    += r.qty_in;    a.valueIn    += r.value_in
+      a.qtyOut   += r.qty_out;   a.valueOut   += r.value_out
+      a.qtyClose += r.qty_close; a.valueClose += r.value_close
       return a
     },
-    { open: 0, in: 0, out: 0, close: 0 },
+    {
+      qtyOpen: 0, valueOpen: 0,
+      qtyIn: 0, valueIn: 0,
+      qtyOut: 0, valueOut: 0,
+      qtyClose: 0, valueClose: 0,
+    },
   )
 
   return (
@@ -78,10 +85,10 @@ export function NxtTable({ fromPeriod, toPeriod, warehouseId, warehouses, rows }
               {/* Dòng TỔNG giá trị */}
               <tr className="bg-brand-50/60 font-semibold text-brand-800 border-b-2 border-brand-200">
                 <td className="px-3 py-2" colSpan={2}>TỔNG GIÁ TRỊ <span className="text-xs font-normal text-brand-700">({rows.length} mặt hàng)</span></td>
-                <td className="px-3 py-2 text-right border-l">—</td><td className="px-3 py-2 text-right">{formatVND(totals.open)}</td>
-                <td className="px-3 py-2 text-right border-l">—</td><td className="px-3 py-2 text-right">{formatVND(totals.in)}</td>
-                <td className="px-3 py-2 text-right border-l">—</td><td className="px-3 py-2 text-right">{formatVND(totals.out)}</td>
-                <td className="px-3 py-2 text-right border-l">—</td><td className="px-3 py-2 text-right">{formatVND(totals.close)}</td>
+                <td className="px-3 py-2 text-right border-l">{num(totals.qtyOpen)}</td><td className="px-3 py-2 text-right">{formatVND(totals.valueOpen)}</td>
+                <td className="px-3 py-2 text-right border-l">{num(totals.qtyIn)}</td><td className="px-3 py-2 text-right">{formatVND(totals.valueIn)}</td>
+                <td className="px-3 py-2 text-right border-l">{num(totals.qtyOut)}</td><td className="px-3 py-2 text-right">{formatVND(totals.valueOut)}</td>
+                <td className="px-3 py-2 text-right border-l">{num(totals.qtyClose)}</td><td className="px-3 py-2 text-right">{formatVND(totals.valueClose)}</td>
                 <td className="px-3 py-2 text-right border-l"></td>
               </tr>
               {rows.map(r => {

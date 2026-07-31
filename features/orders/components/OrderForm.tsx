@@ -90,6 +90,7 @@ export function OrderForm({ companies, customers, projects, products, warehouses
   const [lotNo,         setLotNo]         = useState(initial?.lot_no        ?? '')
   const [expiryDate,    setExpiryDate]    = useState(initial?.expiry_date   ?? '')
   const [isIntercompany, setIsIntercompany] = useState(initial?.is_intercompany ?? false)
+  const [isGift,         setIsGift]         = useState(initial?.is_gift ?? false)
   const [counterpartId,  setCounterpartId]  = useState(initial?.counterpart_company_id ?? '')
   const [warehouseId,    setWarehouseId]    = useState<string>(() =>
     initial?.warehouse_id ?? pickDefaultWarehouse(warehouses, initial?.company?.id ?? ''))
@@ -185,6 +186,7 @@ export function OrderForm({ companies, customers, projects, products, warehouses
         lot_no:        lotNo     || null,
         expiry_date:   expiryDate || null,
         is_intercompany: isIntercompany,
+        is_gift:       isGift,
         counterpart_company_id: isIntercompany ? (counterpartId || null) : null,
         discount_pct:  parseFloat(discountPct) || 0,
         vat_pct:       parseFloat(vatPct)      || 0,
@@ -341,6 +343,21 @@ export function OrderForm({ companies, customers, projects, products, warehouses
             )}
           </select>
         )}
+      </div>
+
+      {/* ─ Quà tặng ──────────────────────────────────────────────────────── */}
+      <div className={`rounded-lg border p-3 ${isGift ? 'border-amber-300 bg-amber-50' : 'border-gray-200 bg-white'}`}>
+        <div className="flex items-start gap-3">
+          <input id="gift-invoice" type="checkbox" checked={isGift}
+            onChange={(e) => setIsGift(e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-input" />
+          <div>
+            <Label htmlFor="gift-invoice">{t('Hóa đơn quà tặng / biếu tặng')}</Label>
+            <p className="mt-1 text-xs text-gray-600">
+              {t('Vẫn vào bảng kê bán ra và tính VAT đầu ra. Không ghi doanh thu, không theo dõi công nợ; dòng có mã hàng vẫn xuất kho và tính giá vốn.')}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* ─ Thông tin hóa đơn ─────────────────────────────────────────────── */}

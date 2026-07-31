@@ -150,6 +150,11 @@ export function OrderList({ initialRows, total, canWrite, companies, customers, 
                     >
                       {row.order_code}
                     </Link>
+                    {row.is_gift && (
+                      <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 font-sans text-[10px] font-semibold text-amber-800">
+                        QUÀ TẶNG
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 font-mono text-gray-700 whitespace-nowrap">
                     {row.invoice_no
@@ -171,7 +176,9 @@ export function OrderList({ initialRows, total, canWrite, companies, customers, 
                     <FulfillmentBadge status={row.fulfillment_status} />
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <PaymentBadge status={row.payment_status} />
+                    {row.is_gift
+                      ? <span className="text-xs font-medium text-gray-500">Không công nợ</span>
+                      : <PaymentBadge status={row.payment_status} />}
                   </td>
                   {canWrite && (
                     <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>

@@ -1,5 +1,5 @@
 import { getCurrentUser, canEdit } from '@/lib/auth'
-import { listCashBook } from '@/features/cash-book/queries'
+import { getCashSummary, listCashBook } from '@/features/cash-book/queries'
 import { listCompanies } from '@/features/companies/queries'
 import { listUsers } from '@/features/users/queries'
 import { listCustomers } from '@/features/customers/queries'
@@ -23,7 +23,7 @@ export default async function ChungTuKhacPage({
   const sp = await searchParams
   const { companyId, year } = await getGlobalFilter()
   const range = resolveRange(year, sp.period, sp.from, sp.to)
-  const [me, rows, companies, users, customersRaw, suppliersRaw] = await Promise.all([
+  const [me, rows, cashSummary] = await Promise.all([
     getCurrentUser(),
     listCashBook({
       companyId: companyId || undefined,
@@ -32,13 +32,18 @@ export default async function ChungTuKhacPage({
       to:        range.to,
       limit:     500,
     }),
-    listCompanies(),
-    listUsers(),
-    listCustomers(),
-    listSuppliers(),
+    getCashSummary({
+      companyId: companyId || undefined,
+      year,
+      from: range.from,
+      to: range.to,
+    }),
   ])
 
   const canWrite = !!me && canEdit(me.role)
+  const [companies, users, customersRaw, suppliersRaw] = canWrite
+    ? await Promise.all([listCompanies(), listUsers(), listCustomers(), listSuppliers()])
+    : [[], [], [], []]
 
   return (
     <div className={PAGE_WRAPPER}>
@@ -67,6 +72,9 @@ export default async function ChungTuKhacPage({
         customers={customersRaw.map(c => ({ id: c.id, code: c.code as string, name: c.name }))}
         suppliers={suppliersRaw.map(s => ({ id: s.id, code: s.code as string, name: s.name }))}
         canWrite={canWrite}
+        summary={cashSummary}
+        selectedCompanyId={companyId || ''}
+        year={Number(year)}
       />
     </div>
   )

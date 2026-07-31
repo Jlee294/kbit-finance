@@ -17,6 +17,7 @@ import { defaultWarehouseId } from '@/features/warehouse/queries'
 import { deductOrderStock }   from '@/features/warehouse/actions'
 import { computeStockDeltas } from './stock-deltas'
 import { maybeDeductOrderStock } from './stock-sync'
+import { classifySalesDocument } from '@/features/accounting-flow/domain'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -67,6 +68,10 @@ export async function createOrder(raw: CreateOrderInput) {
     input.shipping_fee,
   )
   const paymentStatus = derivePaymentStatus(grandTotal, 0)
+  const salesPolicy = classifySalesDocument({
+    isGift: input.is_gift,
+    hasStockItems: input.items.some((item) => !!item.product_id),
+  })
 
   // Lấy customer code để build mã đơn
   const { data: customer, error: custErr } = await supabase
@@ -98,6 +103,9 @@ export async function createOrder(raw: CreateOrderInput) {
         lot_no: input.lot_no ?? null,
         expiry_date: input.expiry_date ?? null,
         is_intercompany: input.is_intercompany,
+        is_gift: input.is_gift,
+        recognize_revenue: salesPolicy.recognizeRevenue,
+        creates_receivable: salesPolicy.createReceivable,
         counterpart_company_id: input.counterpart_company_id ?? null,
         discount_pct: input.discount_pct,
         vat_pct: input.vat_pct,
@@ -215,6 +223,10 @@ export async function updateOrder(id: string, raw: UpdateOrderInput) {
     input.shipping_fee,
   )
   const paymentStatus = derivePaymentStatus(grandTotal, Number(existing.amount_paid))
+  const salesPolicy = classifySalesDocument({
+    isGift: input.is_gift,
+    hasStockItems: input.items.some((item) => !!item.product_id),
+  })
 
   // Cập nhật đơn hàng
   const { error: updateErr } = await supabase
@@ -231,6 +243,9 @@ export async function updateOrder(id: string, raw: UpdateOrderInput) {
       lot_no: input.lot_no ?? null,
       expiry_date: input.expiry_date ?? null,
       is_intercompany: input.is_intercompany,
+      is_gift: input.is_gift,
+      recognize_revenue: salesPolicy.recognizeRevenue,
+      creates_receivable: salesPolicy.createReceivable,
       counterpart_company_id: input.counterpart_company_id ?? null,
       discount_pct: input.discount_pct,
       vat_pct: input.vat_pct,

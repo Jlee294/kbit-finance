@@ -1,5 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
+import { isDemoMode } from '@/lib/demo'
+import { GLA_DATA } from '@/lib/gla-data'
 import { computeLedger, cashEntryToLedgerSource } from './ledger'
+import { openingDebtNet, type PartnerType } from '@/features/accounting-flow/domain'
 
 // ── Công nợ phải THU (KH) — từ customer_orders.outstanding ──────────────────
 
@@ -26,6 +29,7 @@ export async function listAccountsReceivable(opts: {
       companies!company_id ( name ),
       customers!customer_id ( code, name )
     `)
+    .eq('creates_receivable', true)
     .gt('outstanding', 0)
     .order('order_date', { ascending: true })
 
@@ -83,11 +87,12 @@ export async function listAccountsPayable(opts: {
   let q = supabase
     .from('supplier_orders')
     .select(`
-      supplier_id, order_date, cost_total, amount_paid, outstanding, currency, exchange_rate,
+      supplier_id, order_date, payable_total, amount_paid, payable_outstanding, currency, exchange_rate,
       companies!company_id ( name ),
       suppliers!supplier_id ( code, name )
     `)
-    .gt('outstanding', 0)
+    .eq('creates_payable', true)
+    .gt('payable_outstanding', 0)
     .order('order_date', { ascending: true })
 
   if (opts.companyId) q = q.eq('company_id', opts.companyId)
@@ -99,9 +104,9 @@ export async function listAccountsPayable(opts: {
   for (const r of (data ?? []) as any[]) {
     const sid = r.supplier_id
     const rate = r.currency === 'KRW' ? Number(r.exchange_rate ?? 0) : 1
-    const costVnd  = Number(r.cost_total)   * rate
+    const costVnd  = Number(r.payable_total) * rate
     const paidVnd  = Number(r.amount_paid)  * rate
-    const outVnd   = Number(r.outstanding)  * rate
+    const outVnd   = Number(r.payable_outstanding) * rate
     const existing = map.get(sid)
     if (existing) {
       existing.orders_count += 1
@@ -141,6 +146,8 @@ export interface IrRow {
 }
 
 export async function listInternalReceivables(): Promise<IrRow[]> {
+  if (isDemoMode()) return []
+
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('internal_receivables')
@@ -178,6 +185,8 @@ export interface DepositRow {
 }
 
 export async function listUnassignedDeposits(): Promise<DepositRow[]> {
+  if (isDemoMode()) return []
+
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('income_transactions')
@@ -186,6 +195,7 @@ export async function listUnassignedDeposits(): Promise<DepositRow[]> {
       customers!customer_id ( name )
     `)
     .eq('is_unassigned', true)
+    .eq('affects_debt', true)
     .order('txn_date', { ascending: false })
   if (error) { console.error('[listDeposits]', error.message); return [] }
   return (data ?? []).map((r: any) => ({
@@ -215,6 +225,25 @@ export interface DebtOpeningRow {
 }
 
 export async function listDebtOpenings(year: number, companyId: string | undefined, partnerType: 'customer' | 'supplier'): Promise<DebtOpeningRow[]> {
+  if (isDemoMode()) {
+    if (year !== GLA_DATA.period.year) return []
+    if (companyId && companyId !== GLA_DATA.company.id) return []
+    const rows = partnerType === 'customer' ? GLA_DATA.receivables : GLA_DATA.payables
+    return rows
+      .filter((row) => row.openingDebit !== 0 || row.openingCredit !== 0)
+      .map((row) => ({
+        id: row.id,
+        partner_type: partnerType,
+        partner_id: row.partyId,
+        partner_code: row.partyCode,
+        partner_name: row.partyName,
+        year,
+        debit_amount: row.openingDebit,
+        credit_amount: row.openingCredit,
+        note: 'Nhập từ file tổng hợp công nợ GLA',
+      }))
+  }
+
   const supabase = await createClient()
   let q = supabase
     .from('debt_opening_balances')
@@ -288,7 +317,13 @@ async function fetchManualOpenings(
   year: number,
   companyId: string | undefined,
   partnerType: 'customer' | 'supplier',
-): Promise<Map<string, { debit: number; credit: number }>> {
+): Promise<Map<string, {
+  debit: number
+  credit: number
+  code: string
+  name: string
+  taxCode: string | null
+}>> {
   let q = supabase
     .from('debt_opening_balances')
     .select('partner_id, debit_amount, credit_amount')
@@ -296,9 +331,28 @@ async function fetchManualOpenings(
     .eq('year', year)
   if (companyId) q = q.eq('company_id', companyId)
   const { data } = await q
-  const m = new Map<string, { debit: number; credit: number }>()
+  const partnerIds = (data ?? []).map((row: any) => row.partner_id)
+  const partnerTable = partnerType === 'customer' ? 'customers' : 'suppliers'
+  const { data: partners } = partnerIds.length > 0
+    ? await supabase.from(partnerTable).select('id, code, name, tax_code').in('id', partnerIds)
+    : { data: [] }
+  const partnerById = new Map((partners ?? []).map((partner: any) => [partner.id, partner]))
+  const m = new Map<string, {
+    debit: number
+    credit: number
+    code: string
+    name: string
+    taxCode: string | null
+  }>()
   for (const d of data ?? []) {
-    m.set(d.partner_id, { debit: Number(d.debit_amount), credit: Number(d.credit_amount) })
+    const partner = partnerById.get(d.partner_id)
+    m.set(d.partner_id, {
+      debit: Number(d.debit_amount),
+      credit: Number(d.credit_amount),
+      code: partner?.code ?? '',
+      name: partner?.name ?? '',
+      taxCode: partner?.tax_code ?? null,
+    })
   }
   return m
 }
@@ -308,7 +362,14 @@ function assembleLedger(
   groups: Map<string, PartyAccum>,
   year: number,
   prefix: string,
-  manualOpenings?: Map<string, { debit: number; credit: number }>,
+  partnerType: PartnerType,
+  manualOpenings?: Map<string, {
+    debit: number
+    credit: number
+    code: string
+    name: string
+    taxCode: string | null
+  }>,
 ): LedgerRow[] {
   const yearStart = `${year}-01-01`
   const yearEnd   = `${year}-12-31`
@@ -317,7 +378,7 @@ function assembleLedger(
     const t = computeLedger(g.source, yearStart, yearEnd)
     const mo = manualOpenings?.get(g.party_id)
     if (mo) {
-      const adj = mo.debit - mo.credit
+      const adj = openingDebtNet(partnerType, mo.debit, mo.credit)
       t.opening += adj
       t.closing = t.opening + t.incurred - t.settled
     }
@@ -339,10 +400,14 @@ function assembleLedger(
   if (manualOpenings) {
     for (const [pid, mo] of manualOpenings) {
       if (groups.has(pid)) continue
-      const adj = mo.debit - mo.credit
+      const adj = openingDebtNet(partnerType, mo.debit, mo.credit)
       if (adj === 0) continue
       rows.push({
-        party_id: pid, party_code: '', party_name: '', tax_code: null, symbol: '',
+        party_id: pid,
+        party_code: mo.code,
+        party_name: mo.name,
+        tax_code: mo.taxCode,
+        symbol: '',
         opening: adj, incurred: 0, settled: 0, closing: adj, orders: [],
       })
     }
@@ -353,18 +418,50 @@ function assembleLedger(
 }
 
 export async function getReceivableLedger(year: number, companyId?: string): Promise<LedgerRow[]> {
+  if (isDemoMode()) {
+    if (year !== GLA_DATA.period.year) return []
+    if (companyId && companyId !== GLA_DATA.company.id) return []
+    return GLA_DATA.receivables.map((debt) => ({
+      party_id: debt.partyId,
+      party_code: debt.partyCode,
+      party_name: debt.partyName,
+      tax_code: debt.taxCode,
+      symbol: debt.symbol,
+      opening: debt.openingDebit - debt.openingCredit,
+      incurred: debt.periodDebit,
+      settled: debt.periodCredit,
+      closing: debt.closingDebit - debt.closingCredit,
+      orders: GLA_DATA.receivableDetails
+        .filter((entry) => entry.symbol === debt.symbol)
+        .map((entry) => ({
+          id: entry.id,
+          order_code: entry.sourceRef
+            ?? [entry.documentSymbol, entry.documentNo].filter(Boolean).join(' ')
+            ?? `Dòng ${entry.sequence}`,
+          order_date: entry.txnDate,
+          total: entry.debit,
+          paid: entry.credit,
+          outstanding: entry.balanceDebit - entry.balanceCredit,
+          is_cash: true,
+        })),
+    }))
+  }
+
   const supabase = await createClient()
   const yearStart = `${year}-01-01`
   const yearEnd   = `${year}-12-31`
   let q = supabase
     .from('customer_orders')
     .select(`
-      id, customer_id, order_code, order_date, grand_total, amount_paid, outstanding, customer_tax_code,
+      id, customer_id, order_code, order_date, invoice_date,
+      grand_total, amount_paid, outstanding, customer_tax_code, creates_receivable,
       customers!customer_id ( code, name )
     `)
     .neq('fulfillment_status', 'draft')   // I2: đơn nháp chưa phát sinh công nợ (khớp báo cáo gốc)
-    .lte('order_date', yearEnd)
-    .order('order_date', { ascending: true })
+    .eq('creates_receivable', true)
+    .not('invoice_date', 'is', null)
+    .lte('invoice_date', yearEnd)
+    .order('invoice_date', { ascending: true })
   if (companyId) q = q.eq('company_id', companyId)
 
   const { data, error } = await q
@@ -379,11 +476,12 @@ export async function getReceivableLedger(year: number, companyId?: string): Pro
       g = { party_id: id, party_code: r.customers?.code ?? '', party_name: r.customers?.name ?? '', tax_code: null, source: [], detail: [] }
       groups.set(id, g)
     }
+    const accountingDate = r.invoice_date ?? r.order_date
     const total = Number(r.grand_total), paid = Number(r.amount_paid), outstanding = Number(r.outstanding)
-    g.source.push({ order_date: r.order_date, total, paid })
+    g.source.push({ order_date: accountingDate, total, paid })
     if (!g.tax_code && r.customer_tax_code) g.tax_code = r.customer_tax_code
-    if (r.order_date >= yearStart || outstanding > 0) {
-      g.detail.push({ id: r.id, order_code: r.order_code, order_date: r.order_date, total, paid, outstanding })
+    if (accountingDate >= yearStart || outstanding > 0) {
+      g.detail.push({ id: r.id, order_code: r.order_code, order_date: accountingDate, total, paid, outstanding })
     }
   }
   // Gộp "Chứng từ khác" gắn khách hàng (Thu → giảm phải thu, Chi → tăng)
@@ -415,6 +513,7 @@ export async function getReceivableLedger(year: number, companyId?: string): Pro
     .from('income_transactions')
     .select('id, customer_id, amount_vnd, amount, txn_date, status, customers!customer_id ( code, name )')
     .eq('is_unassigned', true)
+    .eq('affects_debt', true)
     .in('status', ['confirmed', 'approved'])
     .lte('txn_date', yearEnd)
   if (companyId) dq = dq.eq('company_id', companyId)
@@ -434,25 +533,99 @@ export async function getReceivableLedger(year: number, companyId?: string): Pro
       g.detail.push({ id: d.id, order_code: 'Thu chưa gắn đơn', order_date: d.txn_date, total: 0, paid: amount, outstanding: -amount, is_cash: true })
     }
   }
+  // Các phát sinh khác lấy từ file công nợ nguồn nhưng không thuộc hóa đơn,
+  // ngân hàng hay tiền mặt. Mỗi dòng bắt buộc có giải trình và lô import.
+  let adjustmentQuery = supabase
+    .from('debt_adjustments')
+    .select('id, partner_id, txn_date, debit_amount, credit_amount, note')
+    .eq('partner_type', 'customer')
+    .lte('txn_date', yearEnd)
+  if (companyId) adjustmentQuery = adjustmentQuery.eq('company_id', companyId)
+  const { data: adjustmentData } = await adjustmentQuery
+  const adjustmentPartnerIds = [...new Set((adjustmentData ?? []).map((row: any) => row.partner_id))]
+  const { data: adjustmentPartners } = adjustmentPartnerIds.length > 0
+    ? await supabase.from('customers').select('id, code, name, tax_code').in('id', adjustmentPartnerIds)
+    : { data: [] }
+  const adjustmentPartnerMap = new Map((adjustmentPartners ?? []).map((partner: any) => [partner.id, partner]))
+  for (const adjustment of (adjustmentData ?? []) as any[]) {
+    const partner = adjustmentPartnerMap.get(adjustment.partner_id)
+    let g = groups.get(adjustment.partner_id)
+    if (!g) {
+      g = {
+        party_id: adjustment.partner_id,
+        party_code: partner?.code ?? '',
+        party_name: partner?.name ?? '',
+        tax_code: partner?.tax_code ?? null,
+        source: [],
+        detail: [],
+      }
+      groups.set(adjustment.partner_id, g)
+    }
+    const total = Number(adjustment.debit_amount)
+    const paid = Number(adjustment.credit_amount)
+    g.source.push({ order_date: adjustment.txn_date, total, paid })
+    if (adjustment.txn_date >= yearStart) {
+      g.detail.push({
+        id: adjustment.id,
+        order_code: 'Điều chỉnh có giải trình',
+        order_date: adjustment.txn_date,
+        total,
+        paid,
+        outstanding: total - paid,
+        is_cash: true,
+      })
+    }
+  }
   // Manual opening balances
   const moData = await fetchManualOpenings(supabase, year, companyId, 'customer')
-  return assembleLedger(groups, year, '131', moData)
+  return assembleLedger(groups, year, '131', 'customer', moData)
 }
 
 export async function getPayableLedger(year: number, companyId?: string): Promise<LedgerRow[]> {
+  if (isDemoMode()) {
+    if (year !== GLA_DATA.period.year) return []
+    if (companyId && companyId !== GLA_DATA.company.id) return []
+    return GLA_DATA.payables.map((debt) => ({
+        party_id: debt.partyId,
+        party_code: debt.partyCode,
+        party_name: debt.partyName,
+        tax_code: debt.taxCode,
+        symbol: debt.symbol,
+        opening: debt.openingCredit - debt.openingDebit,
+        incurred: debt.periodCredit,
+        settled: debt.periodDebit,
+        closing: debt.closingCredit - debt.closingDebit,
+        orders: GLA_DATA.payableDetails
+          .filter((entry) => entry.symbol === debt.symbol)
+          .map((entry) => ({
+            id: entry.id,
+            order_code: entry.sourceRef
+              ?? [entry.documentSymbol, entry.documentNo].filter(Boolean).join(' ')
+              ?? `Dòng ${entry.sequence}`,
+            order_date: entry.txnDate,
+            total: entry.credit,
+            paid: entry.debit,
+            outstanding: entry.balanceCredit - entry.balanceDebit,
+            is_cash: true,
+          })),
+      }))
+  }
+
   const supabase = await createClient()
   const yearStart = `${year}-01-01`
   const yearEnd   = `${year}-12-31`
   let q = supabase
     .from('supplier_orders')
     .select(`
-      id, supplier_id, order_code, order_date,
-      goods_value, import_duty, vat_import, other_fees, amount_paid, outstanding,
+      id, supplier_id, order_code, order_date, invoice_date,
+      payable_total, payable_outstanding, amount_paid,
       currency, exchange_rate, supplier_tax_code,
       suppliers!supplier_id ( code, name )
     `)
-    .lte('order_date', yearEnd)
-    .order('order_date', { ascending: true })
+    .eq('creates_payable', true)
+    .not('invoice_date', 'is', null)
+    .lte('invoice_date', yearEnd)
+    .order('invoice_date', { ascending: true })
   if (companyId) q = q.eq('company_id', companyId)
 
   const { data, error } = await q
@@ -468,16 +641,63 @@ export async function getPayableLedger(year: number, companyId?: string): Promis
       groups.set(id, g)
     }
     const rate = r.currency === 'KRW' ? Number(r.exchange_rate ?? 0) : 1
-    const total = (Number(r.goods_value) + Number(r.import_duty) + Number(r.vat_import) + Number(r.other_fees)) * rate
+    const accountingDate = r.invoice_date ?? r.order_date
+    const total = Number(r.payable_total) * rate
     const paid  = Number(r.amount_paid) * rate
-    const outstanding = Number(r.outstanding) * rate
-    g.source.push({ order_date: r.order_date, total, paid })
+    const outstanding = Number(r.payable_outstanding) * rate
+    g.source.push({ order_date: accountingDate, total, paid })
     if (!g.tax_code && r.supplier_tax_code) g.tax_code = r.supplier_tax_code
-    if (r.order_date >= yearStart || outstanding > 0) {
-      g.detail.push({ id: r.id, order_code: r.order_code, order_date: r.order_date, total, paid, outstanding })
+    if (accountingDate >= yearStart || outstanding > 0) {
+      g.detail.push({ id: r.id, order_code: r.order_code, order_date: accountingDate, total, paid, outstanding })
     }
   }
   // Gộp "Chứng từ khác" gắn NCC (Chi → giảm phải trả, Thu → tăng)
+  // Thuế nhập khẩu, VAT nhập khẩu và phí dịch vụ có chủ nợ riêng.
+  // Dòng goods đã nằm trong supplier_orders nên loại ra để không ghi trùng.
+  let componentQuery = supabase
+    .from('import_cost_components')
+    .select(`
+      id, supplier_order_id, kind, creditor_supplier_id, amount_vnd,
+      document_date, document_no,
+      suppliers!creditor_supplier_id(code, name, tax_code),
+      supplier_orders!supplier_order_id(invoice_date, order_date)
+    `)
+    .neq('kind', 'goods')
+    .not('creditor_supplier_id', 'is', null)
+  if (companyId) componentQuery = componentQuery.eq('company_id', companyId)
+  const { data: costComponents } = await componentQuery
+  for (const component of (costComponents ?? []) as any[]) {
+    const accountingDate = component.document_date
+      ?? component.supplier_orders?.invoice_date
+      ?? component.supplier_orders?.order_date
+    if (!accountingDate || accountingDate > yearEnd) continue
+    const id = component.creditor_supplier_id
+    let g = groups.get(id)
+    if (!g) {
+      g = {
+        party_id: id,
+        party_code: component.suppliers?.code ?? '',
+        party_name: component.suppliers?.name ?? '',
+        tax_code: component.suppliers?.tax_code ?? null,
+        source: [],
+        detail: [],
+      }
+      groups.set(id, g)
+    }
+    const total = Number(component.amount_vnd)
+    g.source.push({ order_date: accountingDate, total, paid: 0 })
+    if (accountingDate >= yearStart) {
+      g.detail.push({
+        id: component.id,
+        order_code: component.document_no || `Chi phí nhập khẩu ${component.kind}`,
+        order_date: accountingDate,
+        total,
+        paid: 0,
+        outstanding: total,
+      })
+    }
+  }
+
   let cq = supabase
     .from('cash_book')
     .select(`id, ky_hieu, txn_date, so_tien, direction, supplier_id, suppliers!supplier_id ( code, name )`)
@@ -508,6 +728,7 @@ export async function getPayableLedger(year: number, companyId?: string): Promis
     .select('id, supplier_id, supplier_order_id, amount_vnd, txn_date, status, suppliers!supplier_id ( code, name )')
     .not('supplier_id', 'is', null)
     .is('supplier_order_id', null)
+    .eq('affects_debt', true)
     .in('status', ['confirmed', 'approved'])
     .lte('txn_date', yearEnd)
   if (companyId) eq = eq.eq('company_id', companyId)
@@ -526,7 +747,49 @@ export async function getPayableLedger(year: number, companyId?: string): Promis
       g.detail.push({ id: e.id, order_code: 'Chi chưa gắn đơn', order_date: e.txn_date, total: 0, paid: amount, outstanding: -amount, is_cash: true })
     }
   }
+  let adjustmentQuery = supabase
+    .from('debt_adjustments')
+    .select('id, partner_id, txn_date, debit_amount, credit_amount, note')
+    .eq('partner_type', 'supplier')
+    .lte('txn_date', yearEnd)
+  if (companyId) adjustmentQuery = adjustmentQuery.eq('company_id', companyId)
+  const { data: adjustmentData } = await adjustmentQuery
+  const adjustmentPartnerIds = [...new Set((adjustmentData ?? []).map((row: any) => row.partner_id))]
+  const { data: adjustmentPartners } = adjustmentPartnerIds.length > 0
+    ? await supabase.from('suppliers').select('id, code, name, tax_code').in('id', adjustmentPartnerIds)
+    : { data: [] }
+  const adjustmentPartnerMap = new Map((adjustmentPartners ?? []).map((partner: any) => [partner.id, partner]))
+  for (const adjustment of (adjustmentData ?? []) as any[]) {
+    const partner = adjustmentPartnerMap.get(adjustment.partner_id)
+    let g = groups.get(adjustment.partner_id)
+    if (!g) {
+      g = {
+        party_id: adjustment.partner_id,
+        party_code: partner?.code ?? '',
+        party_name: partner?.name ?? '',
+        tax_code: partner?.tax_code ?? null,
+        source: [],
+        detail: [],
+      }
+      groups.set(adjustment.partner_id, g)
+    }
+    // Phải trả: phát sinh Có làm tăng nợ, phát sinh Nợ là đã trả/giảm nợ.
+    const total = Number(adjustment.credit_amount)
+    const paid = Number(adjustment.debit_amount)
+    g.source.push({ order_date: adjustment.txn_date, total, paid })
+    if (adjustment.txn_date >= yearStart) {
+      g.detail.push({
+        id: adjustment.id,
+        order_code: 'Điều chỉnh có giải trình',
+        order_date: adjustment.txn_date,
+        total,
+        paid,
+        outstanding: total - paid,
+        is_cash: true,
+      })
+    }
+  }
   // Manual opening balances
   const moData = await fetchManualOpenings(supabase, year, companyId, 'supplier')
-  return assembleLedger(groups, year, '331', moData)
+  return assembleLedger(groups, year, '331', 'supplier', moData)
 }
