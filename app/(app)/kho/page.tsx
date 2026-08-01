@@ -16,7 +16,7 @@ export default async function KhoPage({ searchParams }: { searchParams: Promise<
   const sp = await searchParams
   const { companyId: gCompany, year } = await getGlobalFilter()
   const companies = await listCompanies()
-  const companyId = gCompany || companies[0]?.id
+  const companyId = gCompany || undefined
   const demoMode = isDemoMode()
   // Kho theo KỲ THÁNG (snapshot NXT). Mặc định: tháng hiện tại nếu là năm nay, ngược lại tháng 1 của năm chọn.
   const defMonth = year === todayLocal().slice(0, 4) ? todayLocal().slice(5, 7) : '01'

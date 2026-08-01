@@ -13,7 +13,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
   const sp = await searchParams
   const { companyId: gCompany, year } = await getGlobalFilter()
   const companies = await listCompanies()
-  const companyId = gCompany || companies[0]?.id
+  const companyId = gCompany || undefined
   const defMonth = year === todayLocal().slice(0, 4) ? todayLocal().slice(5, 7) : '01'
   const period = sp.period || `${year}-${defMonth}`
   const [me, products, warehouses, openings, stock] = await Promise.all([
