@@ -52,8 +52,14 @@ export default async function OrderDetailPage({ params, searchParams }: Props) {
           <div>
             <h1 className="text-2xl font-bold font-mono text-gray-900">{order.order_code}</h1>
             <p className="text-gray-600 mt-1">
-              {order.customer.name}{' '}
-              <span className="text-gray-400">[{order.customer.code}]</span>
+              {order.customer ? (
+                <>
+                  {order.customer.name}{' '}
+                  <span className="text-gray-400">[{order.customer.code}]</span>
+                </>
+              ) : (
+                <span className="text-gray-400 italic">Không có khách hàng</span>
+              )}
             </p>
           </div>
           <div className="flex flex-col items-end gap-2">

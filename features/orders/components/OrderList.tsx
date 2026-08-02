@@ -162,8 +162,14 @@ export function OrderList({ initialRows, total, canWrite, companies, customers, 
                       : <span className="text-gray-300">—</span>}
                   </td>
                   <td className="px-4 py-3 text-gray-900">
-                    <span className="font-medium">{row.customer.name}</span>
-                    <span className="ml-1.5 text-xs text-gray-400">[{row.customer.code}]</span>
+                    {row.customer ? (
+                      <>
+                        <span className="font-medium">{row.customer.name}</span>
+                        <span className="ml-1.5 text-xs text-gray-400">[{row.customer.code}]</span>
+                      </>
+                    ) : (
+                      <span className="text-gray-400 italic">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-gray-600">{row.company.name}</td>
                   <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
