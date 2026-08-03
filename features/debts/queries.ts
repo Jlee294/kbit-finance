@@ -507,12 +507,12 @@ export async function getReceivableLedger(year: number, companyId?: string): Pro
       g.detail.push({ id: c.id, order_code: `CTK ${c.ky_hieu ?? ''}`.trim(), order_date: c.txn_date, total: src.total, paid: src.paid, outstanding: 0, is_cash: true })
     }
   }
-  // KTT E1: Phiếu thu CHƯA GẮN ĐƠN vẫn vào công nợ phải thu (giảm closing).
-  // Gộp tất cả income.is_unassigned có customer_id vào settled — tạo group mới nếu KH chưa có order.
+  // Phiếu thu vào công nợ phải thu (giảm closing): bao gồm CẢ phiếu chưa gắn
+  // đơn (is_unassigned=true) VÀ phiếu đã gắn KH nhưng chưa phân bổ vào đơn cụ
+  // thể (is_unassigned=false, amount_paid trên customer_orders vẫn = 0).
   let dq = supabase
     .from('income_transactions')
     .select('id, customer_id, amount_vnd, amount, txn_date, status, customers!customer_id ( code, name )')
-    .eq('is_unassigned', true)
     .eq('affects_debt', true)
     .in('status', ['confirmed', 'approved'])
     .lte('txn_date', yearEnd)
@@ -651,52 +651,9 @@ export async function getPayableLedger(year: number, companyId?: string): Promis
       g.detail.push({ id: r.id, order_code: r.order_code, order_date: accountingDate, total, paid, outstanding })
     }
   }
-  // Gộp "Chứng từ khác" gắn NCC (Chi → giảm phải trả, Thu → tăng)
-  // Thuế nhập khẩu, VAT nhập khẩu và phí dịch vụ có chủ nợ riêng.
-  // Dòng goods đã nằm trong supplier_orders nên loại ra để không ghi trùng.
-  let componentQuery = supabase
-    .from('import_cost_components')
-    .select(`
-      id, supplier_order_id, kind, creditor_supplier_id, amount_vnd,
-      document_date, document_no,
-      suppliers!creditor_supplier_id(code, name, tax_code),
-      supplier_orders!supplier_order_id(invoice_date, order_date)
-    `)
-    .neq('kind', 'goods')
-    .not('creditor_supplier_id', 'is', null)
-  if (companyId) componentQuery = componentQuery.eq('company_id', companyId)
-  const { data: costComponents } = await componentQuery
-  for (const component of (costComponents ?? []) as any[]) {
-    const accountingDate = component.document_date
-      ?? component.supplier_orders?.invoice_date
-      ?? component.supplier_orders?.order_date
-    if (!accountingDate || accountingDate > yearEnd) continue
-    const id = component.creditor_supplier_id
-    let g = groups.get(id)
-    if (!g) {
-      g = {
-        party_id: id,
-        party_code: component.suppliers?.code ?? '',
-        party_name: component.suppliers?.name ?? '',
-        tax_code: component.suppliers?.tax_code ?? null,
-        source: [],
-        detail: [],
-      }
-      groups.set(id, g)
-    }
-    const total = Number(component.amount_vnd)
-    g.source.push({ order_date: accountingDate, total, paid: 0 })
-    if (accountingDate >= yearStart) {
-      g.detail.push({
-        id: component.id,
-        order_code: component.document_no || `Chi phí nhập khẩu ${component.kind}`,
-        order_date: accountingDate,
-        total,
-        paid: 0,
-        outstanding: total,
-      })
-    }
-  }
+  // import_cost_components with creditor removed: those costs already exist as
+  // separate supplier_orders for the creditor (from bảng kê), so including them
+  // here double-counts AP.
 
   let cq = supabase
     .from('cash_book')

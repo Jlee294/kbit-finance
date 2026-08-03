@@ -124,7 +124,7 @@ export async function listImportOrders(companyId?: string): Promise<ImportOrderR
       vat_amount, invoice_no, invoice_symbol,
       company_id, supplier_id,
       suppliers!supplier_id(name, code),
-      inventory_items:supplier_order_items!inner(product_id)
+      inventory_items:supplier_order_items!inner(product_id, source_line_amount)
     `)
     .not('inventory_items.product_id', 'is', null)
     .order('order_date', { ascending: false })
@@ -132,7 +132,12 @@ export async function listImportOrders(companyId?: string): Promise<ImportOrderR
   if (companyId) q = q.eq('company_id', companyId)
   const { data, error } = await q
   if (error) throw new Error(error.message)
-  return (data ?? []) as unknown as ImportOrderRow[]
+  return (data ?? []).map((row: any) => {
+    const journalGoods = (row.inventory_items ?? [])
+      .reduce((sum: number, item: any) => sum + Number(item.source_line_amount ?? 0), 0)
+    const { inventory_items: _, ...rest } = row
+    return { ...rest, goods_value: journalGoods || row.goods_value } as ImportOrderRow
+  })
 }
 
 /** Chi tiết 1 đơn nhập khẩu kèm dòng hàng */
