@@ -29,7 +29,7 @@ export default async function BangKeBanRaPage({
     companyId: companyId || undefined,
     from:      range.from,
     to:        range.to,
-    limit:     500,
+    limit:     2000,
   })
 
   const totalSubtotal = rows.reduce((s, r) => s + r.subtotal,    0)

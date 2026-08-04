@@ -164,6 +164,32 @@ function detectFileKind(filename) {
   return null
 }
 
+function verifyListingKind(kind, rows) {
+  if (kind !== 'sales_listing' && kind !== 'purchase_listing') return kind
+
+  const journalHeaders = /ma (hh|hang|san pham)|ten hang|so luong|don gia|dvt|don vi tinh/
+  for (const row of rows.slice(0, 10)) {
+    const headerText = normalizeHeader(row.filter(c => typeof c === 'string').join(' '))
+    if (journalHeaders.test(headerText)) {
+      return kind === 'sales_listing' ? 'sales_journal' : 'purchase_journal'
+    }
+  }
+
+  let journalLike = 0, checked = 0
+  for (const row of rows) {
+    const base = sequenceIndex(row)
+    if (base < 0) continue
+    if (isoDate(row[base + 2]) && !isoDate(row[base + 4])) journalLike++
+    checked++
+    if (checked >= 5) break
+  }
+  if (checked > 0 && journalLike / checked >= 0.6) {
+    return kind === 'sales_listing' ? 'sales_journal' : 'purchase_journal'
+  }
+
+  return kind
+}
+
 // ── Parsers (mirror parser.ts) ───────────────────────────────────────────────
 
 function parseListing(kind, rows) {
@@ -500,7 +526,7 @@ function chooseSheet(workbook, kind) {
 
 function parseFile(filePath) {
   const filename = path.basename(filePath)
-  const kind = detectFileKind(filename)
+  let kind = detectFileKind(filename)
   if (!kind) { console.warn(`  ⚠ Skipping unrecognized file: ${filename}`); return null }
 
   const bytes = fs.readFileSync(filePath)
@@ -510,6 +536,12 @@ function parseFile(filePath) {
   const sheet = workbook.Sheets[sheetName]
   if (!sheet) { console.warn(`  ⚠ No sheet in ${filename}`); return null }
   const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null, raw: true })
+
+  const originalKind = kind
+  kind = verifyListingKind(kind, rows)
+  if (kind !== originalKind) {
+    console.log(`  ⚡ Override: ${filename} reclassified ${originalKind} → ${kind} (content-based)`)
+  }
 
   let parsedRows
   if (kind === 'sales_listing' || kind === 'purchase_listing') parsedRows = parseListing(kind, rows)
